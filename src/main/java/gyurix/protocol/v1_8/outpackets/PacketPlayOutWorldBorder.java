@@ -46,7 +46,7 @@ public class PacketPlayOutWorldBorder extends WrappedPacket {
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayOutWorldBorder$EnumWorldBorderAction"), "valueOf");
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayOutWorldBorder$EnumWorldBorderAction"), "valueOf",String.class);
         }
 
         public Object toVanillaPlayerAction() {

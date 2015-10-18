@@ -9,10 +9,12 @@ import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
 import gyurix.economy.EconomyVaultHook;
+import gyurix.inventory.InventoryAPI;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.*;
 import gyurix.protocol.utils.ItemStackWrapper;
 import gyurix.scoreboard.ScoreboardAPI;
+import gyurix.spigotutils.TPSMeter;
 import net.milkbowl.vault.economy.Economy;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -28,6 +30,8 @@ import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.Plugin;
@@ -48,7 +52,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Version of the SpigotLib
      */
-    public static final String version = "1.6";
+    public static final String version = "1.6.1";
     /**
      * Logger for SpigotLib debug
      */
@@ -77,6 +81,12 @@ public class Main extends JavaPlugin implements Listener {
         SU.saveResources(this, "lang.yml", "config.yml");
         kf = new ConfigFile(new File(dir + File.separator + "config.yml"));
         kf.data.deserialize(Config.class);
+        if (Config.economy==null){
+            Config.economy=new EconomyAPI();
+            EconomyAPI.liveSync=true;
+            EconomyAPI.balanceTypes.put("default",new EconomyAPI.BalanceData("","default","$",new BigDecimal(100)));
+            kf.save();
+        }
 
         SU.pf = new ConfigFile(new File(dir + File.separator + "players.yml"));
 
@@ -171,6 +181,7 @@ public class Main extends JavaPlugin implements Listener {
         SU.pm.registerEvents(this, this);
         SU.pm.registerEvents(SU.tp, this);
         SU.initOfflinePlayerManager();
+        Config.tpsMeter.start();
     }
 
     /**
@@ -199,35 +210,14 @@ public class Main extends JavaPlugin implements Listener {
         }
         ScoreboardAPI.playerJoin(plr);
         UUID id=plr.getUniqueId();
-        ConfigFile pf=SU.getPlayerConfig(plr);
-        if (EconomyAPI.liveSync&&EconomyAPI.getBalance(id)==null){
-            for (RegisteredServiceProvider<Economy> p:Bukkit.getServicesManager().getRegistrations(Economy.class)){
-                if (p.getPlugin()!=this){
-                    EconomyAPI.setBalance(plr.getUniqueId(),new BigDecimal(p.getProvider().getBalance(plr)));
-                }
-            }
-        }
+        EconomyAPI.getBalance(id);
         for (EconomyAPI.BalanceData bd:EconomyAPI.balanceTypes.values()){
-            if (EconomyAPI.getBalance(id, bd.name)==null){
-                pf.setObject("balance."+bd.name,bd.defaultValue);
-            }
+            EconomyAPI.getBalance(id,bd.name);
         }
     }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onAfterPlayerJoin(PlayerJoinEvent e){
-        if (!Config.joinMessage)
-            return;
-        Player plr=e.getPlayer();
-        e.setJoinMessage(null);
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (!p.hasPermission("spigotlib.joinmsg"))
-                return;
-            String msg = lang.get(p, "messages.join", "player", plr.getName());
-            if (!msg.equals("<none>")) {
-                ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, msg, p);
-            }
-        }
+    @EventHandler
+    public void onPluginUnload(PluginDisableEvent e){
+        InventoryAPI.unregister(e.getPlugin());
     }
 
     /**
@@ -237,19 +227,7 @@ public class Main extends JavaPlugin implements Listener {
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLeave(PlayerQuitEvent e) {
-        if (!Config.leaveMessage)
-            return;
-        Player plr = e.getPlayer();
-        e.setQuitMessage(null);
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (plr != p) {
-                if (!p.hasPermission("spigotlib.leavemsg"))
-                    return;
-                String msg = lang.get(p, "messages.leave", "player", e.getPlayer().getName());
-                if (!msg.equals("<none>"))
-                    ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, msg, p);
-            }
-        }
+        Player plr=e.getPlayer();
         if (Config.AntiItemHack.enabled)
             SU.getPlayerConfig(plr).removeData("antiitemhack.lastitem");
         SU.pf.save();
@@ -268,23 +246,6 @@ public class Main extends JavaPlugin implements Listener {
         e.setNewBookMeta(meta);
     }
 
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerKick(PlayerKickEvent e) {
-        if (!Config.kickMessage)
-            return;
-        Player plr = e.getPlayer();
-        e.setLeaveMessage(null);
-        for (Player p : Bukkit.getOnlinePlayers()) {
-            if (plr != p) {
-                if (!p.hasPermission("spigotlib.kickmsg"))
-                    return;
-                String msg = lang.get(p, "messages.kick", "player", e.getPlayer().getName(), "reason", e.getReason());
-                if (!msg.equals("<none>"))
-                    ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, msg, p);
-            }
-        }
-    }
 
     /**
      *
@@ -712,6 +673,10 @@ public class Main extends JavaPlugin implements Listener {
                         return true;
                     }
                 }
+            } else if (args[0].equals("debug")) {
+                Config.debug=!Config.debug;
+                lang.msg(sender,"debug."+(Config.debug?"on":"off"));
+                return true;
             } else if (args[0].equals("item")) {
                 if (args.length == 1) {
                     if (plr == null) {

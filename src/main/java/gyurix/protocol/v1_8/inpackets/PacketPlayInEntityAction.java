@@ -32,7 +32,7 @@ public class PacketPlayInEntityAction extends WrappedPacket{
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInEntityAction$EnumPlayerAction"), "valueOf");
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInEntityAction$EnumPlayerAction"), "valueOf",String.class);
         }
 
         public Object toVanillaPlayerAction() {

@@ -12,12 +12,14 @@ import java.util.UUID;
  * Created by GyuriX on 2015.07.20..
  */
 public class SidebarLine {
+    public final Sidebar bar;
     public boolean hide;
     public int number;
     public final char uniqueChar;
     public String oldUser;
     public String user,prefix="",suffix="";
-    public SidebarLine(char ch){
+    public SidebarLine(Sidebar bar,char ch){
+        this.bar=bar;
         uniqueChar=ch;
         oldUser=user="§"+uniqueChar;
     }
@@ -25,45 +27,45 @@ public class SidebarLine {
         if (hide)
             return;
         SU.tp.sendPacket(plr, PacketOutType.ScoreboardTeam.newPacket(
-                "SBT" + uniqueChar,"SBT" + uniqueChar, //name, displayname
+                bar.teamNamePrefix + uniqueChar,bar.teamNamePrefix + uniqueChar, //name, displayname
                 prefix,suffix, //prefix, suffix
                 "always",0, //nametag visibility, color
                 Lists.newArrayList(user),0,0 //users, action, flags
         ));
-        SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,"SBAPI-sidebar",number,ScoreboardAPI.setScore));
+        SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,bar.barname,number,ScoreboardAPI.setScore));
     }
     public void hide(Player plr){
         if (hide)
             return;
         SU.tp.sendPacket(plr, PacketOutType.ScoreboardTeam.newPacket(
-                "SBT" + uniqueChar,"SBT" + uniqueChar, //name, displayname
+                bar.teamNamePrefix + uniqueChar,bar.teamNamePrefix + uniqueChar, //name, displayname
                 prefix,suffix, //prefix, suffix
                 "always",0, //nametag visibility, color
                 Lists.newArrayList(user),1,0 //users, action, flags
         ));
-        SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,"SBAPI-sidebar",number,ScoreboardAPI.removeScore));
+        SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,bar.barname,number,ScoreboardAPI.removeScore));
     }
     public void updateNumber(Player plr){
-        SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,"SBAPI-sidebar",number,ScoreboardAPI.setScore));
+        SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,bar.barname,number,ScoreboardAPI.setScore));
     }
     public void update(Player plr){
         SU.tp.sendPacket(plr, PacketOutType.ScoreboardTeam.newPacket(
-                "SBT" + uniqueChar,"SBT" + uniqueChar, //name, displayname
+                bar.teamNamePrefix + uniqueChar,bar.teamNamePrefix + uniqueChar, //name, displayname
                 prefix,suffix, //prefix, suffix
                 "always",0, //nametag visibility, color
                 Lists.newArrayList(user),2,0 //users, action, flags
         ));
         if (!user.equals(oldUser)){
             SU.tp.sendPacket(plr, PacketOutType.ScoreboardTeam.newPacket(
-                    "SBT" + uniqueChar,"SBT" + uniqueChar, //name, displayname
+                    bar.teamNamePrefix + uniqueChar,bar.teamNamePrefix + uniqueChar, //name, displayname
                     prefix,suffix, //prefix, suffix
                     "always",0, //nametag visibility, color
                     Lists.newArrayList(user),3,0 //users, action, flags
             ));
-            SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(oldUser,"SBAPI-sidebar",number,ScoreboardAPI.removeScore));
-            SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,"SBAPI-sidebar",number,ScoreboardAPI.setScore));
+            SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(oldUser,bar.barname,number,ScoreboardAPI.removeScore));
+            SU.tp.sendPacket(plr, PacketOutType.ScoreboardScore.newPacket(user,bar.barname,number,ScoreboardAPI.setScore));
             SU.tp.sendPacket(plr, PacketOutType.ScoreboardTeam.newPacket(
-                    "SBT" + uniqueChar,"SBT" + uniqueChar, //name, displayname
+                    bar.teamNamePrefix + uniqueChar,bar.teamNamePrefix + uniqueChar, //name, displayname
                     prefix,suffix, //prefix, suffix
                     "always",0, //nametag visibility, color
                     Lists.newArrayList(oldUser),4,0 //users, action, flags

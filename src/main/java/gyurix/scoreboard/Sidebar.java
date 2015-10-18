@@ -15,9 +15,18 @@ import java.util.UUID;
 public class Sidebar extends ScoreboardBar{
     public ArrayList<SidebarLine> lines=new ArrayList<SidebarLine>();
     public Sidebar(){
-        super("SBAPI-sidebar",1);
+        super("SBAPI-sidebar","SLSB",1);
         for (int i=1;i<16;i++){
-            SidebarLine line=new SidebarLine((char)(280+i));
+            SidebarLine line=new SidebarLine(this,(char)(280+i));
+            lines.add(line);
+            line.setText("§6§lLine §e§l"+i);
+            line.number=100-i;
+        }
+    }
+    public Sidebar(String name,String teamNamePrefix){
+        super(name,teamNamePrefix,1);
+        for (int i=1;i<16;i++){
+            SidebarLine line=new SidebarLine(this,(char)(280+i));
             lines.add(line);
             line.setText("§6§lLine §e§l"+i);
             line.number=100-i;
@@ -86,12 +95,12 @@ public class Sidebar extends ScoreboardBar{
                 line.show(plr);
             }
         }
-        SU.tp.sendPacket(plr,showPacket);
+        if (visible)
+            SU.tp.sendPacket(plr,showPacket);
     }
 
     @Override
     public void addViewerFirstBar(Player plr) {
-        System.out.println("First bar: "+plr.getName());
         viewers.add(plr.getUniqueId());
         sendCreatePacket(plr);
         for (SidebarLine line:lines){
@@ -99,7 +108,8 @@ public class Sidebar extends ScoreboardBar{
                 line.show(plr);
             }
         }
-        SU.tp.sendPacket(plr,showPacket);
+        if (visible)
+            SU.tp.sendPacket(plr,showPacket);
     }
 
     @Override
@@ -114,6 +124,10 @@ public class Sidebar extends ScoreboardBar{
             lines.get(i).show(plr);
         }
         sendUpdatePacket(plr);
+        if (!old.visible&&visible)
+            SU.tp.sendPacket(plr,showPacket);
+        if (!visible&&old.visible)
+            SU.tp.sendPacket(plr,hidePacket);
     }
 
     @Override
@@ -122,7 +136,8 @@ public class Sidebar extends ScoreboardBar{
             return;
         if (!plr.isOnline())
             return;
-        SU.tp.sendPacket(plr,hidePacket);
+        if (visible)
+            SU.tp.sendPacket(plr,hidePacket);
         for (SidebarLine line:lines){
             line.hide(plr);
         }

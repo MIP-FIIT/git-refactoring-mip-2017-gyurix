@@ -55,13 +55,3 @@ public abstract class PacketEvent
         this.cancelled = cancel;
     }
 }
-
-
-
-/* Location:           D:\pluginok\ServerLib\out\artifacts\SpigotLib.jar
-
- * Qualified Name:     gyurix.protocol.PacketEvent
-
- * JD-Core Version:    0.7.0.1
-
- */

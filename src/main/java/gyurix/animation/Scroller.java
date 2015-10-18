@@ -55,7 +55,7 @@ public class Scroller implements CustomEffect {
      * @param text
      */
     public Scroller(int max, int size, String text) {
-        this(max, size, 1, false, true, ' ', text);
+        this(max, size, 1, 0, false, true, ' ', text);
     }
 
     /**
@@ -69,10 +69,11 @@ public class Scroller implements CustomEffect {
      * @param fill
      * @param text
      */
-    public Scroller(int max, int size, int speed, boolean reversed, boolean skipColors, char fill, String text) {
+    public Scroller(int max, int size, int speed, int start, boolean reversed, boolean skipColors, char fill, String text) {
         this.max = max;
         this.size = size;
         this.speed = speed;
+        this.start = start;
         this.reversed = reversed;
         this.skipColors = skipColors;
         this.fill = fill;
@@ -149,5 +150,10 @@ public class Scroller implements CustomEffect {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    @Override
+    public CustomEffect clone() {
+        return new Scroller(max, size, speed, start, reversed, skipColors, fill, text);
     }
 }

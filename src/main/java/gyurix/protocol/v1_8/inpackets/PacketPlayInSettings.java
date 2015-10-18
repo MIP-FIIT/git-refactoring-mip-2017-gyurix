@@ -33,7 +33,7 @@ public class PacketPlayInSettings extends WrappedPacket {
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("EntityHuman$EnumChatVisibility"), "valueOf");
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("EntityHuman$EnumChatVisibility"), "valueOf",String.class);
         }
 
         public Object toVanillaChatVisibility() {

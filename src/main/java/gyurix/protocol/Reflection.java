@@ -6,6 +6,8 @@ import gyurix.utils.Primitives;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -132,13 +134,13 @@ public class Reflection {
         while (cl!=null){
             if (args.length == 0) {
                 for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getName().equals(name)) {
+                    if (m.getParameterTypes().length==0&&m.getName().equals(name)) {
                         m.setAccessible(true);
                         return m;
                     }
                 }
                 for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getName().equalsIgnoreCase(name)) {
+                    if (m.getParameterTypes().length==0&&m.getName().equalsIgnoreCase(name)) {
                         m.setAccessible(true);
                         return m;
                     }
@@ -151,7 +153,19 @@ public class Reflection {
                     }
                 }
                 for (Method m : cl.getDeclaredMethods()) {
+                    if (m.getName().equals(name) && classArrayCompareLight(args, m.getParameterTypes())) {
+                        m.setAccessible(true);
+                        return m;
+                    }
+                }
+                for (Method m : cl.getDeclaredMethods()) {
                     if (m.getName().equalsIgnoreCase(name) && classArrayCompare(args, m.getParameterTypes())) {
+                        m.setAccessible(true);
+                        return m;
+                    }
+                }
+                for (Method m : cl.getDeclaredMethods()) {
+                    if (m.getName().equalsIgnoreCase(name) && classArrayCompareLight(args, m.getParameterTypes())) {
                         m.setAccessible(true);
                         return m;
                     }
@@ -168,6 +182,16 @@ public class Reflection {
         }
         for (int i = 0; i < l1.length; i++) {
             if (l1[i] != l2[i])
+                return false;
+        }
+        return true;
+    }
+    public static boolean classArrayCompareLight(Class[] l1, Class[] l2) {
+        if (l1.length != l2.length) {
+            return false;
+        }
+        for (int i = 0; i < l1.length; i++) {
+            if (!l2[i].isAssignableFrom(l1[i]))
                 return false;
         }
         return true;
@@ -207,37 +231,44 @@ public class Reflection {
         throw new RuntimeException("Can't find field!");
     }
 
-    public static Object getData(Object o, String str) {
+    public static Object getData(Object obj, List<Object> data) {
         try {
-            String[] d = str.split("\\.");
-            for (String s : d) {
-                Class c = Primitives.unwrap(o.getClass());
-                try{
-                    int id=Integer.valueOf(s);
-                    if (c.isArray())
-                        o=Array.get(o,Integer.valueOf(s));
-                    else
-                        o=((List)o).get(id);
-                    continue;
+            Class[] ecd=new Class[0];
+            Class[] cd=ecd;
+            Object[] eod=new Object[0];
+            Object[] od=eod;
+            for (Object o:data) {
+                Class oc=o.getClass();
+                if (oc.isArray()) {
+                    od=(Object[])o;
+                    cd = new Class[od.length];
+                    for (int j = 0; j < cd.length; j++) {
+                        cd[j] = od[j].getClass();
+                    }
                 }
-                catch (Throwable e){}
-                try {
-                    o= getMethod(c,"get" + s).invoke(o);
-                    continue;
-                } catch (RuntimeException e) {
+                else{
+                    for (String s:((String)o).split("\\.")){
+                        Class objc=obj.getClass();
+                        try {
+                            obj= getMethod(objc,"get" + s,cd).invoke(obj,od);
+                        } catch (RuntimeException e) {
+                            try {
+                                obj = getMethod(objc,s,cd).invoke(obj, od);
+                            } catch (RuntimeException e2) {
+                                obj = getField(objc, s).get(obj);
+                            }
+                        }
+                        cd=ecd;
+                        od=eod;
+                    }
                 }
-                try {
-                    o = getMethod(c,s).invoke(o);
-                    continue;
-                } catch (RuntimeException e) {
-                }
-                o = getField(c, s).get(o);
             }
         } catch (Throwable e) {
-            e.printStackTrace();
-            System.out.println("§cReflection ERROR: §fFailed to handle " + str + " request.");
+            if (Config.debug)
+                e.printStackTrace();
+            System.out.println("§cReflection ERROR: §fFailed to handle " + data + " request.");
             return null;
         }
-        return o;
+        return obj;
     }
 }

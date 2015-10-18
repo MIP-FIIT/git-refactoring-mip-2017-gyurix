@@ -16,9 +16,8 @@ public class Tabbar extends ScoreboardBar{
     public String header="§b§lTest header",footer="§c§l--------------------\nTabbar, made by gyuriX\n§c§l--------------------";
     public ArrayList<UUID> viewers=new ArrayList<UUID>();
     public HashMap<UUID,TabPlayer> pls=new HashMap<UUID, TabPlayer>();
-    public boolean hide;
     public Tabbar(){
-        super("SBAPI-tabbar",0);
+        super("SBAPI-tabbar","SLTB",0);
     }
     public void addPlayer(UUID uuid,TabPlayer tabPlayer){
         pls.put(uuid, tabPlayer);
@@ -38,22 +37,6 @@ public class Tabbar extends ScoreboardBar{
         tp.tabname=name;
         sendPackets(tp.getTabnameSetPacket());
     }
-    public void hide(){
-        if (hide) {
-            System.err.println("§eHIDING ALREADY SHOWED TABBAR?");
-            return;
-        }
-        sendPackets(hidePacket);
-        hide=true;
-    }
-    public void show(){
-        if (!hide) {
-            System.err.println("§eSHOWING ALREADY SHOWED TABBAR?");
-            return;
-        }
-        sendPackets(showPacket);
-        hide=false;
-    }
     public void setNumber(Player plr,int number){
         TabPlayer sp=pls.get(plr.getUniqueId());
         sp.number=number;
@@ -68,7 +51,7 @@ public class Tabbar extends ScoreboardBar{
             SU.tp.sendPacket(plr,p.getSetScorePacket());
             SU.tp.sendPacket(plr,p.getTabnameSetPacket());
         }
-        if (!hide)
+        if (visible)
             SU.tp.sendPacket(plr,showPacket);
         SU.tp.sendPacket(plr,PacketOutType.PlayerListHeaderFooter.newPacket(
                 ChatAPI.toICBC(ChatAPI.TextToJson(header)),ChatAPI.toICBC(ChatAPI.TextToJson(footer))));
@@ -83,7 +66,7 @@ public class Tabbar extends ScoreboardBar{
             SU.tp.sendPacket(plr,p.getSetScorePacket());
             SU.tp.sendPacket(plr,p.getTabnameSetPacket());
         }
-        if (!hide)
+        if (visible)
             SU.tp.sendPacket(plr,showPacket);
         SU.tp.sendPacket(plr,PacketOutType.PlayerListHeaderFooter.newPacket(
                 ChatAPI.toICBC(ChatAPI.TextToJson(header)),ChatAPI.toICBC(ChatAPI.TextToJson(footer))));
@@ -108,9 +91,9 @@ public class Tabbar extends ScoreboardBar{
                 SU.tp.sendPacket(plr,p.getTabnameRestorePacket());
             }
         }
-        if (old.hide&&!hide)
+        if (!old.visible&&visible)
             SU.tp.sendPacket(plr,showPacket);
-        if (hide&&!old.hide)
+        if (!visible&&old.visible)
             SU.tp.sendPacket(plr,hidePacket);
         if (!(old.header.equals(header)&&old.footer.equals(footer))){
             SU.tp.sendPacket(plr,PacketOutType.PlayerListHeaderFooter.newPacket(
@@ -120,7 +103,6 @@ public class Tabbar extends ScoreboardBar{
 
     @Override
     public void removeViewer(Player plr) {
-        System.out.println("§cTB: §cRemove viewer: "+plr.getName());
         if (!viewers.remove(plr.getUniqueId()))
             return;
         if (!plr.isOnline())
@@ -131,7 +113,7 @@ public class Tabbar extends ScoreboardBar{
         }
         SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(
                 ChatAPI.toICBC(ChatAPI.TextToJson("")), ChatAPI.toICBC(ChatAPI.TextToJson(""))));
-        if (!hide)
+        if (visible)
             SU.tp.sendPacket(plr, hidePacket);
 
     }

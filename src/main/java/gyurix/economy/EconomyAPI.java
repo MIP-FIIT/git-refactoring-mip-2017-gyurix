@@ -13,7 +13,7 @@ import java.util.UUID;
 
 /**
  * @author GyuriX
- *
+ *         <p/>
  *         An API for managing the whole servers economy system.
  *         It includes the following features:
  *         - multiple balance type
@@ -26,7 +26,7 @@ public class EconomyAPI {
     /**
      * Sync the balance from other plugins if the player don't have the default money in the SpigotLibs EconomyAPI.
      */
-    public static boolean liveSync=true;
+    public static boolean liveSync = true;
     /**
      * The map of the available banks and their balances of each balancetype
      */
@@ -51,7 +51,6 @@ public class EconomyAPI {
     }
 
     /**
-     *
      * Get the given typed balance of a bank
      *
      * @param bank        bank name
@@ -74,18 +73,21 @@ public class EconomyAPI {
      */
     public static BigDecimal getBalance(UUID plr) {
         try {
-            BigDecimal bal=(BigDecimal) SU.getPlayerConfig(plr).get("balance.default", BigDecimal.class);
-            if (EconomyAPI.liveSync&&bal==null){
-                OfflinePlayer op=Bukkit.getOfflinePlayer(plr);
-                for (RegisteredServiceProvider<Economy> p: Bukkit.getServicesManager().getRegistrations(Economy.class)){
-                    if (p.getPlugin()!= Main.pl){
-                        EconomyAPI.setBalance(plr,new BigDecimal(p.getProvider().getBalance(op)));
+            BigDecimal bal = (BigDecimal) SU.getPlayerConfig(plr).get("balance.default", BigDecimal.class);
+            if (bal != null)
+                return bal;
+            if (liveSync) {
+                liveSync=false;
+                OfflinePlayer op = Bukkit.getOfflinePlayer(plr);
+                for (RegisteredServiceProvider<Economy> p : Bukkit.getServicesManager().getRegistrations(Economy.class)) {
+                    if (p.getPlugin() != Main.pl) {
+                        SU.getPlayerConfig(plr).setObject("balance.default", bal=new BigDecimal(p.getProvider().getBalance(op)));
                     }
                 }
+                liveSync=true;
             }
-            else if (bal==null){
-                EconomyAPI.setBalance(plr,bal=balanceTypes.get("default").defaultValue);
-            }
+            if (bal == null)
+                EconomyAPI.setBalance(plr, bal = balanceTypes.get("default").defaultValue);
             return bal;
         } catch (Throwable e) {
             return new BigDecimal(0);
@@ -101,7 +103,10 @@ public class EconomyAPI {
      */
     public static BigDecimal getBalance(UUID plr, String balanceType) {
         try {
-            return (BigDecimal) SU.getPlayerConfig(plr).get("balance." + balanceType, BigDecimal.class);
+            BigDecimal bal= (BigDecimal) SU.getPlayerConfig(plr).get("balance." + balanceType, BigDecimal.class);
+            if (bal == null)
+                SU.getPlayerConfig(plr).setObject("balance.default", bal = balanceTypes.get(balanceType).defaultValue);
+            return bal;
         } catch (Throwable e) {
             return new BigDecimal(0);
         }
@@ -157,7 +162,6 @@ public class EconomyAPI {
      * @return The success of the transfer, it's false, if the player doesn't have enough default typed balance
      */
     public static boolean addBalance(UUID plr, BigDecimal balance) {
-        System.out.println(plr);
         BigDecimal bd = getBalance(plr).add(balance);
         if (bd.compareTo(new BigDecimal(0)) < 0)
             return false;
@@ -271,8 +275,8 @@ public class EconomyAPI {
 
     /**
      * @author GyuriX
-     *
-     *A class for storing informations about a balance type
+     *         <p/>
+     *         A class for storing informations about a balance type
      */
     public static class BalanceData {
         public String prefix = "", name = "", suffix = "";
@@ -281,35 +285,36 @@ public class EconomyAPI {
         /**
          * Empty constructor
          */
-        public BalanceData(){
+        public BalanceData() {
 
         }
 
         /**
          * Constructor with every parameter, but defaultValue
+         *
          * @param prefix prefix of the balance type
-         * @param name name of the balance type
+         * @param name   name of the balance type
          * @param suffix suffix of the balance type
          */
         public BalanceData(String prefix, String name, String suffix) {
-            this.prefix=prefix;
-            this.suffix=suffix;
-            this.name=name;
+            this.prefix = prefix;
+            this.suffix = suffix;
+            this.name = name;
         }
 
         /**
          * Constructor with every parameter
-         * @param prefix prefix of the balance type
-         * @param name name of the balance type
-         * @param suffix suffix of the balance type
-         * @param defaultValue default value of the balance type
          *
+         * @param prefix       prefix of the balance type
+         * @param name         name of the balance type
+         * @param suffix       suffix of the balance type
+         * @param defaultValue default value of the balance type
          */
-        public BalanceData(String prefix, String name, String suffix,BigDecimal defaultValue) {
-            this.prefix=prefix;
-            this.suffix=suffix;
-            this.name=name;
-            this.defaultValue=defaultValue;
+        public BalanceData(String prefix, String name, String suffix, BigDecimal defaultValue) {
+            this.prefix = prefix;
+            this.suffix = suffix;
+            this.name = name;
+            this.defaultValue = defaultValue;
         }
 
         /**

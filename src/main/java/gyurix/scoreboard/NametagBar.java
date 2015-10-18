@@ -21,15 +21,10 @@ public class NametagBar extends ScoreboardBar {
      */
     public HashSet<UUID> viewers = new HashSet<UUID>();
     /**
-     * True if the numbers of the NametagBar are hidden.
-     */
-    public boolean hide;
-
-    /**
      * Instantiates a new NametagBar.
      */
     public NametagBar() {
-        super("SBAPI-nametag", 2);
+        super("SBAPI-nametag", "SLNB",2);
     }
 
     /**
@@ -84,31 +79,6 @@ public class NametagBar extends ScoreboardBar {
         nt.number=number;
         sendPackets(nt.getSetScorePacket());
     }
-
-
-    /**
-     * Hide numbers in the NametagBar.
-     */
-    public void hide(){
-        if (hide) {
-            System.err.println("§eHIDING ALREADY SHOWED NAMETAG BAR?");
-            return;
-        }
-        hide=true;
-        sendPackets(hidePacket);
-    }
-
-    /**
-     * Show numbers in the NametagBar.
-     */
-    public void show(){
-        if (!hide) {
-            System.err.println("§eSHOWING ALREADY SHOWN NAMETAG BAR?");
-            return;
-        }
-        hide=false;
-        sendPackets(showPacket);
-    }
     @Override
     public void addViewer(Player plr) {
         System.out.println("§bNB: §aAdd viewer: "+plr.getName());
@@ -118,9 +88,8 @@ public class NametagBar extends ScoreboardBar {
             SU.tp.sendPacket(plr, n.getTeamPacket(2));
             SU.tp.sendPacket(plr, n.getSetScorePacket());
         }
-        if (!hide) {
+        if (visible)
             SU.tp.sendPacket(plr, showPacket);
-        }
     }
 
     @Override
@@ -132,9 +101,8 @@ public class NametagBar extends ScoreboardBar {
             SU.tp.sendPacket(plr, n.getTeamPacket(0));
             SU.tp.sendPacket(plr, n.getSetScorePacket());
         }
-        if (!hide) {
+        if (visible)
             SU.tp.sendPacket(plr, showPacket);
-        }
     }
 
     @Override
@@ -153,9 +121,9 @@ public class NametagBar extends ScoreboardBar {
             SU.tp.sendPacket(plr, n.getTeamPacket(old.pls.containsKey(n.name) ? 2 : 0));
             SU.tp.sendPacket(plr, n.getSetScorePacket());
         }
-        if (old.hide&&!hide)
+        if (!old.visible&&visible)
             SU.tp.sendPacket(plr,showPacket);
-        else if (!old.hide&&hide)
+        if (!visible&&old.visible)
             SU.tp.sendPacket(plr,hidePacket);
     }
 
@@ -170,7 +138,7 @@ public class NametagBar extends ScoreboardBar {
             SU.tp.sendPacket(plr, n.getTeamPacket(1));
             SU.tp.sendPacket(plr, n.getRemoveScorePacket());
         }
-        if (!hide)
+        if (visible)
             SU.tp.sendPacket(plr,hidePacket);
     }
 }

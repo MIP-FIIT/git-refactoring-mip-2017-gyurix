@@ -1,17 +1,19 @@
 package gyurix.api;
 
+import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
- *
  * A really simple and easy way to share your variables with another plugins or
  * access your and other plugins variables.
  *
  * @author GyuriX
- *
  */
 public class VariableAPI {
     /**
@@ -25,57 +27,78 @@ public class VariableAPI {
      * add a player and an another object next to the fillable String, which may
      * help to the VariableHandler.
      *
-     * @param msg input message, where the variables should be filled
-     * @param plr optional player metadata for the VariableHandlers
-     * @param obj optional additional object for the VariableHandlers
+     * @param msg   input message, where the variables should be filled
+     * @param plr   optional player metadata for the VariableHandlers
+     * @param oArgs optional additional objects for the VariableHandlers
      * @return The input message with filled variables.
      */
-    public static String fillVariables(String msg, Player plr, Object obj) {
-        msg = msg.replace("\\<", "").replace("\\>", "\001");
-        StringBuilder m = new StringBuilder(msg);
-        for (int i = 0; i < m.length(); i++) {
-            if (m.charAt(i) == '<') {
-                i = replaceVariable(m, i, plr, obj);
-            }
-        }
-        return m.toString().replace('\000', '<').replace('\001', '>');
+    public static String fillVariables(String msg, Player plr, Object... oArgs) {
+        ArrayList<Object> out=fill(msg.replace("\\<", "\000").replace("\\>", "\001"),0,plr,oArgs);
+        out.remove(0);
+        return StringUtils.join(out, "").replace('\000', '<').replace('\001', '>');
     }
-
-    private static int replaceVariable(StringBuilder m, int id, Player plr, Object obj) {
-        int i = id + 1;
-        boolean dec = true;
-        while (i < m.length()) {
-            if (m.charAt(i) == '<') {
-                i = replaceVariable(m, i, plr, obj);
-            } else if (m.charAt(i) == '>') {
-                dec = false;
-                break;
-            }
-            i++;
+    private static Object handle(String var,Player plr,ArrayList<Object> inside,Object[] oArgs){
+        VariableHandler vh=handlers.get(var);
+        if (vh==null){
+            Main.log.severe("Missing handler for variable "+var+"!");
         }
-        if ((dec) && (i != m.length()))
-            i--;
-        if (i >= m.length())
-            i = m.length();
-        String var = m.substring(id + 1, i);
-        String[] v = var.split(":", 2);
-        VariableHandler vh = handlers.get(v[0]);
-        String out = null;
-        if (vh == null) {
-            Main.log.severe("The handler is missing for variable \"" + v[0] + "\"");
-        } else {
-            try {
-                out = vh.getValue(obj, plr, v.length == 1 ? "" : v[1]);
-            } catch (Throwable e) {
-                Main.log.severe("Error on calculating variable \"" + v[0] + "\":");
+        try{
+            return vh.getValue(plr, inside,oArgs);
+        }
+        catch (Throwable e){
+            Main.log.severe("Error on calculating variable "+var+"!");
+            if (Config.debug)
                 e.printStackTrace();
+        }
+        return "<"+var+">";
+    }
+    public static Object fillVar(Player plr,List<Object> inside,Object[] oArgs){
+        String s="";
+        int c;
+        int l=inside.size();
+        for (c=0;c<l;c++){
+            String os=String.valueOf(inside.get(c));
+            int id=os.indexOf(':');
+            if (id!=-1){
+                s+=os.substring(0,id);
+                ArrayList<Object> list=new ArrayList<>(inside.subList(c+1,l));
+                if (id!=os.length()-1)
+                    list.add(0,os.substring(id+1));
+                return handle(s,plr,list,oArgs);
             }
-            if (out != null) {
-                m.replace(id, i + 1, out);
-                return id + out.length() - 1;
+            s+=os;
+        }
+        return handle(s,plr,new ArrayList<Object>(),oArgs);
+    }
+    public static ArrayList<Object> fill(String msg, int from, Player plr, Object[] oArgs) {
+        int l=msg.length();
+        int sid=from;
+        ArrayList<Object> out=new ArrayList<>();
+        for (int i=from;i<l;i++){
+            char c=msg.charAt(i);
+            if (c=='<'){
+                if (sid<i){
+                    out.add(msg.substring(sid,i));
+                }
+                ArrayList<Object> d=fill(msg, i+1, plr, oArgs);
+                i=(Integer)d.get(0);
+                sid=i+1;
+                d.remove(0);
+                out.add(fillVar(plr,d,oArgs));
+            }
+            else if (c=='>'){
+                if (sid<i){
+                    out.add(msg.substring(sid,i));
+                }
+                out.add(0,i);
+                return out;
             }
         }
-        return i;
+        if (sid<msg.length()){
+            out.add(msg.substring(sid,msg.length()));
+        }
+        out.add(0,msg.length()-1);
+        return out;
     }
 
     /**
@@ -85,11 +108,11 @@ public class VariableAPI {
         /**
          * This method is called on every variable filling request
          *
-         * @param obj optional additional object, given by the message fill requester
-         * @param plr optional player object, given by the message fill requester
-         * @param str optional parameters given to the variable name, i.e. "asd" from variable "&lt;myvariable:asd&gt;"
+         * @param oArgs  optional additional objects, given by the message fill requester
+         * @param plr    optional player object, given by the message fill requester
+         * @param inside calculated objects by other handlers inside this handler
          * @return The value of the variable in a form of a String.
          */
-        String getValue(Object obj, Player plr, String str);
+        Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs);
     }
 }

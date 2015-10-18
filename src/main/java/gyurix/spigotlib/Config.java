@@ -2,6 +2,7 @@ package gyurix.spigotlib;
 
 import gyurix.configfile.ConfigSerialization;
 import gyurix.economy.EconomyAPI;
+import gyurix.spigotutils.TPSMeter;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
@@ -15,13 +16,6 @@ public class Config {
     @ConfigSerialization.ConfigOptions(comment = "Tab completion will need the tab.complete perm.")
     public static boolean tabCompletePerm;
 
-    @ConfigSerialization.ConfigOptions(comment = "SpigotLib will handle player join messages.")
-    public static boolean joinMessage;
-    @ConfigSerialization.ConfigOptions(comment = "SpigotLib will handle player leave messages.")
-    public static boolean leaveMessage;
-    @ConfigSerialization.ConfigOptions(comment = "SpigotLib will handle player kick messages.")
-    public static boolean kickMessage;
-
     @ConfigSerialization.ConfigOptions(comment = "Path for auto backups on every save.")
     public static String backup;
     @ConfigSerialization.ConfigOptions(comment = "Debug mode, use it for error reporting.")
@@ -30,10 +24,11 @@ public class Config {
     public static Chat chat;
     @ConfigSerialization.ConfigOptions(comment = "Error log, please report all of these errors to plugins dev, gyuriX.")
     public static ArrayList<String> errors = new ArrayList<String>();
+    public static TPSMeter tpsMeter= new TPSMeter();
     public static ConnectionLog connectionLog;
     public static AntiItemHack antiItemHack;
     public static AntiSignHack antiSignHack;
-    public static EconomyAPI economy=new EconomyAPI();
+    public static EconomyAPI economy;
 
     public static HashMap<String,String[]> books;
     @ConfigSerialization.ConfigOptions(comment = "Packet name mapping for PacketAPI to reach compatibility between different Minecraft versions.\n" +

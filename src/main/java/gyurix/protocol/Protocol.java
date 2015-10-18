@@ -102,13 +102,6 @@ public class Protocol
         }
     }
 
-    @EventHandler
-    public void onPluginDisable(PluginDisableEvent e) {
-        if (e.getPlugin().getName().equals("SpigotLib")) {
-            close();
-        }
-    }
-
     private void registerChannelHandler() {
         createServerChannelHandler();
         for (Object ch : this.channelFutures) {

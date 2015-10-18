@@ -32,6 +32,10 @@ public class Blink implements ConfigSerialization.StringSerializable,CustomEffec
         remaining=data.next();
     }
 
+    public Blink() {
+
+    }
+
     public String next(String in){
         --remaining;
         if (remaining==0){
@@ -49,5 +53,23 @@ public class Blink implements ConfigSerialization.StringSerializable,CustomEffec
 
     public void setText(String newText) {
         text=newText;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out=new StringBuilder();
+        out.append("{");
+        if (!active)
+            out.append("A ");
+        for (Long r:repeat){
+            out.append(r).append(' ');
+        }
+        out.setCharAt(out.length()-1,'}');
+        return out.append(text).toString();
+    }
+
+    @Override
+    public CustomEffect clone() {
+        return new Blink(toString());
     }
 }

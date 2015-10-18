@@ -28,7 +28,7 @@ public class PacketPlayInResourcePackStatus extends WrappedPacket{
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInResourcePackStatus$EnumPlayerAction"), "valueOf");
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInResourcePackStatus$EnumPlayerAction"), "valueOf",String.class);
         }
 
         public Object toVanillaRPStatus() {

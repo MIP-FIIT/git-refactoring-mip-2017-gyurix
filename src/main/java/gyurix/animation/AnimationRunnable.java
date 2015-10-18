@@ -4,7 +4,9 @@ import gyurix.api.VariableAPI;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +18,7 @@ public class AnimationRunnable implements Runnable{
     public String name;
     public Iterator<Frame> frames;
     public Iterator<Long> delays,repeats;
+    public HashMap<String,HashMap<String,CustomEffect>> effects=new HashMap<>();
     public Frame f;
     public long repeat,delay;
     public Player plr;
@@ -27,6 +30,13 @@ public class AnimationRunnable implements Runnable{
         frames =a.frames.iterator();
         plr=player;
         obj=object;
+        for (Map.Entry<String,HashMap<String,CustomEffect>> e:anim.effects.entrySet()){
+            HashMap<String,CustomEffect> map=new HashMap<>();
+            effects.put(e.getKey(),map);
+            for (Map.Entry<String,CustomEffect> e2:e.getValue().entrySet()){
+                map.put(e2.getKey(),e2.getValue().clone());
+            }
+        }
     }
     public void run() {
         if (repeat==0){
@@ -51,7 +61,7 @@ public class AnimationRunnable implements Runnable{
                 repeat=repeats.next();
             }
         }
-        AnimationUpdateEvent e=new AnimationUpdateEvent(this, VariableAPI.fillVariables(f.text, plr, obj));
+        AnimationUpdateEvent e=new AnimationUpdateEvent(this, VariableAPI.fillVariables(f.text, plr, this));
         SU.pm.callEvent(e);
         --repeat;
         running=AnimationAPI.sch.schedule(this, delay, TimeUnit.MILLISECONDS);

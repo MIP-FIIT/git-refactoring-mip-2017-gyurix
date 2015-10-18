@@ -5,19 +5,28 @@ import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.economy.EconomyAPI;
 import gyurix.protocol.Reflection;
+import gyurix.spigotutils.TPSMeter;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import javax.script.ScriptException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 
 /**
  * The SpigotLibs hook for the configuration system to register the only Spigot
  * based variables and serializers
  */
 public class ConfigHook {
+    public static HashMap<String,Object> data=new HashMap<>();
     /**
      * Registers the only Spigot based serializers
      */
@@ -58,57 +67,154 @@ public class ConfigHook {
      */
     public static void registerVariables() {
         VariableAPI.handlers.put("eval", new VariableAPI.VariableHandler() {
-            public String getValue(Object obj, Player plr, String str) {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                String s=StringUtils.join(inside,"");
                 try {
-                    return "" + SU.js.eval(str);
-                } catch (Throwable e) {
-                    return "<eval:" + str + ">";
+                    return SU.js.eval(s);
+                } catch (ScriptException e) {
+                    return "<eval:"+s+">";
                 }
+            }
+        });
+        VariableAPI.handlers.put("tobool", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return Boolean.valueOf(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("tobyte", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return (byte)(double)Double.valueOf(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("toshort", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return (short)(double)Double.valueOf(StringUtils.join(inside,""));
             }
         });
         VariableAPI.handlers.put("toint", new VariableAPI.VariableHandler() {
-            public String getValue(Object obj, Player plr, String str) {
-                try {
-                    return "" + (long) (double) Double.valueOf(str);
-                } catch (Throwable e) {
-                    return "<toint:" + str + ">";
-                }
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return (int)(double)Double.valueOf(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("tolong", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return (long)(double)Double.valueOf(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("tofloat", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return Float.valueOf(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("todouble", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return Double.valueOf(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("tostr", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return StringUtils.join(inside,"");
+            }
+        });
+        VariableAPI.handlers.put("toarray", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return inside.toArray();
+            }
+        });
+        VariableAPI.handlers.put("splits", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return StringUtils.join(inside,"").split(" ");
+            }
+        });
+        VariableAPI.handlers.put("noout", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return "";
             }
         });
         VariableAPI.handlers.put("lang", new VariableAPI.VariableHandler() {
-            public String getValue(Object obj, Player plr, String str) {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
                 String lang = SU.getPlayerConfig(plr).getString("lang");
                 return lang.isEmpty()?Config.defaultLang:lang;
             }
         });
         VariableAPI.handlers.put("args", new VariableAPI.VariableHandler() {
-            public String getValue(Object obj, Player plr, String str) {
-                return ""+((Object[])obj)[Integer.valueOf(str)];
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                int id=Integer.valueOf(StringUtils.join(inside,""));
+                return oArgs[id];
+            }
+        });
+        VariableAPI.handlers.put("len", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                Object o=inside.get(0);
+                return o.getClass().isArray()? Array.getLength(o):((Collection)o).size();
+            }
+        });
+        VariableAPI.handlers.put("iarg", new VariableAPI.VariableHandler() {
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                int id=Integer.valueOf(inside.get(0).toString());
+                return inside.get(id);
             }
         });
         VariableAPI.handlers.put("plr", new VariableAPI.VariableHandler() {
             @Override
-            public String getValue(Object obj, Player plr, String str) {
-                return ""+ Reflection.getData(plr, str);
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return Reflection.getData(plr, inside);
             }
         });
         VariableAPI.handlers.put("obj", new VariableAPI.VariableHandler() {
             @Override
-            public String getValue(Object obj, Player plr, String str) {
-                return ""+ Reflection.getData(obj, str);
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return Reflection.getData(oArgs[0], inside);
+            }
+        });
+        VariableAPI.handlers.put("dstore", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                if (inside.size()==1) {
+                    String[] s = StringUtils.join(inside, "").split(" ", 2);
+                    return data.put(s[0],s[1]);
+                }
+                return data.put(inside.get(0).toString(),inside.get(1));
+
+            }
+        });
+        VariableAPI.handlers.put("dget", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return data.get(StringUtils.join(inside,""));
+            }
+        });
+        VariableAPI.handlers.put("tps", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return TPSMeter.tps;
+            }
+        });
+        VariableAPI.handlers.put("realtime", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                return System.currentTimeMillis();
+            }
+        });
+        VariableAPI.handlers.put("formattime", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                String str=StringUtils.join(inside,"");
+                int id=str.indexOf(' ');
+                Long time=Long.valueOf(str.substring(0, id));
+                String format=str.substring(id+1);
+                return new SimpleDateFormat(format).format(time);
             }
         });
         VariableAPI.handlers.put("balf", new VariableAPI.VariableHandler() {
-            public String getValue(Object obj, Player plr, String str) {
-                if (str.isEmpty())
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                if (inside==null)
                     return EconomyAPI.balanceTypes.get("default").format(EconomyAPI.getBalance(plr.getUniqueId()));
-                else
+                else {
+                    String str=StringUtils.join(inside,"");
                     return EconomyAPI.balanceTypes.get(str).format(EconomyAPI.getBalance(plr.getUniqueId(), str));
-            }
-        });
-        VariableAPI.handlers.put("pname", new VariableAPI.VariableHandler() {
-            public String getValue(Object obj, Player plr, String str) {
-                return plr.getName();
+                }
             }
         });
     }

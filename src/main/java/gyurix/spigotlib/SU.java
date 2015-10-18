@@ -326,6 +326,9 @@ public class SU {
      * @return The UUID of the requested player, or null if it was not found.
      */
     public static UUID getUUID(String name) {
+        Player plr=Bukkit.getPlayer(name);
+        if (plr!=null)
+            return plr.getUniqueId();
         OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
         for (OfflinePlayer p : offlinePls) {
             if ((p.getName() != null) && (p.getName().equals(name)))
@@ -350,6 +353,9 @@ public class SU {
      * @return The name of the requested player or null if the name was not found.
      */
     public static String getName(UUID id) {
+        Player plr=Bukkit.getPlayer(id);
+        if (plr!=null)
+            return plr.getName();
         OfflinePlayer op = Bukkit.getOfflinePlayer(id);
         if (op == null)
             return null;

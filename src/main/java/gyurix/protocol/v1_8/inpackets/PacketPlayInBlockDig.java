@@ -36,7 +36,7 @@ public class PacketPlayInBlockDig extends WrappedPacket {
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInBlockDig$EnumPlayerDigType"), "valueOf");
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInBlockDig$EnumPlayerDigType"), "valueOf",String.class);
         }
 
         public Object toVanillaDigType() {

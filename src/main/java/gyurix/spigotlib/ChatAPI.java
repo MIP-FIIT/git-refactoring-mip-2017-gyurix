@@ -32,6 +32,8 @@ public class ChatAPI {
 
     public static Object toICBC(String json) {
         try {
+            if (json==null)
+                return null;
             return toICBC.invoke(null, json);
         } catch (Throwable e) {
             Main.errorLog(null, e);
@@ -40,6 +42,8 @@ public class ChatAPI {
     }
     public static String toJson(Object icbc){
         try {
+            if (icbc==null)
+                return null;
             return (String) fromICBC.invoke(null, icbc);
         } catch (Throwable e) {
             Main.errorLog(null, e);

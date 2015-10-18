@@ -3,6 +3,7 @@ package gyurix.animation;
 import gyurix.api.VariableAPI;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.spigotlib.Main;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -23,14 +24,13 @@ public class AnimationAPI {
      * The instance of the animation thread pool.
      */
     public static ScheduledExecutorService sch= Executors.newScheduledThreadPool(1);
-    private static HashMap<Integer,Animation> animations=new HashMap<Integer, Animation>();
+    private static HashMap<Integer,AnimationRunnable> animationsRunnables=new HashMap<Integer, AnimationRunnable>();
     private static HashMap<Animation,ArrayList<AnimationRunnable>> runningAnimations=new HashMap<Animation, ArrayList<AnimationRunnable>>();
     /**
      * Map of the custom effects. You should put your custom effect types to this map, using method
      * effects.put(String customEffectName,Class classImplementingTheCustomEffectsInterface);
      */
     public static HashMap<String,Class> effects=new HashMap<String, Class>();
-    private static int id=0;
 
     /**
      * Initializer of the AnimationAPI. You should NOT use this method.
@@ -51,19 +51,6 @@ public class AnimationAPI {
      * @param animation Animation to be added.
      */
     public static void addAnimation(Animation animation){
-        animations.put(++id,animation);
-        for (Frame f:animation.frames){
-            for (String effect:animation.effects.keySet()){
-                f.text=f.text.replace("<"+effect,"<"+effect+":"+id);
-            }
-        }
-        for (String effectName:animation.effects.keySet()){
-            for (HashMap<String,CustomEffect> list:animation.effects.values()){
-                for (CustomEffect effect:list.values()){
-                    effect.setText(effect.getText("").replace("<"+effectName,"<"+effectName+":"+id));
-                }
-            }
-        }
         runningAnimations.put(animation, new ArrayList<AnimationRunnable>());
     }
 
@@ -80,7 +67,7 @@ public class AnimationAPI {
     public static AnimationRunnable runAnimation(Animation a,String name,Player plr,Object obj){
         ArrayList<AnimationRunnable> list=runningAnimations.get(a);
         if (list==null)
-            throw new RuntimeException("The given gyurix.animation is not registred!");
+            throw new RuntimeException("The given animation is not registered!");
         AnimationRunnable ar=new AnimationRunnable(a,name,plr,obj);
         ar.run();
         list.add(ar);
@@ -109,14 +96,10 @@ public class AnimationAPI {
     public static boolean removeAnimation(Animation a){
         if (a==null)
             return false;
-        Animation anim=animations.remove(a.id);
-        if (anim==null)
-            return false;
-        for (AnimationRunnable ar:runningAnimations.get(anim)){
+        for (AnimationRunnable ar:runningAnimations.remove(a)){
             if (ar.running!=null)
                 ar.running.cancel(true);
         }
-        runningAnimations.remove(anim);
         return true;
     }
 
@@ -130,15 +113,17 @@ public class AnimationAPI {
             this.name = name;
         }
 
-        public String getValue(Object obj, Player plr, String data) {
-            String[] d=data.split(":",3);
-            String text=d.length<=2?"":d[2];
-            CustomEffect effect=animations.get(Integer.valueOf(d[0])).effects.get(name).get(d[1]);
+        @Override
+        public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+            AnimationRunnable ar= (AnimationRunnable) oArgs[0];
+            String[] d= StringUtils.join(inside, "").split(":", 2);
+            CustomEffect effect=ar.effects.get(name).get(d[0]);
             if (effect!=null){
-                return effect.next(VariableAPI.fillVariables(effect.getText(text),plr,obj));
+                String text=d.length<=1?"":d[1];
+                return effect.next(VariableAPI.fillVariables(effect.getText(text),plr,oArgs));
             }
             else
-                Main.log.severe("Invalid "+name+" name in gyurix.animation "+d[0]);
+                Main.log.severe("The given scroller name ("+d[0]+") is invalid "+name+" name in animation ");
             return "?";
         }
     }

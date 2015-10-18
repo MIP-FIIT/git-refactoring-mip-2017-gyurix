@@ -26,7 +26,7 @@ public class PacketPlayInClientCommand extends WrappedPacket {
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInClientCommand$EnumClientCommand"), "valueOf");
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInClientCommand$EnumClientCommand"), "valueOf",String.class);
         }
 
         public Object toVanillaClientCommand() {

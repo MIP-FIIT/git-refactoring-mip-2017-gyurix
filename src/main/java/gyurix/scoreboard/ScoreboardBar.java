@@ -15,13 +15,15 @@ import java.util.UUID;
  */
 public abstract class ScoreboardBar {
     LinkedList<UUID> viewers=new LinkedList<UUID>();
-    public final String barname;
+    public final String barname, teamNamePrefix;
     private String title;
+    protected boolean visible=true;
     public final Object showPacket,hidePacket;
     private ScoreboardAPI.ScoreboardDisplayMode displayMode= ScoreboardAPI.ScoreboardDisplayMode.INTEGER;
-    public ScoreboardBar(String barname, int displaySlot) {
+    public ScoreboardBar(String barname, String teamNamePrefix,int displaySlot) {
         this.barname = barname;
         title=barname;
+        this.teamNamePrefix=teamNamePrefix;
         showPacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, barname);
         hidePacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, "");
     }
@@ -62,5 +64,15 @@ public abstract class ScoreboardBar {
                     SU.tp.sendPacket(plr,p);
             }
         }
+    }
+    public void setVisible(boolean visible){
+        if (visible!=this.visible){
+            sendPackets(visible?showPacket:hidePacket);
+            this.visible=visible;
+        }
+    }
+
+    public boolean isVisible() {
+        return visible;
     }
 }

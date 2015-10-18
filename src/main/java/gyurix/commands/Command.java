@@ -4,8 +4,10 @@ import gyurix.api.TitleAPI;
 import gyurix.api.VariableAPI;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.economy.EconomyAPI;
+import gyurix.inventory.InventoryAPI;
 import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.SU;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -21,7 +23,8 @@ public class Command implements ConfigSerialization.StringSerializable{
     /**
      * Type of a command
      */
-    public enum CommandType{NORMAL,OP,CONSOLE,LOG,ABM,MSG,TS,TITLE,SUBTITLE,ARGS, ECON, ECONSET, XP, XPLEVEL, HP, MAXHP, CUSTOM}
+    public enum CommandType{NOCMD,NORMAL,OP,CONSOLE,LOG,ABM,MSG,TS,TITLE,SUBTITLE,ARGS,ECON,ECONSET,XP,XPLEVEL,HP,MAXHP,
+        SOUND,PARTICLE,NOTE,GSOUND,GPARTICLE,GNOTE,OPENINV,CUSTOM}
 
     /**
      * Map of the CustomCommandHandlers. You need to use the Command.customCommands.put(customCommandName,customCommandHandler)
@@ -65,6 +68,8 @@ public class Command implements ConfigSerialization.StringSerializable{
             Player plr= sender instanceof Player? (Player) sender :null;
             String text=VariableAPI.fillVariables(cmd,plr,args);
             switch (type){
+                case NOCMD:
+                    return true;
                 case NORMAL:
                     plr.chat(text);
                     return true;
@@ -128,6 +133,81 @@ public class Command implements ConfigSerialization.StringSerializable{
                     if (plr!=null)
                         plr.setMaxHealth(Integer.valueOf(text));
                     return true;
+                case PARTICLE:
+                    data=text.split(" ",5);
+                    Location loc=new Location(plr.getWorld(),Double.valueOf(data[0]),Double.valueOf(data[1]),Double.valueOf(data[2]));
+                    plr.playEffect(loc, Effect.valueOf(data[3]),data.length==4?0:Integer.valueOf(data[4]));
+                    return true;
+                case SOUND:
+                    data=text.split(" ",6);
+                    loc=new Location(plr.getWorld(),Double.valueOf(data[0]),Double.valueOf(data[1]),Double.valueOf(data[2]));
+                    plr.playSound(loc,data[3],Float.valueOf(data[4]),Float.valueOf(data[5]));
+                    return true;
+                case NOTE:
+                    data=text.split(" ",4);
+                    loc=new Location(plr.getWorld(),Double.valueOf(data[0]),Double.valueOf(data[1]),Double.valueOf(data[2]));
+                    Instrument i=Instrument.valueOf(data[0]);
+                    int octave=Integer.valueOf(data[2]);
+                    Note.Tone t= Note.Tone.valueOf(data[3]);
+                    switch(data[1]){
+                        case "flat":
+                            plr.playNote(loc, i, Note.flat(octave,t));
+                            return true;
+                        case "sharp":
+                            plr.playNote(loc, i, Note.sharp(octave, t));
+                            return true;
+                        case "natural":
+                            plr.playNote(loc, i, Note.natural(octave, t));
+                            return true;
+                        default:
+                            System.err.println("Invalid node type: "+data[1]);
+                    }
+                    return true;
+                case GPARTICLE:
+                    data=text.split(" ", 5);
+                    World w=plr.getWorld();
+                    loc=new Location(w,Double.valueOf(data[0]),Double.valueOf(data[1]),Double.valueOf(data[2]));
+                    w.playEffect(loc, Effect.valueOf(data[3]), data.length == 4 ? 0 : Integer.valueOf(data[4]));
+                    return true;
+                case GSOUND:
+                    data=text.split(" ", 6);
+                    w=plr.getWorld();
+                    loc=new Location(w,Double.valueOf(data[0]),Double.valueOf(data[1]),Double.valueOf(data[2]));
+                    float v=Float.valueOf(data[4]);
+                    float v1=Float.valueOf(data[5]);
+                    for (Player p:w.getPlayers())
+                        p.playSound(loc,data[3],v,v1);
+                    return true;
+                case GNOTE:
+                    data=text.split(" ", 4);
+                    w=plr.getWorld();
+                    loc=new Location(w,Double.valueOf(data[0]),Double.valueOf(data[1]),Double.valueOf(data[2]));
+                    i=Instrument.valueOf(data[0]);
+                    octave=Integer.valueOf(data[2]);
+                    t= Note.Tone.valueOf(data[3]);
+                    Note n;
+                    switch(data[1]){
+                        case "flat":
+                            n=Note.flat(octave,t);
+                            break;
+                        case "sharp":
+                            n=Note.sharp(octave, t);
+                            break;
+                        case "natural":
+                            n=Note.natural(octave, t);
+                            break;
+                        default:
+                            System.err.println("Invalid node type: "+data[1]);
+                            return true;
+                    }
+                    for (Player p:w.getPlayers())
+                        p.playNote(loc, i, n);
+                    return true;
+                case OPENINV:
+                    data=text.split(" ", 2);
+                    InventoryAPI.getView(data[0],data.length==1?plr:SU.getPlayer(data[1]));
+                    System.out.println("INV OPENED");
+                    return true;
                 case CUSTOM:
                     return customCommands.get(customCMD).handle(sender, customCMD, text.split(" "), args);
                 case ARGS:
@@ -142,6 +222,7 @@ public class Command implements ConfigSerialization.StringSerializable{
             throw e;
         }
         catch (Throwable e){
+            e.printStackTrace();
             return false;
         }
     }

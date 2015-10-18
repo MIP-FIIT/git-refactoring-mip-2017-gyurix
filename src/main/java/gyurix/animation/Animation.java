@@ -23,11 +23,6 @@ public class Animation {
      * The frame list of the Animation
      */
     public ArrayList<Frame> frames=new ArrayList<Frame>();
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    /**
-     * The identifical code of the animation
-     */
-    protected int id;
     /**
      * Time of the not specialized timed frames in milliseconds
      */

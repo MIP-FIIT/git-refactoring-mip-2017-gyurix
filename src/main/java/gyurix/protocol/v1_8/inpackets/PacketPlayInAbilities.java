@@ -1,4 +1,4 @@
-package gyurix.inpackets;
+package gyurix.protocol.v1_8.inpackets;
 
 import gyurix.protocol.PacketInType;
 import gyurix.protocol.WrappedPacket;
