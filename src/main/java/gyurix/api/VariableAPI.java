@@ -2,6 +2,7 @@ package gyurix.api;
 
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
 
@@ -21,6 +22,10 @@ public class VariableAPI {
      * map, using the <b>handlers.put(String name,VariableHandler variableHandler) method</b>
      */
     public static final HashMap<String, VariableHandler> handlers = new HashMap();
+    /**
+     * Toggles the hook to the clips PlaceholderAPI plugin in order to use its variables too
+     */
+    public static boolean phaHook;
 
     /**
      * Use this method to fill the variables in a String. You can also optionally
@@ -35,7 +40,11 @@ public class VariableAPI {
     public static String fillVariables(String msg, Player plr, Object... oArgs) {
         ArrayList<Object> out=fill(msg.replace("\\<", "\000").replace("\\>", "\001"),0,plr,oArgs);
         out.remove(0);
-        return StringUtils.join(out, "").replace('\000', '<').replace('\001', '>');
+        String s=StringUtils.join(out, "").replace('\000', '<').replace('\001', '>');
+        if (phaHook){
+            return PlaceholderAPI.setPlaceholders(plr,s);
+        }
+        return s;
     }
     private static Object handle(String var,Player plr,ArrayList<Object> inside,Object[] oArgs){
         VariableHandler vh=handlers.get(var);

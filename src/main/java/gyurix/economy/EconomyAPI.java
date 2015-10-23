@@ -117,9 +117,14 @@ public class EconomyAPI {
      *
      * @param plr     UUID of the player
      * @param balance amount of the players new default balance
+     * @return The success of the transfer
      */
-    public static void setBalance(UUID plr, BigDecimal balance) {
-        SU.getPlayerConfig(plr).setObject("balance.default", balance);
+    public static boolean setBalance(UUID plr, BigDecimal balance) {
+        BalanceUpdateEvent e=new BalanceUpdateEvent(plr,getBalance(plr),balance,balanceTypes.get("default"));
+        SU.pm.callEvent(e);
+        if (!e.isCancelled())
+            SU.getPlayerConfig(plr).setObject("balance.default", balance);
+        return !e.isCancelled();
     }
 
     /**
@@ -128,9 +133,14 @@ public class EconomyAPI {
      * @param plr         UUID of the player
      * @param balanceType type of the balance
      * @param balance     amount of the players new given typed balance
+     * @return The success of the transfer
      */
-    public static void setBalance(UUID plr, String balanceType, BigDecimal balance) {
-        SU.getPlayerConfig(plr).setObject("balance." + balanceType, balance);
+    public static boolean setBalance(UUID plr, String balanceType, BigDecimal balance) {
+        BalanceUpdateEvent e=new BalanceUpdateEvent(plr,getBalance(plr,balanceType),balance,balanceTypes.get(balanceType));
+        SU.pm.callEvent(e);
+        if (!e.isCancelled())
+            SU.getPlayerConfig(plr).setObject("balance." + balanceType, balance);
+        return !e.isCancelled();
     }
 
     /**
@@ -138,9 +148,14 @@ public class EconomyAPI {
      *
      * @param bank    Target bank
      * @param balance amount of the banks new default typed balance
+     * @return The success of the transfer
      */
-    public static void setBankBalance(String bank, BigDecimal balance) {
-        banks.get(bank).put("default", balance);
+    public static boolean setBankBalance(String bank, BigDecimal balance) {
+        BankBalanceUpdateEvent e=new BankBalanceUpdateEvent(bank,getBankBalance(bank),balance,balanceTypes.get("default"));
+        SU.pm.callEvent(e);
+        if (!e.isCancelled())
+            banks.get(bank).put("default", balance);
+        return !e.isCancelled();
     }
 
     /**
@@ -149,9 +164,14 @@ public class EconomyAPI {
      * @param bank        target bank
      * @param balanceType type of the balance
      * @param balance     amount of the banks new given typed balance
+     * @return The success of the transfer
      */
-    public static void setBankBalance(String bank, String balanceType, BigDecimal balance) {
-        banks.get(bank).put(balanceType, balance);
+    public static boolean setBankBalance(String bank, String balanceType, BigDecimal balance) {
+        BankBalanceUpdateEvent e=new BankBalanceUpdateEvent(bank,getBankBalance(bank,balanceType),balance,balanceTypes.get(balanceType));
+        SU.pm.callEvent(e);
+        if (!e.isCancelled())
+            banks.get(bank).put(balanceType, balance);
+        return !e.isCancelled();
     }
 
     /**
@@ -165,8 +185,7 @@ public class EconomyAPI {
         BigDecimal bd = getBalance(plr).add(balance);
         if (bd.compareTo(new BigDecimal(0)) < 0)
             return false;
-        setBalance(plr, bd);
-        return true;
+        return setBalance(plr, bd);
     }
 
     /**
@@ -181,8 +200,7 @@ public class EconomyAPI {
         BigDecimal bd = getBalance(plr, balanceType).add(balance);
         if (bd.compareTo(new BigDecimal(0)) < 0)
             return false;
-        setBalance(plr, balanceType, bd);
-        return true;
+        return setBalance(plr, balanceType, bd);
     }
 
     /**
@@ -190,9 +208,10 @@ public class EconomyAPI {
      *
      * @param bank    target bank
      * @param balance amount of the default balance type to be added (balance&gt;0) or taken (balance&lt;0) from the given bank
+     * @return The success of the transfer
      */
-    public static void addBankBalance(String bank, BigDecimal balance) {
-        setBankBalance(bank, getBankBalance(bank).add(balance));
+    public static boolean addBankBalance(String bank, BigDecimal balance) {
+        return setBankBalance(bank, getBankBalance(bank).add(balance));
     }
 
     /**
@@ -201,9 +220,10 @@ public class EconomyAPI {
      * @param bank        target bank
      * @param balanceType type of the given balance
      * @param balance     amount of the given balance type to be added (balance&gt;0) or taken (balance&lt;0) from the given bank
+     * @return The success of the transfer
      */
-    public static void addBankBalance(String bank, String balanceType, BigDecimal balance) {
-        setBankBalance(bank, balanceType, getBankBalance(bank, balanceType).add(balance));
+    public static boolean addBankBalance(String bank, String balanceType, BigDecimal balance) {
+        return setBankBalance(bank, balanceType, getBankBalance(bank, balanceType).add(balance));
     }
 
     /**

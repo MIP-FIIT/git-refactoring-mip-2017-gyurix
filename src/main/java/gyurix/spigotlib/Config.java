@@ -20,10 +20,12 @@ public class Config {
     public static String backup;
     @ConfigSerialization.ConfigOptions(comment = "Debug mode, use it for error reporting.")
     public static boolean debug = false;
+    @ConfigSerialization.ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
+    public static boolean phaHook = true;
     @ConfigSerialization.ConfigOptions(comment = "Chat settings.")
     public static Chat chat;
     @ConfigSerialization.ConfigOptions(comment = "Error log, please report all of these errors to plugins dev, gyuriX.")
-    public static ArrayList<String> errors = new ArrayList<String>();
+    public static ArrayList<String> errors = new ArrayList<>();
     public static TPSMeter tpsMeter= new TPSMeter();
     public static ConnectionLog connectionLog;
     public static AntiItemHack antiItemHack;

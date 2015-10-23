@@ -6,11 +6,6 @@ en:
       lang: §e§l<player>§b has §e§l<lang> §blanguage selected.
       set: §e§l<player>§b players language has been set to §e§l<lang>§b.
         own: §a§lYou have changed your language to §e§l<lang>§a§l!
-    messages:
-      join: <none>
-      leave: §f<player>§c left the game.
-      kick: §f<player>§c was kicked for reason: "§e<reason>".
-      earlylogin: §c§lToo early login, the server is not yet loaded!
     noperm: §c§lYou don't have permission for using SpigotLib commands.
       command: §c§lYou don't have permission for using this SpigotLib subcommand.
     help: §9§lChatAPI:
@@ -53,6 +48,9 @@ en:
       config: §a§lSpigotLib config has reloaded successfully.
       pf: §a§lPlayer data file has reloaded successfully.
       lf: §a§lSpigotLibs language file has reloaded successfully.
+    debug:
+      on: §a§lDebug messages has been enabled.
+      off: §c§lDebug messages has been disabled.
     save:
       pf: §a§lPlayer file has been saved successfully.
     packet: §9§lAvailable incoming packets: §b<in>

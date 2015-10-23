@@ -1,12 +1,12 @@
 name: SpigotLib
 main: gyurix.spigotlib.Main
-author: GyuriX
-version: 1.6
+author: gyuriX
+version: 1.8
 loadbefore: [ProtocolLib]
-softdepend: [ProtocolSupport,Vault,Essentials]
+softdepend: [ProtocolSupport,Vault,Essentials,PlaceholderAPI]
 commands:
   spigotlib:
-    description: gyurix.coc.generators.Main command
+    description: Main command
     aliases: [sl]
   lang:
     description: Basic player language selection command

@@ -2,14 +2,14 @@
 defaultLang: en
 #Tab completion will need the tab.complete perm.
 tabCompletePerm: +
-#SpigotLib will handle player join messages.
-joinMessage: +
-#SpigotLib will handle player leave messages.
-leaveMessage: +
-#SpigotLib will handle player kick messages.
-kickMessage: +
+#Hook to the clips PlaceholderAPI in order to obtain more variables.
+phaHook: +
 debug: -
 backup: plugins/SpigotLib/backups/config-backup(<time>).yml
+tpsMeter:
+  limit: 5
+  checkTime: 10000
+  startupDelay: 35000
 connectionLog:
   enabled: +
   #You can blacklist here some ips, which you would not like to see in the log.
@@ -50,7 +50,7 @@ antiSignHack:
   enabled: +
   limit: 50
 antiItemHack:
-  enabled: +
+  enabled: -
   helmets: 86,298,302,306,310,314,397
   chestplates: 299,303,307,311,315
   leggings: 300,304,308,312,316
@@ -728,6 +728,7 @@ economy:
   balanceTypes:
     default:
       prefix:
+      defaultValue: 100
       name: default
       suffix: $
 packetMapping:
