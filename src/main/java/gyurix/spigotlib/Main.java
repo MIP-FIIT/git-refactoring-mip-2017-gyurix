@@ -14,8 +14,6 @@ import gyurix.nbt.NBTApi;
 import gyurix.protocol.*;
 import gyurix.protocol.utils.ItemStackWrapper;
 import gyurix.scoreboard.ScoreboardAPI;
-import gyurix.spigotutils.TPSMeter;
-import net.milkbowl.vault.economy.Economy;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
@@ -28,14 +26,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -52,7 +47,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Version of the SpigotLib
      */
-    public static final String version = "1.6.1";
+    public static final String version = "1.8";
     /**
      * Logger for SpigotLib debug
      */
@@ -77,24 +72,21 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Loads the configuration and initializes the modules of the SpigotLib
      */
-    public void load(){
+    public void load() {
         SU.saveResources(this, "lang.yml", "config.yml");
         kf = new ConfigFile(new File(dir + File.separator + "config.yml"));
         kf.data.deserialize(Config.class);
-        if (Config.economy==null){
-            Config.economy=new EconomyAPI();
-            EconomyAPI.liveSync=true;
-            EconomyAPI.balanceTypes.put("default",new EconomyAPI.BalanceData("","default","$",new BigDecimal(100)));
+        if (Config.economy == null) {
+            Config.economy = new EconomyAPI();
+            EconomyAPI.liveSync = true;
+            EconomyAPI.balanceTypes.put("default", new EconomyAPI.BalanceData("", "default", "$", new BigDecimal(100)));
             kf.save();
         }
-
         SU.pf = new ConfigFile(new File(dir + File.separator + "players.yml"));
-
         lang = GlobalLangFile.loadLF("spigotlib", dir + File.separator + "lang.yml");
         Reflection.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
         SU.init();
-
         AnimationAPI.init();
         PacketInType.init();
         PacketOutType.init();
@@ -102,30 +94,31 @@ public class Main extends JavaPlugin implements Listener {
         TitleAPI.init();
         NBTApi.init();
         ScoreboardAPI.init();
-        if (SU.pm.getPlugin("Vault")!=null)
+        if (SU.pm.getPlugin("Vault") != null)
             EconomyVaultHook.init();
+        if (SU.pm.getPlugin("PlaceholderAPI") != null)
+            VariableAPI.phaHook = Config.phaHook;
     }
 
     /**
      * Resets the configuration and the language file of the SpigotLib. Used when the
      * plugin fails to load.
      */
-    public void resetConfig(){
-        try{
-            File oldConf=new File(dir+File.separator+"config.yml");
-            File backupConf=new File(dir+File.separator+"config.yml.bak");
-            if (backupConf.exists()){
+    public void resetConfig() {
+        try {
+            File oldConf = new File(dir + File.separator + "config.yml");
+            File backupConf = new File(dir + File.separator + "config.yml.bak");
+            if (backupConf.exists()) {
                 backupConf.delete();
             }
             oldConf.renameTo(backupConf);
-            File oldLang=new File(dir+File.separator+"lang.yml");
-            File backupLang=new File(dir+File.separator+"lang.yml.bak");
-            if (backupLang.exists()){
+            File oldLang = new File(dir + File.separator + "lang.yml");
+            File backupLang = new File(dir + File.separator + "lang.yml.bak");
+            if (backupLang.exists()) {
                 backupLang.delete();
             }
             oldLang.renameTo(backupLang);
-        }
-        catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
             log.severe("§cFailed to reset the config :-( The plugin is shutting down...");
             SU.pm.disablePlugin(this);
@@ -133,8 +126,7 @@ public class Main extends JavaPlugin implements Listener {
         }
         try {
             load();
-        }
-        catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
             log.severe("§cFailed to load plugin after config reset :-( The plugin is shutting down...");
             SU.pm.disablePlugin(this);
@@ -152,22 +144,20 @@ public class Main extends JavaPlugin implements Listener {
         SU.cs = SU.srv.getConsoleSender();
 
         dir = getDataFolder();
-        try{
+        try {
             DefaultSerializers.init();
             ConfigHook.registerSerializers();
             ConfigHook.registerVariables();
-        }
-        catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
             log.severe("§cFailed to load config hook :-( The plugin is shutting down...");
             SU.pm.disablePlugin(this);
             return;
         }
 
-        try{
+        try {
             load();
-        }
-        catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
             System.err.println("Failed to load plugin, trying to reset the config...");
             resetConfig();
@@ -196,6 +186,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Handles PlayerJoinEvent for saving the players name+UUID to the ConnectionLog database,
      * and for handling the join message system.
+     *
      * @param e PlayerJoinEvent
      */
     @EventHandler(priority = EventPriority.LOW)
@@ -209,25 +200,27 @@ public class Main extends JavaPlugin implements Listener {
             uuids.add(plr.getUniqueId());
         }
         ScoreboardAPI.playerJoin(plr);
-        UUID id=plr.getUniqueId();
+        UUID id = plr.getUniqueId();
         EconomyAPI.getBalance(id);
-        for (EconomyAPI.BalanceData bd:EconomyAPI.balanceTypes.values()){
-            EconomyAPI.getBalance(id,bd.name);
+        for (EconomyAPI.BalanceData bd : EconomyAPI.balanceTypes.values()) {
+            EconomyAPI.getBalance(id, bd.name);
         }
     }
+
     @EventHandler
-    public void onPluginUnload(PluginDisableEvent e){
+    public void onPluginUnload(PluginDisableEvent e) {
         InventoryAPI.unregister(e.getPlugin());
     }
 
     /**
      * Handles the PlayerLeave event for leave message handling and for saving the
      * player file.
+     *
      * @param e PlayerQuitEvent
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLeave(PlayerQuitEvent e) {
-        Player plr=e.getPlayer();
+        Player plr = e.getPlayer();
         if (Config.AntiItemHack.enabled)
             SU.getPlayerConfig(plr).removeData("antiitemhack.lastitem");
         SU.pf.save();
@@ -248,7 +241,6 @@ public class Main extends JavaPlugin implements Listener {
 
 
     /**
-     *
      * @param slot
      * @return
      */
@@ -298,7 +290,7 @@ public class Main extends JavaPlugin implements Listener {
             return "itemhack.stacksize";
         }
         return (SU.containsItem(Config.AntiItemHack.whitelist, is) || SU.containsItem(plr.getInventory(), is)) ?
-                null : "itemhack.invaliditem";
+          null : "itemhack.invaliditem";
 
     }
 
@@ -340,10 +332,10 @@ public class Main extends JavaPlugin implements Listener {
                         }
                         if (list.size() == 1)
                             SU.cs.sendMessage((login ? Config.ConnectionLog.login : Config.ConnectionLog.ping)
-                                    .replace("<ip>", ip).replace("<uuid>", "" + uuids.iterator().next()).replace("<name>", n));
+                              .replace("<ip>", ip).replace("<uuid>", "" + uuids.iterator().next()).replace("<name>", n));
                         else
                             SU.cs.sendMessage((login ? Config.ConnectionLog.loginmore : Config.ConnectionLog.pingmore).replace("<ip>", ip) +
-                                    StringUtils.join(list, ", "));
+                              StringUtils.join(list, ", "));
                     }
                 } catch (IllegalAccessException e1) {
                     errorLog(null, e1);
@@ -542,7 +534,7 @@ public class Main extends JavaPlugin implements Listener {
                 }
             } else if (args[0].equals("packets")) {
                 lang.msg(sender, "packet", "in", StringUtils.join(PacketInType.values(), ", "), "out",
-                        StringUtils.join(PacketOutType.values(), ", "));
+                  StringUtils.join(PacketOutType.values(), ", "));
                 return true;
             } else if (args[0].equals("errors")) {
                 sender.sendMessage(StringUtils.join(Config.errors, "\n \n"));
@@ -597,15 +589,14 @@ public class Main extends JavaPlugin implements Listener {
                 ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, out.length() == 0 ? " " : out.substring(3), plr);
                 return true;
             } else if (args[0].equals("pf")) {
-                if (args.length==1){
+                if (args.length == 1) {
                     ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, SU.pf.toString(), plr);
-                }
-                else{
+                } else {
                     ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, SU.getPlayerConfig(SU.getUUID(args[1])).toString(), plr);
                 }
                 return true;
             } else if (args[0].equals("reload")) {
-                if (args.length==0)
+                if (args.length == 0)
                     lang.msg(sender, "invalidcmd");
                 if (args[1].equals("config")) {
                     kf.reload();
@@ -674,8 +665,8 @@ public class Main extends JavaPlugin implements Listener {
                     }
                 }
             } else if (args[0].equals("debug")) {
-                Config.debug=!Config.debug;
-                lang.msg(sender,"debug."+(Config.debug?"on":"off"));
+                Config.debug = !Config.debug;
+                lang.msg(sender, "debug." + (Config.debug ? "on" : "off"));
                 return true;
             } else if (args[0].equals("item")) {
                 if (args.length == 1) {
