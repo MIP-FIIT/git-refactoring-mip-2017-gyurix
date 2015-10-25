@@ -35,6 +35,10 @@ public class EconomyAPI {
      * The map of the balance types names and their data
      */
     public static HashMap<String, BalanceData> balanceTypes = new HashMap<String, BalanceData>();
+    /**
+     * Toggles the hook to the Vault plugin.
+     */
+    public static boolean vaultHook=true;
 
     /**
      * Get the default typed balance of a bank

@@ -724,6 +724,7 @@ antiItemHack:
   - 2266
   - 2267
 economy:
+  vaultHook: +
   liveSync: +
   balanceTypes:
     default:

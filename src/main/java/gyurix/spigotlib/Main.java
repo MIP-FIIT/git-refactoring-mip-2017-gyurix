@@ -94,7 +94,7 @@ public class Main extends JavaPlugin implements Listener {
         TitleAPI.init();
         NBTApi.init();
         ScoreboardAPI.init();
-        if (SU.pm.getPlugin("Vault") != null)
+        if (SU.pm.getPlugin("Vault") != null&&EconomyAPI.vaultHook)
             EconomyVaultHook.init();
         if (SU.pm.getPlugin("PlaceholderAPI") != null)
             VariableAPI.phaHook = Config.phaHook;
