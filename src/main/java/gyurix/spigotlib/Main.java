@@ -47,7 +47,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Version of the SpigotLib
      */
-    public static final String version = "1.8";
+    public static final String version = "1.8.1";
     /**
      * Logger for SpigotLib debug
      */
