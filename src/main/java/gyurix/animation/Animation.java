@@ -1,53 +1,112 @@
 package gyurix.animation;
 
+import gyurix.animation.effects.FramesEffect;
 import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigSerialization;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * @author GyuriX
- *
- * A representation of an animation
- */
 public class Animation {
-    /**
-     *  The map of the effect names and their implementation
-     */
-    public HashMap<String,HashMap<String,CustomEffect>> effects=new HashMap<String, HashMap<String, CustomEffect>>();
-    /**
-     * The frame list of the Animation
-     */
-    public ArrayList<Frame> frames=new ArrayList<Frame>();
-    /**
-     * Time of the not specialized timed frames in milliseconds
-     */
-    public long frameTime=1000;
+    public HashMap<String, HashMap<String, CustomEffect>> effects = new HashMap();
 
-    /**
-     * The serializer and deserializer of the animations to be able to store them in the config in a special form
-     */
-    public static class AnimationSerializer implements ConfigSerialization.Serializer{
-
-        public Object fromData(ConfigData data, Class cl, Type... args) {
-            Animation anim=new Animation();
-            for (Map.Entry<ConfigData,ConfigData> e:data.mapData.entrySet()){
-                String key=e.getKey().stringData;
-                if (key.equals("frameTime")){
-                    anim.frameTime=Long.valueOf(e.getValue().stringData);
+    public static class AnimationSerializer
+            implements ConfigSerialization.Serializer {
+        @Override
+        public /* varargs */ Object fromData(ConfigData data, Class cl, Type... args) {
+            Animation anim = new Animation();
+            long ft = 0;
+            if (data.mapData != null) {
+                for (Map.Entry<ConfigData, ConfigData> e : data.mapData.entrySet()) {
+                    String key = e.getKey().stringData;
+                    ConfigData value = e.getValue();
+                    if (key.endsWith("s")) {
+                        if (AnimationAPI.effects.containsKey(key = key.substring(0, key.length() - 1))) {
+                            anim.effects.put(key, (HashMap) e.getValue().deserialize(HashMap.class, String.class, AnimationAPI.effects.get(key)));
+                            continue;
+                        }
+                        System.err.println("Unregistered effect type " + key + " can't be loaded.");
+                        continue;
+                    }
+                    if (!key.equals("frameTime")) continue;
+                    ft = Long.valueOf(value.stringData);
                 }
-                else if (key.equals("frames")){
-                    anim.frames= (ArrayList<Frame>) e.getValue().deserialize(ArrayList.class,Frame.class);
+            }
+            if (data.listData != null) {
+                FramesEffect fe = new FramesEffect();
+                for (ConfigData cd : data.listData) {
+                    fe.frames.add(new Frame(cd.stringData));
                 }
-                else if (key.endsWith("s")){
-                    key=key.substring(0,key.length()-1);
-                    if (AnimationAPI.effects.keySet().contains(key)){
-                        anim.effects.put(key, (HashMap<String, CustomEffect>) e.getValue()
-                                .deserialize(HashMap.class, String.class, AnimationAPI.effects.get(key)));
+                HashMap<String, CustomEffect> map = anim.effects.get("frame");
+                if (map == null) {
+                    map = new HashMap<>();
+                }
+                map.put("main", fe);
+                anim.effects.put("frame", map);
+            } else if (data.stringData != null && !data.stringData.isEmpty()) {
+                HashMap map = anim.effects.get("frame");
+                if (map == null) {
+                    map = new HashMap();
+                }
+                if (!map.containsKey("main")) {
+                    FramesEffect fe = new FramesEffect();
+                    if (data.stringData.contains(";")) {
+                        for (String s : data.stringData.split(";")) {
+                            fe.frames.add(new Frame(s));
+                        }
+                    } else {
+                        fe.frames.add(new Frame(data.stringData));
+                    }
+                    map.put("main", fe);
+                    anim.effects.put("frame", map);
+                }
+            }
+            if (!anim.effects.containsKey("frame")) {
+                System.err.println("Error, the animation doesn't contain ANY frames parts.");
+                return this.fromData(new ConfigData("ERROR-NO-FRAMES"), cl, args);
+            }
+            if (!anim.effects.get("frame").containsKey("main")) {
+                System.err.println("Error, the animation doesn't contain the main frames part.");
+                return this.fromData(new ConfigData("ERROR-NO-MAINFRAMEPART"), cl, args);
+            }
+            if (((FramesEffect) anim.effects.get("frame").get("main")).frames.isEmpty()) {
+                System.err.println("Error, the animation doesn't contain any main frames.");
+                return this.fromData(new ConfigData("ERROR-NO-MAINFRAMES"), cl, args);
+            }
+            if (ft != 0) {
+                ((FramesEffect) anim.effects.get("frame").get("main")).frameTime = ft;
+            }
+            for (CustomEffect fe : anim.effects.get("frame").values()) {
+                for (Frame f : ((FramesEffect) fe).frames) {
+                    for (Map.Entry<String, Class> ef : AnimationAPI.effects.entrySet()) {
+                        int id;
+                        String text = f.text;
+                        String efn = ef.getKey();
+                        while ((id = text.indexOf("<" + efn + ":")) != -1) {
+                            int bracket;
+                            int colon = (text = text.substring(id += efn.length() + 2)).indexOf(":");
+                            if (colon == -1) {
+                                colon = text.length();
+                            }
+                            if ((bracket = text.indexOf(">")) == -1) {
+                                bracket = text.length();
+                            }
+                            int id2 = Math.min(bracket, colon);
+                            String name = text.substring(0, id2);
+                            HashMap map = anim.effects.get(efn);
+                            if (map == null) {
+                                map = new HashMap();
+                            }
+                            try {
+                                if (map.containsKey(name)) continue;
+                                map.put(name, ef.getValue().newInstance());
+                                anim.effects.put(efn, map);
+                            } catch (Throwable e) {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 }
             }
@@ -55,21 +114,22 @@ public class Animation {
             return anim;
         }
 
-        public ConfigData toData(Object obj, Type... types) {
-            Animation anim= (Animation) obj;
-            ConfigData out=new ConfigData();
-            out.mapData=new LinkedHashMap<ConfigData, ConfigData>();
-            out.mapData.put(new ConfigData("frameTime"),new ConfigData(""+anim.frameTime));
-            out.mapData.put(new ConfigData("frames"), ConfigData.serializeObject(anim.frames,Frame.class));
-            for (Map.Entry<String,HashMap<String,CustomEffect>> e:anim.effects.entrySet()){
-                Class cl=AnimationAPI.effects.get(e.getKey());
-                if (cl==null){
-                    System.err.println("Unregistered effect type "+e.getKey()+" can't be saved.");
+        @Override
+        public /* varargs */ ConfigData toData(Object obj, Type... types) {
+            Animation anim = (Animation) obj;
+            ConfigData out = new ConfigData();
+            out.mapData = new LinkedHashMap();
+            for (Map.Entry<String, HashMap<String, CustomEffect>> e : anim.effects.entrySet()) {
+                Class cl = AnimationAPI.effects.get(e.getKey());
+                if (cl == null) {
+                    System.err.println("Unregistered effect type " + e.getKey() + " can't be saved.");
                     continue;
                 }
-                out.mapData.put(new ConfigData(e.getKey()+"s"),ConfigData.serializeObject(e.getValue(),String.class,cl));
+                out.mapData.put(new ConfigData(e.getKey() + "s"), ConfigData.serializeObject(e.getValue(), String.class, cl));
             }
             return out;
         }
     }
+
 }
+

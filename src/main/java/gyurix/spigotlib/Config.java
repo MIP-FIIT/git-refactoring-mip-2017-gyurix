@@ -5,8 +5,10 @@ import gyurix.economy.EconomyAPI;
 import gyurix.spigotutils.TPSMeter;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.UUID;
 
 public class Config {
     @ConfigSerialization.ConfigOptions(comment = "Servers default language.")
@@ -15,27 +17,72 @@ public class Config {
     public static int version;
     @ConfigSerialization.ConfigOptions(comment = "Tab completion will need the tab.complete perm.")
     public static boolean tabCompletePerm;
-
     @ConfigSerialization.ConfigOptions(comment = "Path for auto backups on every save.")
     public static String backup;
     @ConfigSerialization.ConfigOptions(comment = "Debug mode, use it for error reporting.")
-    public static boolean debug = false;
+    public static boolean debug;
     @ConfigSerialization.ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
-    public static boolean phaHook = true;
+    public static boolean phaHook;
+    public static boolean commandLog;
     @ConfigSerialization.ConfigOptions(comment = "Chat settings.")
     public static Chat chat;
     @ConfigSerialization.ConfigOptions(comment = "Error log, please report all of these errors to plugins dev, gyuriX.")
-    public static ArrayList<String> errors = new ArrayList<>();
-    public static TPSMeter tpsMeter= new TPSMeter();
+    public static ArrayList<String> errors;
+    public static TPSMeter tpsMeter;
+    public static boolean packetAPI;
     public static ConnectionLog connectionLog;
     public static AntiItemHack antiItemHack;
     public static AntiSignHack antiSignHack;
     public static EconomyAPI economy;
+    public static HashMap<String, String[]> books;
+    @ConfigSerialization.ConfigOptions(comment = "Packet name mapping for PacketAPI to reach compatibility between different Minecraft versions.\nDON'T CHANGE IT, IF YOU DON'T KNOW EXACTLY WHAT ARE YOU DOING!")
+    public static HashMap<String, HashMap<String, String>> packetMapping;
 
-    public static HashMap<String,String[]> books;
-    @ConfigSerialization.ConfigOptions(comment = "Packet name mapping for PacketAPI to reach compatibility between different Minecraft versions.\n" +
-            "DON'T CHANGE IT, IF YOU DON'T KNOW EXACTLY WHAT ARE YOU DOING!")
-    public static HashMap<String,HashMap<String,String>> packetMapping;
+    static {
+        debug = false;
+        phaHook = true;
+        commandLog = true;
+        errors = new ArrayList();
+        tpsMeter = new TPSMeter();
+    }
+
+    public static class ConnectionLog {
+        public static boolean enabled;
+        @ConfigSerialization.ConfigOptions(comment = "You can blacklist here some ips, which you would not like to see in the log.")
+        public static ArrayList<String> blacklist;
+        public static String ping;
+        public static String pingmore;
+        public static String login;
+        public static String loginmore;
+        public static String loginunknown;
+        public static String pingunknown;
+        public static HashMap<String, HashSet<UUID>> ipUUIDBase;
+
+        static {
+            blacklist = new ArrayList();
+            pingmore = "[ConnectionLog] One of the following players tried to ping to the server from ip <ip>:";
+            loginmore = "[ConnectionLog] One of the following players tried to login to the server from ip <ip>:";
+            ipUUIDBase = new HashMap();
+        }
+    }
+
+    public static class AntiSignHack {
+        public static boolean enabled;
+        public static int limit;
+    }
+
+    public static class AntiItemHack {
+        public static boolean enabled;
+        public static String helmets;
+        public static String chestplates;
+        public static String leggings;
+        public static String boots;
+        public static ArrayList<ItemStack> whitelist;
+
+        static {
+            whitelist = new ArrayList();
+        }
+    }
 
     public static class Chat {
         @ConfigSerialization.ConfigOptions(comment = "Enable SpigotLib chat management.")
@@ -59,32 +106,8 @@ public class Config {
             @ConfigSerialization.ConfigOptions(comment = "Limit maximum length of longer messages, per permissionly (chat.longerlimit.<group> permissions)")
             public static HashMap<String, Integer> lengthLimit;
         }
-    }
-    public static class AntiItemHack{
-        public static boolean enabled;
-        public static String helmets;
-        public static String chestplates;
-        public static String leggings;
-        public static String boots;
-        public static ArrayList<ItemStack> whitelist=new ArrayList<ItemStack>();
-    }
 
-    public static class AntiSignHack {
-        public static boolean enabled;
-        public static int limit;
-    }
-
-    public static class ConnectionLog {
-        public static boolean enabled;
-        @ConfigSerialization.ConfigOptions(comment = "You can blacklist here some ips, which you would not like to see in the log.")
-        public static ArrayList<String> blacklist=new ArrayList<String>();
-        public static String ping,pingmore="[ConnectionLog] One of the following players tried to ping to the server from ip <ip>:",
-                login,loginmore="[ConnectionLog] One of the following players tried to login to the server from ip <ip>:",
-                loginunknown,pingunknown;
-        public static HashMap<String,HashSet<UUID>> ipUUIDBase= new HashMap<String, HashSet<UUID>>();
-        public ConnectionLog(){
-
-        }
     }
 
 }
+

@@ -69,6 +69,11 @@ public class SU {
      */
     public static ScriptEngine js;
 
+    /**
+     * An instance of the Random number generator
+     */
+    public static Random rand = new Random();
+
     private static Constructor entityPlayerC,playerInterractManagerC;
     private static Method getBukkitEntityM,loadDataM,saveDataM;
     private static Object worldServer,mcServer;
@@ -76,7 +81,6 @@ public class SU {
 
     static void init() {
         try {
-            tp = new Protocol();
             sch = srv.getScheduler();
             js = new ScriptEngineManager().getEngineByName("JavaScript");
 
@@ -421,22 +425,24 @@ public class SU {
         StringBuilder out = new StringBuilder();
         char prev = ' ';
         for (char c : in.toCharArray()) {
-            if (prev == '\u00A7') {
+            if (prev == '§') {
                 if (c >= 'k' && c <= 'o') {
                     if (formats.indexOf("" + c) == -1) {
-                        formats.append('\u00A7').append(c);
-                        newformats.append('\u00A7').append(c);
+                        formats.append('§').append(c);
+                        newformats.append('§').append(c);
                     }
                 } else {
                     if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
                         c = 'f';
                     }
-                    formats.setLength(0);
-                    formats.append('\u00A7').append(c);
-                    newformats.setLength(0);
-                    newformats.append('\u00A7').append(c);
+                    if (!(formats.length() == 2 && formats.charAt(1) == c)) {
+                        formats.setLength(0);
+                        formats.append('§').append(c);
+                        newformats.setLength(0);
+                        newformats.append('§').append(c);
+                    }
                 }
-            } else if (c != '\u00A7') {
+            } else if (c != '§') {
                 out.append(newformats);
                 out.append(c);
                 newformats.setLength(0);
@@ -475,7 +481,7 @@ public class SU {
         int l = parts.length;
         ItemStack out = new ItemStack(id, amount, dataValue);
         ItemMeta meta = out.getItemMeta();
-        ArrayList<String[]> remaining = new ArrayList<String[]>();
+        ArrayList<String[]> remaining = new ArrayList<>();
         for (int i = st; i < l; i++) {
             String[] s = parts[i].split(":", 2);
             s[0] = s[0].toUpperCase();

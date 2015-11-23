@@ -1,3 +1,5 @@
+#The version of the config.
+version: 1
 #Servers default language.
 defaultLang: en
 #Tab completion will need the tab.complete perm.
@@ -22,6 +24,7 @@ connectionLog:
   login: [ConnectionLog] Player <name>(<uuid>), tried to login to the server from ip <ip>.
   loginmore: [ConnectionLog] One of the following players tried to login to the server from ip <ip>:
   ipUUIDBase:
+packetAPI: -
 #Chat settings.
 chat:
   #Enable SpigotLib chat management.
