@@ -1,13 +1,11 @@
 package gyurix.economy;
 
-import gyurix.economy.EconomyAPI;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 
 import java.math.BigDecimal;
@@ -77,7 +75,7 @@ public class EconomyVaultHook implements Economy{
     public double getBalance(OfflinePlayer offlinePlayer) {
         UUID id=offlinePlayer.getUniqueId();
         if (id==null)
-           id=SU.getUUID(offlinePlayer.getName());
+            id = SU.getUUID(offlinePlayer.getName());
         return EconomyAPI.getBalance(id).doubleValue();
     }
 
@@ -109,7 +107,7 @@ public class EconomyVaultHook implements Economy{
         UUID id=SU.getUUID(player);
         boolean success=EconomyAPI.addBalance(id,new BigDecimal(0-v));
         return new EconomyResponse(v,EconomyAPI.getBalance(id).doubleValue(),
-                success? EconomyResponse.ResponseType.SUCCESS: EconomyResponse.ResponseType.FAILURE,success?"§aSuccess.":"§cNot enough money.");
+                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "Â§aSuccess." : "Â§cNot enough money.");
     }
 
     public EconomyResponse withdrawPlayer(OfflinePlayer offlinePlayer, double v) {
@@ -118,14 +116,14 @@ public class EconomyVaultHook implements Economy{
             id=SU.getUUID(offlinePlayer.getName());
         boolean success=EconomyAPI.addBalance(id,new BigDecimal(0-v));
         return new EconomyResponse(v,EconomyAPI.getBalance(id).doubleValue(),
-                success? EconomyResponse.ResponseType.SUCCESS: EconomyResponse.ResponseType.FAILURE,success?"§aSuccess.":"§cNot enough money.");
+                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "Â§aSuccess." : "Â§cNot enough money.");
     }
 
     public EconomyResponse withdrawPlayer(String player, String world, double v) {
         UUID id=SU.getUUID(player);
         boolean success=EconomyAPI.addBalance(id,new BigDecimal(0-v));
         return new EconomyResponse(v,EconomyAPI.getBalance(id).doubleValue(),
-                success? EconomyResponse.ResponseType.SUCCESS: EconomyResponse.ResponseType.FAILURE,success?"§aSuccess.":"§cNot enough money.");
+                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "Â§aSuccess." : "Â§cNot enough money.");
     }
 
     public EconomyResponse withdrawPlayer(OfflinePlayer offlinePlayer, String world, double v) {
@@ -134,7 +132,7 @@ public class EconomyVaultHook implements Economy{
             id=SU.getUUID(offlinePlayer.getName());
         boolean success=EconomyAPI.addBalance(id,new BigDecimal(0-v));
         return new EconomyResponse(v,EconomyAPI.getBalance(id).doubleValue(),
-                success? EconomyResponse.ResponseType.SUCCESS: EconomyResponse.ResponseType.FAILURE,success?"§aSuccess.":"§cNot enough money.");
+                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "Â§aSuccess." : "Â§cNot enough money.");
     }
 
     public EconomyResponse depositPlayer(String player, double v) {
@@ -155,67 +153,67 @@ public class EconomyVaultHook implements Economy{
 
     public EconomyResponse createBank(String bankName, String s1) {
         if (EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.FAILURE,"§cBank §e§l"+bankName+"§c already exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Â§cBank Â§eÂ§l" + bankName + "Â§c already exists.");
         }
         EconomyAPI.banks.put(bankName,new HashMap<String, BigDecimal>());
-        return new EconomyResponse(0,0, EconomyResponse.ResponseType.SUCCESS,"§2Bank §a§l"+bankName+"§2 has been created successfully.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.SUCCESS, "Â§2Bank Â§aÂ§l" + bankName + "Â§2 has been created successfully.");
     }
 
     public EconomyResponse createBank(String bankName, OfflinePlayer offlinePlayer) {
         if (EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.FAILURE,"§cBank §e§l"+bankName+"§c already exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Â§cBank Â§eÂ§l" + bankName + "Â§c already exists.");
         }
         EconomyAPI.banks.put(bankName, new HashMap<String, BigDecimal>());
-        return new EconomyResponse(0,0, EconomyResponse.ResponseType.SUCCESS,"§2Bank §a§l"+bankName+"§2 has been created successfully.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.SUCCESS, "Â§2Bank Â§aÂ§l" + bankName + "Â§2 has been created successfully.");
     }
 
     public EconomyResponse deleteBank(String bankName) {
         if (!EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.FAILURE,"§cBank §e§l"+bankName+"§c doesn't exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Â§cBank Â§eÂ§l" + bankName + "Â§c doesn't exists.");
         }
         double bal=EconomyAPI.getBankBalance(bankName).doubleValue();
         EconomyAPI.banks.remove(bankName);
-        return new EconomyResponse(0,bal, EconomyResponse.ResponseType.SUCCESS,"§2Bank §a§l"+bankName+"§2 has been removed successfully.");
+        return new EconomyResponse(0, bal, EconomyResponse.ResponseType.SUCCESS, "Â§2Bank Â§aÂ§l" + bankName + "Â§2 has been removed successfully.");
     }
 
     public EconomyResponse bankBalance(String bankName) {
         if (!EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.FAILURE,"§cBank §e§l"+bankName+"§c doesn't exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Â§cBank Â§eÂ§l" + bankName + "Â§c doesn't exists.");
         }
-        return new EconomyResponse(0,EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS,"§aSuccess.");
+        return new EconomyResponse(0, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS, "Â§aSuccess.");
     }
 
     public EconomyResponse bankHas(String bankName, double v) {
         if (!EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.NOT_IMPLEMENTED,"§cBank §e§l"+bankName+"§c doesn't exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Â§cBank Â§eÂ§l" + bankName + "Â§c doesn't exists.");
         }
         double bal=EconomyAPI.getBankBalance(bankName).doubleValue();
         if (v>bal){
-            return new EconomyResponse(v, bal, EconomyResponse.ResponseType.FAILURE,"§cNot enough money.");
+            return new EconomyResponse(v, bal, EconomyResponse.ResponseType.FAILURE, "Â§cNot enough money.");
         }
-        return new EconomyResponse(v, bal, EconomyResponse.ResponseType.SUCCESS,"§aSuccess.");
+        return new EconomyResponse(v, bal, EconomyResponse.ResponseType.SUCCESS, "Â§aSuccess.");
     }
 
     public EconomyResponse bankWithdraw(String bankName, double v) {
         if (!EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.NOT_IMPLEMENTED,"§cBank §e§l"+bankName+"§c doesn't exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Â§cBank Â§eÂ§l" + bankName + "Â§c doesn't exists.");
         }
         EconomyAPI.addBankBalance(bankName,new BigDecimal(0-v));
-        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS,"§aSuccess.");
+        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS, "Â§aSuccess.");
     }
 
     public EconomyResponse bankDeposit(String bankName, double v) {
         if (!EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.NOT_IMPLEMENTED,"§cBank §e§l"+bankName+"§c doesn't exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Â§cBank Â§eÂ§l" + bankName + "Â§c doesn't exists.");
         }
         EconomyAPI.addBankBalance(bankName,new BigDecimal(v));
-        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS,"§aSuccess.");
+        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS, "Â§aSuccess.");
     }
     public EconomyResponse bankMemberOwner(String bankName){
         if (!EconomyAPI.banks.containsKey(bankName)){
-            return new EconomyResponse(0,0, EconomyResponse.ResponseType.NOT_IMPLEMENTED,"§cBank §e§l"+bankName+"§c doesn't exists.");
+            return new EconomyResponse(0, 0, EconomyResponse.ResponseType.NOT_IMPLEMENTED, "Â§cBank Â§eÂ§l" + bankName + "Â§c doesn't exists.");
         }
-        return new EconomyResponse(0,0, EconomyResponse.ResponseType.FAILURE,"§cBanks doesn't have members and owners.");
+        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Â§cBanks doesn't have members and owners.");
     }
     public EconomyResponse isBankOwner(String bankName, String s1) {
         return bankMemberOwner(bankName);

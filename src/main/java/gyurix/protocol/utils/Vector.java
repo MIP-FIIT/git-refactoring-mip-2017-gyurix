@@ -5,23 +5,30 @@ import gyurix.protocol.Reflection;
 import java.lang.reflect.Field;
 
 public class Vector {
-    public double x, y, z;
-    private static final Field xf,yf,zf;
+    private static final Field xf;
+    private static final Field yf;
+    private static final Field zf;
+
     static {
-        Class vec3d=Reflection.getNMSClass("Vec3D");
-        Field[] f=vec3d.getFields();
-        xf=f[0];
-        yf=f[1];
-        zf=f[2];
+        Class vec3d = Reflection.getNMSClass("Vec3D");
+        Field[] f = vec3d.getFields();
+        xf = f[0];
+        yf = f[1];
+        zf = f[2];
     }
-    public Vector(Object vanillaVector){
-        try{
-            x=(Double)xf.get(vanillaVector);
-            y=(Double)yf.get(vanillaVector);
-            z=(Double)zf.get(vanillaVector);
-        }
-        catch (Throwable e){
+
+    public double x;
+    public double y;
+    public double z;
+
+    public Vector(Object vanillaVector) {
+        try {
+            this.x = (Double) xf.get(vanillaVector);
+            this.y = (Double) yf.get(vanillaVector);
+            this.z = (Double) zf.get(vanillaVector);
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 }
+

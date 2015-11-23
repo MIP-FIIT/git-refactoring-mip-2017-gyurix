@@ -2,7 +2,8 @@ package gyurix.protocol;
 
 import io.netty.channel.Channel;
 
-public class PacketOutEvent extends PacketEvent {
+public class PacketOutEvent
+        extends PacketEvent {
     private final PacketOutType type;
 
     public PacketOutEvent(Channel channel, Protocol.NewChannelHandler handler, Object packet) {
@@ -10,12 +11,13 @@ public class PacketOutEvent extends PacketEvent {
         this.type = PacketOutType.getType(packet);
     }
 
-
+    @Override
     public Object[] getPacketData() {
         return this.type.getPacketData(this.packet);
     }
 
-    public void setPacketData(Object... data) {
+    @Override
+    public /* varargs */ void setPacketData(Object... data) {
         this.type.fillPacket(this.packet, data);
     }
 
@@ -23,23 +25,15 @@ public class PacketOutEvent extends PacketEvent {
         return this.type;
     }
 
+    @Override
     public boolean setPacketData(int id, Object o) {
         try {
-            type.fs.get(id).set(this.packet, o);
+            this.type.fs.get(id).set(this.packet, o);
             return true;
         } catch (Throwable e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 }
 
-
-
-/* Location:           D:\pluginok\ServerLib\out\artifacts\SpigotLib.jar
-
- * Qualified Name:     gyurix.protocol.PacketOutEvent
-
- * JD-Core Version:    0.7.0.1
-
- */

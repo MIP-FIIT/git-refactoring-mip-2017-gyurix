@@ -4,48 +4,36 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A wrapper for vanilla NBTCompounds.
- */
-public class NBTCompound extends NBTTag{
-    /**
-     * The map of every NBTTag contained by this compound tag.
-     */
-    public HashMap<String,NBTTag> map=new HashMap<String, NBTTag>();
+public class NBTCompound
+        extends NBTTag {
     static Class nmsClass;
     static Field mapField;
+    public HashMap<String, NBTTag> map = new HashMap();
 
-    /**
-     * Empty constructor
-     */
-    public NBTCompound(){}
+    public NBTCompound() {
+    }
 
-    /**
-     * Contstructor from an NMS NBTCompound object
-     * @param nmsTag NMS NBTCompound tag
-     */
-    public NBTCompound(Object nmsTag){
-        loadFromNMS(nmsTag);
+    public NBTCompound(Object nmsTag) {
+        this.loadFromNMS(nmsTag);
     }
 
     @Override
     public void loadFromNMS(Object tag) {
         try {
-            Map m= (Map) mapField.get(tag);
-            for (Map.Entry<String,Object> e:((Map<String,Object>)m).entrySet()){
-                String cln=e.getValue().getClass().getSimpleName();
-                if (cln.equals("NBTTagCompound")){
-                    map.put(e.getKey(),new NBTCompound(e.getValue()));
+            Map<?, ?> m = (Map) mapField.get(tag);
+            for (Map.Entry<?, ?> e : m.entrySet()) {
+                String cln = e.getValue().getClass().getSimpleName();
+                if (cln.equals("NBTTagCompound")) {
+                    this.map.put((String) e.getKey(), new NBTCompound(e.getValue()));
+                    continue;
                 }
-                else if (cln.equals("NBTTagList")){
-                    map.put(e.getKey(),new NBTList(e.getValue()));
+                if (cln.equals("NBTTagList")) {
+                    this.map.put((String) e.getKey(), new NBTList(e.getValue()));
+                    continue;
                 }
-                else{
-                    map.put(e.getKey(),new NBTPrimitive(e.getValue()));
-                }
+                this.map.put((String) e.getKey(), new NBTPrimitive(e.getValue()));
             }
-        }
-        catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
         }
     }
@@ -53,81 +41,64 @@ public class NBTCompound extends NBTTag{
     @Override
     public Object saveToNMS() {
         try {
-            Object tag=nmsClass.newInstance();
-            Map m= (Map) mapField.get(tag);
-            for (Map.Entry<String,NBTTag> e:map.entrySet()){
-                m.put(e.getKey(),e.getValue().saveToNMS());
+            Object tag = nmsClass.newInstance();
+            Map m = (Map) mapField.get(tag);
+            for (Map.Entry<String, NBTTag> e : this.map.entrySet()) {
+                m.put(e.getKey(), e.getValue().saveToNMS());
             }
             return tag;
-        }
-        catch (Throwable e){
+        } catch (Throwable e) {
             e.printStackTrace();
             return null;
         }
     }
-    public NBTCompound getCompound(String key){
-        NBTTag tag=map.get(key);
-        if (tag==null||!(tag instanceof NBTCompound)){
-            map.put(key,tag=new NBTCompound());
+
+    public NBTCompound getCompound(String key) {
+        NBTTag tag = this.map.get(key);
+        if (tag == null || !(tag instanceof NBTCompound)) {
+            tag = new NBTCompound();
+            this.map.put(key, tag);
         }
-        return (NBTCompound)tag;
+        return (NBTCompound) tag;
     }
 
-    public NBTList getList(String key){
-        NBTTag tag=map.get(key);
-        if (tag==null||!(tag instanceof NBTList)){
-            map.put(key,tag=new NBTList());
+    public NBTList getList(String key) {
+        NBTTag tag = this.map.get(key);
+        if (tag == null || !(tag instanceof NBTList)) {
+            tag = new NBTList();
+            this.map.put(key, tag);
         }
-        return (NBTList)tag;
+        return (NBTList) tag;
     }
 
-    @Override
     public String toString() {
-        StringBuilder sb=new StringBuilder();
-        for (Map.Entry e:map.entrySet()){
-            sb.append("\n§e").append(e.getKey()).append(":§b ").append(e.getValue());
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, NBTTag> e : this.map.entrySet()) {
+            sb.append("\n\u00a7e").append((Object) e.getKey()).append(":\u00a7b ").append(e.getValue());
         }
-        return sb.length()==0?"{}":"{"+sb.substring(1)+"}";
+        return sb.length() == 0 ? "{}" : "{" + sb.substring(1) + "}";
     }
 
-    /**
-     * Get the boolean value of a tag contained by this compound.
-     * @param key the String key of the byte tag containing a boolean value
-     * @return The boolean value of the given byte tag
-     */
     public boolean getBoolean(String key) {
-        NBTTag tag = map.get(key);
-        return !(tag == null || !(tag instanceof NBTPrimitive)) && ((Byte) ((NBTPrimitive) tag).data) == 1;
+        NBTTag tag = this.map.get(key);
+        return tag != null && tag instanceof NBTPrimitive && ((Byte) ((NBTPrimitive) tag).data).byteValue() == 1;
     }
 
-    /**
-     *
-     * Add or set the value of a key
-     *
-     * @param key the String key of the tag
-     * @param value the value of this key, it could be a NbtTag or just a normal NBT compatible object
-     * @return this NBTCompound
-     */
     public NBTCompound set(String key, Object value) {
-        if (value==null)
-            map.remove(key);
-        else
-            map.put(key, NBTTag.make(value));
+        if (value == null) {
+            this.map.remove(key);
+        } else {
+            this.map.put(key, NBTTag.make(value));
+        }
         return this;
     }
 
-    /**
-     * Add several key value pairs to this Compound
-     *
-     * @param o map containing the addable NbtTags or the NBT compatible objects
-     * @return this NBTCompound
-     */
-    public NBTCompound addAll(Map<?,?> o) {
-        for (Map.Entry<?,?> e:o.entrySet()){
-            if (e.getKey()==null||e.getValue()==null)
-                continue;
-            map.put(e.getKey().toString(), NBTTag.make(e.getValue()));
+    public NBTCompound addAll(Map<?, ?> o) {
+        for (Map.Entry e : o.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) continue;
+            this.map.put(e.getKey().toString(), NBTTag.make(e.getValue()));
         }
         return this;
     }
 }
+

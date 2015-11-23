@@ -6,37 +6,32 @@ import gyurix.protocol.PacketOutType;
 import gyurix.spigotlib.ChatAPI;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.UUID;
-
-/**
- * Created by GyuriX on 2015.07.21..
- */
 public class TabPlayer {
     public String tabname;
     public GameProfile profile;
     public int number;
-    public TabPlayer(GameProfile profile){
 
+    public TabPlayer(GameProfile profile) {
     }
+
     public TabPlayer(Player plr) {
-        profile=new GameProfile(plr.getUniqueId(), plr.getName());
-        tabname="§c§lTABNAME:§e"+plr.getDisplayName();
-        number=ScoreboardAPI.id++;
+        this.profile = new GameProfile(plr.getUniqueId(), plr.getName());
+        this.tabname = "\u00a7c\u00a7lTABNAME:\u00a7e" + plr.getDisplayName();
+        this.number = ScoreboardAPI.id++;
     }
-    public Object getTabnameSetPacket(){
+
+    public Object getTabnameSetPacket() {
         try {
-            return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList(ScoreboardAPI.tabPlayer.newInstance(
-                    PacketOutType.PlayerInfo.newPacket(), profile, 0, null, ChatAPI.toICBC(ChatAPI.TextToJson(tabname)))));
+            return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList((Object[]) new Object[]{ScoreboardAPI.tabPlayer.newInstance(PacketOutType.PlayerInfo.newPacket(), this.profile, 0, null, ChatAPI.toICBC(ChatAPI.TextToJson(this.tabname)))}));
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
         }
     }
-    public Object getTabnameRestorePacket(){
+
+    public Object getTabnameRestorePacket() {
         try {
-            return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList(ScoreboardAPI.tabPlayer.newInstance(
-                    null, profile, 0, null, null)));
+            return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList((Object[]) new Object[]{ScoreboardAPI.tabPlayer.newInstance(null, this.profile, 0, null, null)}));
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
@@ -44,9 +39,11 @@ public class TabPlayer {
     }
 
     public Object getSetScorePacket() {
-        return PacketOutType.ScoreboardScore.newPacket(profile.getName(), "SBAPI-tabbar", number, ScoreboardAPI.setScore);
+        return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", this.number, ScoreboardAPI.setScore);
     }
+
     public Object getRemoveScorePacket() {
-        return PacketOutType.ScoreboardScore.newPacket(profile.getName(), "SBAPI-tabbar", 0, ScoreboardAPI.removeScore);
+        return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", 0, ScoreboardAPI.removeScore);
     }
 }
+

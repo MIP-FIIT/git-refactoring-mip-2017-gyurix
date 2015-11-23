@@ -18,7 +18,7 @@ public abstract class PacketEvent
     public PacketEvent(Channel channel, Protocol.NewChannelHandler handler, Object packet) {
         this.channel = channel;
         this.packet = packet;
-        this.handler=handler;
+        this.handler = handler;
     }
 
     public static HandlerList getHandlerList() {
@@ -34,7 +34,7 @@ public abstract class PacketEvent
     }
 
     public Player getPlayer() {
-        return handler.player;
+        return this.handler.player;
     }
 
     public Object getPacketObject() {
@@ -43,9 +43,9 @@ public abstract class PacketEvent
 
     public abstract Object[] getPacketData();
 
-    public abstract void setPacketData(Object... paramVarArgs);
+    public /* varargs */ abstract void setPacketData(Object... var1);
 
-    public abstract boolean setPacketData(int paramInt, Object paramObject);
+    public abstract boolean setPacketData(int var1, Object var2);
 
     public boolean isCancelled() {
         return this.cancelled;
@@ -55,3 +55,4 @@ public abstract class PacketEvent
         this.cancelled = cancel;
     }
 }
+

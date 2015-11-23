@@ -2,38 +2,35 @@ package gyurix.protocol;
 
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
-import gyurix.utils.Primitives;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-
 public class Reflection {
-    public static String version = null;
     public static final HashMap<String, String> nmsRenames = new HashMap();
+    public static String version = null;
+    private static Field[] allFields;
 
     public static void init() {
         String name = Bukkit.getServer().getClass().getPackage().getName();
-        version = name.substring(name.lastIndexOf('.') + 1);
+        version = name.substring(name.lastIndexOf(46) + 1);
         HashMap<String, String> mapping = Config.packetMapping.get(version);
         if (mapping == null) {
             Main.log.severe("The packet name mapping is missing for your server version!");
         } else {
             nmsRenames.putAll(mapping);
         }
-        version += ".";
+        version = version + ".";
     }
 
     public static Class getInnerClass(Class cl, String name) {
         try {
             name = cl.getName() + "$" + name;
             for (Class c : cl.getDeclaredClasses()) {
-                if (c.getName().equals(name))
-                    return c;
+                if (!c.getName().equals(name)) continue;
+                return c;
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -45,8 +42,8 @@ public class Reflection {
         try {
             String[] classNames = className.split("\\$");
             Class c = Class.forName(classNames[0]);
-            for (int i = 1; i < classNames.length; i++) {
-                c = getInnerClass(c, classNames[i]);
+            for (int i = 1; i < classNames.length; ++i) {
+                c = Reflection.getInnerClass(c, classNames[i]);
             }
             return c;
         } catch (Throwable e) {
@@ -57,10 +54,11 @@ public class Reflection {
 
     public static Class getNMSClass(String className) {
         String newName = nmsRenames.get(className);
-        if (newName != null)
+        if (newName != null) {
             className = newName;
+        }
         try {
-            return getClass("net.minecraft.server." + version + className);
+            return Reflection.getClass("net.minecraft.server." + version + className);
         } catch (Throwable e) {
             e.printStackTrace();
             throw new RuntimeException("NMS class not found: " + className);
@@ -69,7 +67,7 @@ public class Reflection {
 
     public static Class getOBCClass(String className) {
         try {
-            return getClass("org.bukkit.craftbukkit." + version + className);
+            return Reflection.getClass("org.bukkit.craftbukkit." + version + className);
         } catch (Throwable e) {
             throw new RuntimeException("OBC class not found: " + className);
         }
@@ -86,7 +84,7 @@ public class Reflection {
 
     public static Field getField(Class clazz, String name) {
         try {
-            return setFieldAccessible(clazz.getDeclaredField(name));
+            return Reflection.setFieldAccessible(clazz.getDeclaredField(name));
         } catch (Throwable e) {
             throw new RuntimeException("Can't get field " + name + " from class " + clazz.getName());
         }
@@ -95,9 +93,8 @@ public class Reflection {
     public static Field getFirstFieldOfType(Class clazz, Class type) {
         try {
             for (Field f : clazz.getDeclaredFields()) {
-                if (f.getType().equals(type)) {
-                    return setFieldAccessible(f);
-                }
+                if (!f.getType().equals(type)) continue;
+                return Reflection.setFieldAccessible(f);
             }
             throw new RuntimeException(type.getName() + " typed field was not found in class " + clazz);
         } catch (Throwable e) {
@@ -111,67 +108,62 @@ public class Reflection {
             Field modifiersField = Field.class.getDeclaredField("modifiers");
             modifiersField.setAccessible(true);
             int modifiers = modifiersField.getInt(f);
-            modifiers &= 0xFFFFFFEF;
-            modifiersField.setInt(f, modifiers);
+            modifiersField.setInt(f, modifiers &= -17);
             return f;
         } catch (Throwable e) {
             throw new RuntimeException("Can't set field " + f + " accessible!");
         }
-
     }
 
     public static Field getLastFieldOfType(Class clazz, Class type) {
         Field field = null;
         for (Field f : clazz.getDeclaredFields()) {
-            if (f.getType().equals(type)) {
-                field = f;
-            }
+            if (!f.getType().equals(type)) continue;
+            field = f;
         }
-        return setFieldAccessible(field);
+        return Reflection.setFieldAccessible(field);
     }
 
-    public static Method getMethod(Class cl, String name, Class... args) {
-        while (cl!=null){
+    public static /* varargs */ Method getMethod(Class cl, String name, Class... args) {
+        while (cl != null) {
             if (args.length == 0) {
-                for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getParameterTypes().length==0&&m.getName().equals(name)) {
-                        m.setAccessible(true);
-                        return m;
-                    }
+                for (Method m2222 : cl.getDeclaredMethods()) {
+                    if (m2222.getParameterTypes().length != 0 || !m2222.getName().equals(name)) continue;
+                    m2222.setAccessible(true);
+                    return m2222;
                 }
-                for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getParameterTypes().length==0&&m.getName().equalsIgnoreCase(name)) {
-                        m.setAccessible(true);
-                        return m;
-                    }
+                for (Method m2222 : cl.getDeclaredMethods()) {
+                    if (m2222.getParameterTypes().length != 0 || !m2222.getName().equalsIgnoreCase(name)) continue;
+                    m2222.setAccessible(true);
+                    return m2222;
                 }
             } else {
-                for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getName().equals(name) && classArrayCompare(args, m.getParameterTypes())) {
-                        m.setAccessible(true);
-                        return m;
-                    }
+                for (Method m2222 : cl.getDeclaredMethods()) {
+                    if (!m2222.getName().equals(name) || !Reflection.classArrayCompare(args, m2222.getParameterTypes()))
+                        continue;
+                    m2222.setAccessible(true);
+                    return m2222;
                 }
-                for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getName().equals(name) && classArrayCompareLight(args, m.getParameterTypes())) {
-                        m.setAccessible(true);
-                        return m;
-                    }
+                for (Method m2222 : cl.getDeclaredMethods()) {
+                    if (!m2222.getName().equals(name) || !Reflection.classArrayCompareLight(args, m2222.getParameterTypes()))
+                        continue;
+                    m2222.setAccessible(true);
+                    return m2222;
                 }
-                for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getName().equalsIgnoreCase(name) && classArrayCompare(args, m.getParameterTypes())) {
-                        m.setAccessible(true);
-                        return m;
-                    }
+                for (Method m2222 : cl.getDeclaredMethods()) {
+                    if (!m2222.getName().equalsIgnoreCase(name) || !Reflection.classArrayCompare(args, m2222.getParameterTypes()))
+                        continue;
+                    m2222.setAccessible(true);
+                    return m2222;
                 }
-                for (Method m : cl.getDeclaredMethods()) {
-                    if (m.getName().equalsIgnoreCase(name) && classArrayCompareLight(args, m.getParameterTypes())) {
-                        m.setAccessible(true);
-                        return m;
-                    }
+                for (Method m2222 : cl.getDeclaredMethods()) {
+                    if (!m2222.getName().equalsIgnoreCase(name) || !Reflection.classArrayCompareLight(args, m2222.getParameterTypes()))
+                        continue;
+                    m2222.setAccessible(true);
+                    return m2222;
                 }
             }
-            cl=cl.getSuperclass();
+            cl = cl.getSuperclass();
         }
         throw new RuntimeException("Can't find method " + name + " in class " + cl + "!");
     }
@@ -180,24 +172,25 @@ public class Reflection {
         if (l1.length != l2.length) {
             return false;
         }
-        for (int i = 0; i < l1.length; i++) {
-            if (l1[i] != l2[i])
-                return false;
-        }
-        return true;
-    }
-    public static boolean classArrayCompareLight(Class[] l1, Class[] l2) {
-        if (l1.length != l2.length) {
+        for (int i = 0; i < l1.length; ++i) {
+            if (l1[i] == l2[i]) continue;
             return false;
-        }
-        for (int i = 0; i < l1.length; i++) {
-            if (!l2[i].isAssignableFrom(l1[i]))
-                return false;
         }
         return true;
     }
 
-    public static Constructor getConstructor(Class cl, Class... classes) {
+    public static boolean classArrayCompareLight(Class[] l1, Class[] l2) {
+        if (l1.length != l2.length) {
+            return false;
+        }
+        for (int i = 0; i < l1.length; ++i) {
+            if (l2[i].isAssignableFrom(l1[i])) continue;
+            return false;
+        }
+        return true;
+    }
+
+    public static /* varargs */ Constructor getConstructor(Class cl, Class... classes) {
         try {
             Constructor c = cl.getDeclaredConstructor(classes);
             c.setAccessible(true);
@@ -207,68 +200,63 @@ public class Reflection {
         }
     }
 
-    public static Field getFirstFieldOfType(Class cl, Class returnType, String... matches) {
+    public static /* varargs */ Field getFirstFieldOfType(Class cl, Class returnType, String... matches) {
         for (Field f : cl.getDeclaredFields()) {
-            if (f.getType() == returnType) {
-                if (f.getGenericType() instanceof ParameterizedType) {
-                    ParameterizedType type = (ParameterizedType) f.getGenericType();
-                    Type[] types = type.getActualTypeArguments();
-                    if (matches.length == types.length) {
-                        boolean match = true;
-                        for (int i = 0; i < matches.length; i++) {
-                            if (!((Class) types[i]).getName().matches(matches[i])) {
-                                match = false;
-                                break;
-                            }
-                        }
-                        if (match) {
-                            return setFieldAccessible(f);
-                        }
-                    }
-                }
+            Type[] types;
+            ParameterizedType type;
+            if (f.getType() != returnType || !(f.getGenericType() instanceof ParameterizedType) || matches.length != (types = (type = (ParameterizedType) f.getGenericType()).getActualTypeArguments()).length)
+                continue;
+            boolean match = true;
+            for (int i = 0; i < matches.length; ++i) {
+                if (((Class) types[i]).getName().matches(matches[i])) continue;
+                match = false;
+                break;
             }
+            if (!match) continue;
+            return Reflection.setFieldAccessible(f);
         }
         throw new RuntimeException("Can't find field!");
     }
 
     public static Object getData(Object obj, List<Object> data) {
         try {
-            Class[] ecd=new Class[0];
-            Class[] cd=ecd;
-            Object[] eod=new Object[0];
-            Object[] od=eod;
-            for (Object o:data) {
-                Class oc=o.getClass();
+            Class[] ecd;
+            Object[] eod;
+            Class[] cd = ecd = new Class[0];
+            Object[] od = eod = new Object[0];
+            for (Object o : data) {
+                Class oc = o.getClass();
                 if (oc.isArray()) {
-                    od=(Object[])o;
+                    od = (Object[]) o;
                     cd = new Class[od.length];
-                    for (int j = 0; j < cd.length; j++) {
+                    for (int j = 0; j < cd.length; ++j) {
                         cd[j] = od[j].getClass();
                     }
+                    continue;
                 }
-                else{
-                    for (String s:((String)o).split("\\.")){
-                        Class objc=obj.getClass();
+                for (String s : ((String) o).split("\\.")) {
+                    Class objc = obj.getClass();
+                    try {
+                        obj = Reflection.getMethod(objc, "get" + s, cd).invoke(obj, od);
+                    } catch (RuntimeException e) {
                         try {
-                            obj= getMethod(objc,"get" + s,cd).invoke(obj,od);
-                        } catch (RuntimeException e) {
-                            try {
-                                obj = getMethod(objc,s,cd).invoke(obj, od);
-                            } catch (RuntimeException e2) {
-                                obj = getField(objc, s).get(obj);
-                            }
+                            obj = Reflection.getMethod(objc, s, cd).invoke(obj, od);
+                        } catch (RuntimeException e2) {
+                            obj = Reflection.getField(objc, s).get(obj);
                         }
-                        cd=ecd;
-                        od=eod;
                     }
+                    cd = ecd;
+                    od = eod;
                 }
             }
         } catch (Throwable e) {
-            if (Config.debug)
+            if (Config.debug) {
                 e.printStackTrace();
-            System.out.println("§cReflection ERROR: §fFailed to handle " + data + " request.");
+            }
+            System.out.println("\u00a7cReflection ERROR: \u00a7fFailed to handle " + data + " request.");
             return null;
         }
         return obj;
     }
 }
+

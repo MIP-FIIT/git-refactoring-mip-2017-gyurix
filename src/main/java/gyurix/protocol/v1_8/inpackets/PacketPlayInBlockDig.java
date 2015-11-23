@@ -8,22 +8,23 @@ import gyurix.protocol.utils.Direction;
 
 import java.lang.reflect.Method;
 
-public class PacketPlayInBlockDig extends WrappedPacket {
+public class PacketPlayInBlockDig
+        extends WrappedPacket {
     public BlockLocation block;
     public Direction direction;
     public DigType digType;
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.BlockDig.newPacket(block.toVanillaBlockPosition(), direction.toVanillaDirection(), digType.toVanillaDigType());
+        return PacketInType.BlockDig.newPacket(this.block.toVanillaBlockPosition(), this.direction.toVanillaDirection(), this.digType.toVanillaDigType());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.BlockDig.getPacketData(packet);
-        block = new BlockLocation(data[0]);
-        direction = Direction.valueOf(data[1].toString());
-        digType = DigType.valueOf(data[2].toString());
+        this.block = new BlockLocation(data[0]);
+        this.direction = Direction.valueOf(data[1].toString());
+        this.digType = DigType.valueOf(data[2].toString());
     }
 
     public enum DigType {
@@ -33,19 +34,25 @@ public class PacketPlayInBlockDig extends WrappedPacket {
         DROP_ALL_ITEMS,
         DROP_ITEM,
         RELEASE_USE_ITEM;
+
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInBlockDig$EnumPlayerDigType"), "valueOf",String.class);
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInBlockDig$EnumPlayerDigType"), "valueOf", String.class);
+        }
+
+        DigType() {
         }
 
         public Object toVanillaDigType() {
             try {
-                return valueOf.invoke(null, name());
+                return valueOf.invoke(null, this.name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;
             }
         }
     }
+
 }
+

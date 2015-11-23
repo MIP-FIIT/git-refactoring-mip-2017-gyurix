@@ -8,664 +8,736 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author GyuriX
- *
- * The wrapper class of the NMS DataWatcher class.
- */
 public class DataWatcherWrapper {
-    public HashMap<Integer,Object> data=new HashMap<Integer, Object>();
-    private static Field watchableDataObject,dataWatcherEntity,watchableObjectMap;
+    private static Field watchableDataObject;
+    private static Field dataWatcherEntity;
+    private static Field watchableObjectMap;
     private static Constructor watchableObjectConstructor;
+
     static {
-        Class dw= Reflection.getNMSClass("DataWatcher");
-        Class wo= Reflection.getNMSClass("DataWatcher$WatchableObject");
-        watchableObjectMap=Reflection.getFirstFieldOfType(dw,Map.class,"java.lang.Integer",wo.getName());
-        dataWatcherEntity=Reflection.getFirstFieldOfType(dw,Reflection.getNMSClass("Entity"));
-        watchableDataObject=Reflection.getFirstFieldOfType(wo,Object.class);
-        watchableObjectConstructor=wo.getConstructors()[0];
-    }
-    //Hook
-    public DataWatcherWrapper(Object vanillaWrapper){
-
-    }
-    //Basic getters
-    public byte getByte(int id){
-        return (Byte)data.get(id);
-    }
-    public short getShort(int id){
-        return (Short)data.get(id);
-    }
-    public int getInt(int id){
-        return (Integer)data.get(id);
-    }
-    public float getFloat(int id){
-        return (Byte)data.get(id);
-    }
-    public String getString(int id){
-        return (String)data.get(id);
-    }
-    public ItemStackWrapper getItemStack(int id){
-        return (ItemStackWrapper)data.get(id);
-    }
-    public BlockLocation getBlockLocation(int id){
-        return (BlockLocation)data.get(id);
-    }
-    public Rotation getRotation(int id){
-        return (Rotation)data.get(id);
+        Class dw = Reflection.getNMSClass("DataWatcher");
+        Class wo = Reflection.getNMSClass("DataWatcher$WatchableObject");
+        watchableObjectMap = Reflection.getFirstFieldOfType(dw, Map.class, "java.lang.Integer", wo.getName());
+        dataWatcherEntity = Reflection.getFirstFieldOfType(dw, Reflection.getNMSClass("Entity"));
+        watchableDataObject = Reflection.getFirstFieldOfType(wo, Object.class);
+        watchableObjectConstructor = wo.getConstructors()[0];
     }
 
-    //Entity getters
-    public byte getStatus(){
-        return getByte(0);
-    }
-    public boolean isOnFire(){
-        byte b=getByte(0);
-        return (b&1)==1;
-    }
-    public boolean isCrouched(){
-        byte b=getByte(0);
-        return (b&2)==2;
-    }
-    public boolean isSprinting(){
-        byte b=getByte(0);
-        return (b&8)==8;
-    }
-    public boolean isRightClicking(){
-        byte b=getByte(0);
-        return (b&16)==16;
-    }
-    public boolean isInvisible(){
-        byte b=getByte(0);
-        return (b&32)==32;
-    }
-    public short getAir(){
-        return getShort(1);
+    public HashMap<Integer, Object> data = new HashMap();
+
+    public DataWatcherWrapper(Object vanillaWrapper) {
     }
 
-    //Entity setters
-    public void setStatus(byte status){
-        data.put(0,status);
-    }
-    public void setOnFire(boolean onFire){
-        byte b=getByte(0);
-        data.put(0,(byte)(onFire?b|1:b-(b&1)));
-    }
-    public void setCrouched(boolean crouched){
-        byte b=getByte(0);
-        data.put(0,(byte)(crouched?b|2:b-(b&2)));
-    }
-    public void setSprinting(boolean sprinting){
-        byte b=getByte(0);
-        data.put(0,(byte)(sprinting?b|8:b-(b&8)));
-    }
-    public void setRightClicking(boolean rightClicking){
-        byte b=getByte(0);
-        data.put(0,(byte)(rightClicking?b|16:b-(b&16)));
-    }
-    public void setInvisible(boolean invisible){
-        byte b=getByte(0);
-        data.put(0,(byte)(invisible?b|32:b-(b&32)));
-    }
-    public void setAir(short air){
-        data.put(1,air);
+    public byte getByte(int id) {
+        return ((Byte) this.data.get(id)).byteValue();
     }
 
-
-    //Living Entity getters
-    public String getCustomName(){
-        return (String) data.get(2);
-    }
-    public boolean hasCustomName(){
-        return ((Byte)data.get(3))!=0;
-    }
-    public float getHealth(){
-        return (Float)data.get(6);
-    }
-    public int getPotionEffectColor(){
-        return (Integer)data.get(7);
-    }
-    public boolean isPotionEffectAmbient(){
-        return ((Byte)data.get(8))!=0;
-    }
-    public byte getArrowCount(){
-        return (Byte)data.get(9);
-    }
-    public boolean hasNoAI(){
-        return ((Byte)data.get(15))!=0;
+    public short getShort(int id) {
+        return (Short) this.data.get(id);
     }
 
-    //Living Entity setters
-    public void setCustomName(String customName){
-        data.put(2, customName);
-    }
-    public void setCustomNameVisible(boolean visible){
-        data.put(3, (byte) (visible ? 1 : 0));
-    }
-    public void setHealth(float health){
-        data.put(6,health);
-    }
-    public void setPotionEffectColor(int color){
-        data.put(7,color);
-    }
-    public void setPotionEffectAmbient(boolean ambient){
-        data.put(8,(byte)(ambient?1:0));
-    }
-    public void setArrowCount(byte arrowCount){
-        data.put(9,arrowCount);
-    }
-    public void setNoAI(boolean noAI){
-        data.put(15,(byte)(noAI?1:0));
+    public int getInt(int id) {
+        return (Integer) this.data.get(id);
     }
 
-    //Ageable
-    public byte getAge(){
-        return (Byte)data.get(12);
-    }
-    public void setAge(byte age){
-        data.put(12,age);
+    public float getFloat(int id) {
+        return ((Byte) this.data.get(id)).byteValue();
     }
 
-    //ArmourStand getters
-    public byte getArmourStandFlags(){
-        return (Byte) data.get(10);
-    }
-    public boolean isArmourStandSmall(){
-        return (getArmourStandFlags()&1)==1;
-    }
-    public boolean hasArmourStandGravity(){
-        return (getArmourStandFlags()&2)==2;
-    }
-    public boolean hasArmourStandArms(){
-        return (getArmourStandFlags()&4)==4;
-    }
-    public boolean hasArmourStandBasePlate(){
-        return (getArmourStandFlags()&8)==0;
-    }
-    public boolean hasArmourStandBoundingBox(){
-        return (getArmourStandFlags()&16)==0;
-    }
-    public Rotation getArmourStandHeadRotation(){
-        return (Rotation)data.get(11);
-    }
-    public Rotation getArmourStandBodyRotation(){
-        return (Rotation)data.get(12);
-    }
-    public Rotation getArmourStandLeftArmRotation(){
-        return (Rotation)data.get(13);
-    }
-    public Rotation getArmourStandRightArmRotation(){
-        return (Rotation)data.get(14);
-    }
-    public Rotation getArmourStandLeftLegRotation(){
-        return (Rotation)data.get(15);
-    }
-    public Rotation getArmourStandRightLegRotation(){
-        return (Rotation)data.get(16);
+    public String getString(int id) {
+        return (String) this.data.get(id);
     }
 
-    //ArmourStand setters
-    public void setArmourStandFlags(byte flags){
-        data.put(10, flags);
-    }
-    public void setArmourStandSmall(boolean small){
-        byte b=(Byte)data.get(10);
-        data.put(10,(byte)(small?b-(b&1):b|1));
-    }
-    public void setArmourStandGravity(boolean gravity){
-        byte b=(Byte)data.get(10);
-        data.put(10,(byte)(gravity?b-(b&1):b|1));
-    }
-    public void setArmourStandArms(boolean arms){
-        byte b=(Byte)data.get(10);
-        data.put(10,(byte)(arms?b-(b&1):b|1));
-    }
-    public void setArmourStandBasePlate(boolean basePlate){
-        byte b=(Byte)data.get(10);
-        data.put(10,(byte)(basePlate?b|1:b-(b&1)));
-    }
-    public void setArmourStandBoundingBox(boolean boundingBox){
-        byte b=(Byte)data.get(10);
-        data.put(10,(byte)(boundingBox?b|1:b-(b&1)));
-    }
-    public void setArmourStandHeadRotation(Rotation headRotation){
-        data.put(11, headRotation);
-    }
-    public void setArmourStandBodyRotation(Rotation bodyRotation){
-        data.put(12,bodyRotation);
-    }
-    public void setArmourStandLeftArmRotation(Rotation leftArmRotation){
-        data.put(13,leftArmRotation);
-    }
-    public void setArmourStandRightArmRotation(Rotation rightArmRotation){
-        data.put(14,rightArmRotation);
-    }
-    public void setArmourStandLeftLegRotation(Rotation leftLegRotation){
-        data.put(15,leftLegRotation);
-    }
-    public void setArmourStandRightLegRotation(Rotation rightLegRotation){
-        data.put(16,rightLegRotation);
+    public ItemStackWrapper getItemStack(int id) {
+        return (ItemStackWrapper) this.data.get(id);
     }
 
-    //Human getters
-    public byte getHumanSkinFlags(){
-        return (Byte)data.get(10);
-    }
-    public byte getHumanHiddenSkinParts(){
-        return (Byte)data.get(16);
-    }
-    public boolean isHumanCapeHidden(){
-        return (getHumanHiddenSkinParts()&2)==2;
-    }
-    public float getHumanAbsorptionHearts(){
-        return (Float)data.get(17);
-    }
-    public int getHumanScore(){
-        return (Integer)data.get(18);
+    public BlockLocation getBlockLocation(int id) {
+        return (BlockLocation) this.data.get(id);
     }
 
-    //Human setters
-    public void setHumanSkinFlags(byte skinParts){
-        data.put(10, skinParts);
-    }
-    public void setHumanHiddenSkinParts(byte hiddenSkinParts){
-        data.put(16, hiddenSkinParts);
-    }
-    public void setHumanCapeHidden(boolean hideCape){
-        byte b=getHumanHiddenSkinParts();
-        data.put(16, hideCape ? b | 2 : b - (b & 2));
-    }
-    public void setHumanAbsorptionHearts(float absorptionHearts){
-        data.put(17, absorptionHearts);
-    }
-    public void setHumanScore(int score){
-        data.put(18, score);
+    public Rotation getRotation(int id) {
+        return (Rotation) this.data.get(id);
     }
 
-    //Firework getters
+    public byte getStatus() {
+        return this.getByte(0);
+    }
+
+    public void setStatus(byte status) {
+        this.data.put(0, Byte.valueOf(status));
+    }
+
+    public boolean isOnFire() {
+        byte b = this.getByte(0);
+        return (b & 1) == 1;
+    }
+
+    public void setOnFire(boolean onFire) {
+        byte b = this.getByte(0);
+        this.data.put(0, Byte.valueOf((byte) (onFire ? b | 1 : b - (b & 1))));
+    }
+
+    public boolean isCrouched() {
+        byte b = this.getByte(0);
+        return (b & 2) == 2;
+    }
+
+    public void setCrouched(boolean crouched) {
+        byte b = this.getByte(0);
+        this.data.put(0, Byte.valueOf((byte) (crouched ? b | 2 : b - (b & 2))));
+    }
+
+    public boolean isSprinting() {
+        byte b = this.getByte(0);
+        return (b & 8) == 8;
+    }
+
+    public void setSprinting(boolean sprinting) {
+        byte b = this.getByte(0);
+        this.data.put(0, Byte.valueOf((byte) (sprinting ? b | 8 : b - (b & 8))));
+    }
+
+    public boolean isRightClicking() {
+        byte b = this.getByte(0);
+        return (b & 16) == 16;
+    }
+
+    public void setRightClicking(boolean rightClicking) {
+        byte b = this.getByte(0);
+        this.data.put(0, Byte.valueOf((byte) (rightClicking ? b | 16 : b - (b & 16))));
+    }
+
+    public boolean isInvisible() {
+        byte b = this.getByte(0);
+        return (b & 32) == 32;
+    }
+
+    public void setInvisible(boolean invisible) {
+        byte b = this.getByte(0);
+        this.data.put(0, Byte.valueOf((byte) (invisible ? b | 32 : b - (b & 32))));
+    }
+
+    public short getAir() {
+        return this.getShort(1);
+    }
+
+    public void setAir(short air) {
+        this.data.put(1, air);
+    }
+
+    public String getCustomName() {
+        return (String) this.data.get(2);
+    }
+
+    public void setCustomName(String customName) {
+        this.data.put(2, customName);
+    }
+
+    public boolean hasCustomName() {
+        return ((Byte) this.data.get(3)).byteValue() != 0;
+    }
+
+    public float getHealth() {
+        return ((Float) this.data.get(6)).floatValue();
+    }
+
+    public void setHealth(float health) {
+        this.data.put(6, Float.valueOf(health));
+    }
+
+    public int getPotionEffectColor() {
+        return (Integer) this.data.get(7);
+    }
+
+    public void setPotionEffectColor(int color) {
+        this.data.put(7, color);
+    }
+
+    public boolean isPotionEffectAmbient() {
+        return ((Byte) this.data.get(8)).byteValue() != 0;
+    }
+
+    public void setPotionEffectAmbient(boolean ambient) {
+        this.data.put(8, Byte.valueOf((byte) (ambient ? 1 : 0)));
+    }
+
+    public byte getArrowCount() {
+        return ((Byte) this.data.get(9)).byteValue();
+    }
+
+    public void setArrowCount(byte arrowCount) {
+        this.data.put(9, Byte.valueOf(arrowCount));
+    }
+
+    public boolean hasNoAI() {
+        return ((Byte) this.data.get(15)).byteValue() != 0;
+    }
+
+    public void setCustomNameVisible(boolean visible) {
+        this.data.put(3, Byte.valueOf((byte) (visible ? 1 : 0)));
+    }
+
+    public void setNoAI(boolean noAI) {
+        this.data.put(15, Byte.valueOf((byte) (noAI ? 1 : 0)));
+    }
+
+    public byte getAge() {
+        return ((Byte) this.data.get(12)).byteValue();
+    }
+
+    public void setAge(byte age) {
+        this.data.put(12, Byte.valueOf(age));
+    }
+
+    public byte getArmourStandFlags() {
+        return ((Byte) this.data.get(10)).byteValue();
+    }
+
+    public void setArmourStandFlags(byte flags) {
+        this.data.put(10, Byte.valueOf(flags));
+    }
+
+    public boolean isArmourStandSmall() {
+        return (this.getArmourStandFlags() & 1) == 1;
+    }
+
+    public void setArmourStandSmall(boolean small) {
+        byte b = ((Byte) this.data.get(10)).byteValue();
+        this.data.put(10, Byte.valueOf((byte) (small ? b - (b & 1) : b | 1)));
+    }
+
+    public boolean hasArmourStandGravity() {
+        return (this.getArmourStandFlags() & 2) == 2;
+    }
+
+    public boolean hasArmourStandArms() {
+        return (this.getArmourStandFlags() & 4) == 4;
+    }
+
+    public boolean hasArmourStandBasePlate() {
+        return (this.getArmourStandFlags() & 8) == 0;
+    }
+
+    public boolean hasArmourStandBoundingBox() {
+        return (this.getArmourStandFlags() & 16) == 0;
+    }
+
+    public Rotation getArmourStandHeadRotation() {
+        return (Rotation) this.data.get(11);
+    }
+
+    public void setArmourStandHeadRotation(Rotation headRotation) {
+        this.data.put(11, headRotation);
+    }
+
+    public Rotation getArmourStandBodyRotation() {
+        return (Rotation) this.data.get(12);
+    }
+
+    public void setArmourStandBodyRotation(Rotation bodyRotation) {
+        this.data.put(12, bodyRotation);
+    }
+
+    public Rotation getArmourStandLeftArmRotation() {
+        return (Rotation) this.data.get(13);
+    }
+
+    public void setArmourStandLeftArmRotation(Rotation leftArmRotation) {
+        this.data.put(13, leftArmRotation);
+    }
+
+    public Rotation getArmourStandRightArmRotation() {
+        return (Rotation) this.data.get(14);
+    }
+
+    public void setArmourStandRightArmRotation(Rotation rightArmRotation) {
+        this.data.put(14, rightArmRotation);
+    }
+
+    public Rotation getArmourStandLeftLegRotation() {
+        return (Rotation) this.data.get(15);
+    }
+
+    public void setArmourStandLeftLegRotation(Rotation leftLegRotation) {
+        this.data.put(15, leftLegRotation);
+    }
+
+    public Rotation getArmourStandRightLegRotation() {
+        return (Rotation) this.data.get(16);
+    }
+
+    public void setArmourStandRightLegRotation(Rotation rightLegRotation) {
+        this.data.put(16, rightLegRotation);
+    }
+
+    public void setArmourStandGravity(boolean gravity) {
+        byte b = ((Byte) this.data.get(10)).byteValue();
+        this.data.put(10, Byte.valueOf((byte) (gravity ? b - (b & 1) : b | 1)));
+    }
+
+    public void setArmourStandArms(boolean arms) {
+        byte b = ((Byte) this.data.get(10)).byteValue();
+        this.data.put(10, Byte.valueOf((byte) (arms ? b - (b & 1) : b | 1)));
+    }
+
+    public void setArmourStandBasePlate(boolean basePlate) {
+        byte b = ((Byte) this.data.get(10)).byteValue();
+        this.data.put(10, Byte.valueOf((byte) (basePlate ? b | 1 : b - (b & 1))));
+    }
+
+    public void setArmourStandBoundingBox(boolean boundingBox) {
+        byte b = ((Byte) this.data.get(10)).byteValue();
+        this.data.put(10, Byte.valueOf((byte) (boundingBox ? b | 1 : b - (b & 1))));
+    }
+
+    public byte getHumanSkinFlags() {
+        return ((Byte) this.data.get(10)).byteValue();
+    }
+
+    public void setHumanSkinFlags(byte skinParts) {
+        this.data.put(10, Byte.valueOf(skinParts));
+    }
+
+    public byte getHumanHiddenSkinParts() {
+        return ((Byte) this.data.get(16)).byteValue();
+    }
+
+    public void setHumanHiddenSkinParts(byte hiddenSkinParts) {
+        this.data.put(16, Byte.valueOf(hiddenSkinParts));
+    }
+
+    public boolean isHumanCapeHidden() {
+        return (this.getHumanHiddenSkinParts() & 2) == 2;
+    }
+
+    public void setHumanCapeHidden(boolean hideCape) {
+        byte b = this.getHumanHiddenSkinParts();
+        this.data.put(16, hideCape ? b | 2 : b - (b & 2));
+    }
+
+    public float getHumanAbsorptionHearts() {
+        return ((Float) this.data.get(17)).floatValue();
+    }
+
+    public void setHumanAbsorptionHearts(float absorptionHearts) {
+        this.data.put(17, Float.valueOf(absorptionHearts));
+    }
+
+    public int getHumanScore() {
+        return (Integer) this.data.get(18);
+    }
+
+    public void setHumanScore(int score) {
+        this.data.put(18, score);
+    }
+
     public ItemStackWrapper getFireworkInfo() {
-        return (ItemStackWrapper) data.get(8);
-    }
-    //Firework setters
-    public void setFireworkInfo(ItemStackWrapper info){
-        data.put(8,info);
+        return (ItemStackWrapper) this.data.get(8);
     }
 
-    //ItemFrame getters
-    public ItemStackWrapper getItemFrameItem(){
-        return (ItemStackWrapper)data.get(8);
-    }
-    public byte getItemFrameRotation(){
-        return (Byte)data.get(9);
-    }
-    //ItemFrame setters
-    public void setItemFrameItem(ItemStackWrapper item){
-        data.put(8,item);
-    }
-    public void setItemFrameRotation(byte rotation){
-        data.put(9, rotation);
+    public void setFireworkInfo(ItemStackWrapper info) {
+        this.data.put(8, info);
     }
 
-    //EnderCrystal getters
-    public int getEnderCrystalHealth(){
-        return (Integer)data.get(8);
-    }
-    //EnderCrystal setters
-    public void setEnderCrystalHealth(int enderCrystalHealth){
-        data.put(8,enderCrystalHealth);
+    public ItemStackWrapper getItemFrameItem() {
+        return (ItemStackWrapper) this.data.get(8);
     }
 
-    //Bat getters
-    public boolean isBatHanging(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //Bat setters
-    public void setBatHanging(boolean hanging){
-        data.put(16,(byte)(hanging?1:0));
+    public void setItemFrameItem(ItemStackWrapper item) {
+        this.data.put(8, item);
     }
 
-    //Tameable getters
-    public byte getTameableFlags(){
-        return (Byte)data.get(16);
-    }
-    public boolean isTameableSitting(){
-        return (getTameableFlags()&1)==1;
-    }
-    public boolean isTameableTame(){
-        return (getTameableFlags()&4)==4;
-    }
-    public String getTameableOwner(){
-        return (String)data.get(17);
-    }
-    //Tameable setters
-    public void setTameableFlags(byte flags){
-        data.put(16,flags);
-    }
-    public void setTameableSitting(boolean sitting){
-        byte b=getTameableFlags();
-        data.put(16,(byte)(sitting?b|1:b-(b&1)));
-    }
-    public void setTameableTame(boolean tame){
-        byte b=getTameableFlags();
-        data.put(16,(byte)(tame?b|4:b-(b&4)));
-    }
-    public void setTameableOwner(String owner){
-        data.put(17,owner);
+    public byte getItemFrameRotation() {
+        return ((Byte) this.data.get(9)).byteValue();
     }
 
-    //Ocelot getters
-    public byte getOcelotType(){
-        return (Byte)data.get(18);
-    }
-    //Ocelot setters
-    public void setOcelotType(byte ocelotType){
-        data.put(18,ocelotType);
+    public void setItemFrameRotation(byte rotation) {
+        this.data.put(9, Byte.valueOf(rotation));
     }
 
-    //Wolf getters
-    public byte getWolfFlags(){
-        return (Byte)data.get(16);
-    }
-    public boolean isWolfAngry(){
-        return (getWolfFlags()&2)==2;
-    }
-    public float getWolfHealth(){
-        return (Float)data.get(18);
-    }
-    public boolean isWolfBegging(){
-        return ((Byte)data.get(19))!=0;
-    }
-    public DyeColor getWolfCollarColor(){
-        return DyeColor.values()[(Byte)data.get(20)];
-    }
-    //Wolf setters
-    public void setWolfFlags(byte wolfFlags){
-        data.put(16,wolfFlags);
-    }
-    public void setWolfAngry(boolean angry){
-        byte b=(Byte)data.get(16);
-        data.put(16,(byte)(angry?b|2:b-(b&2)));
-    }
-    public void setWolfHealth(float wolfHealth){
-        data.put(18,wolfHealth);
-    }
-    public void setWolfBegging(boolean wolfBegging){
-        data.put(19,(byte)(wolfBegging?1:0));
-    }
-    public void setWolfCollarColor(DyeColor wolfCollarColor){
-        data.put(20,(byte)wolfCollarColor.ordinal());
+    public int getEnderCrystalHealth() {
+        return (Integer) this.data.get(8);
     }
 
-    //Pig getters
-    public boolean hasPigSaddle(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //Pig setters
-    public void setPigSaddle(boolean hasSaddle){
-        data.put(16,(byte)(hasSaddle?1:0));
+    public void setEnderCrystalHealth(int enderCrystalHealth) {
+        this.data.put(8, enderCrystalHealth);
     }
 
-    //Rabbit getters
-    public byte getRabbitType(){
-        return (Byte)data.get(18);
-    }
-    //Rabbit setters
-    public void setRabbitType(byte rabbitType){
-        data.put(18,rabbitType);
+    public boolean isBatHanging() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
     }
 
-    //Sheep getters
-    public byte getSheepData(){
-        return (Byte)data.get(16);
-    }
-    public DyeColor getSheepColor(){
-        return DyeColor.values()[getSheepData()%16];
-    }
-    public boolean isSheepSheared(){
-        return (getSheepData()&16)==16;
+    public void setBatHanging(boolean hanging) {
+        this.data.put(16, Byte.valueOf((byte) (hanging ? 1 : 0)));
     }
 
-    //Sheep setters
-    public void setSheepData(byte sheepData){
-        data.put(16,sheepData);
-    }
-    public void setSheepSheared(boolean sheared){
-        byte b=getSheepData();
-        data.put(16,(byte)(sheared?b|16:b-(b&16)));
-    }
-    public void setSheepColor(DyeColor dc){
-        byte b=getSheepData();
-        data.put(16,(byte)(b-(b%16)+dc.ordinal()));
+    public byte getTameableFlags() {
+        return ((Byte) this.data.get(16)).byteValue();
     }
 
-    //Villager getters
-    public enum VillagerType{Farmer,Librarian,Priest,Blacksmith,Butcher}
-    public VillagerType getVillagerType(){
-        return VillagerType.values()[(Integer)data.get(16)];
+    public void setTameableFlags(byte flags) {
+        this.data.put(16, Byte.valueOf(flags));
     }
 
-    //Villager setters
-    public void setVillagerType(VillagerType type){
-        data.put(16,type.ordinal());
+    public boolean isTameableSitting() {
+        return (this.getTameableFlags() & 1) == 1;
     }
 
-    //Enderman getters
-    public short getEndermanCarriedBlock(){
-        return (Short)data.get(16);
-    }
-    public byte getEndermanCarriedBlockData(){
-        return (Byte)data.get(17);
-    }
-    public boolean isEndermanScreaming(){
-        return ((Byte)data.get(18))!=0;
-    }
-    //Enderman setters
-    public void setEndermanCarriedBlock(short carriedBlock){
-        data.put(16,carriedBlock);
-    }
-    public void setEndermanCarriedBlockData(byte carriedBlockData){
-        data.put(17,carriedBlockData);
-    }
-    public void setEndermanScreaming(boolean screaming){
-        data.put(18,(byte)(screaming?1:0));
+    public void setTameableSitting(boolean sitting) {
+        byte b = this.getTameableFlags();
+        this.data.put(16, Byte.valueOf((byte) (sitting ? b | 1 : b - (b & 1))));
     }
 
-    //Zombie getters
-    public boolean isZombieChild(){
-        return ((Byte)data.get(12))!=0;
-    }
-    public boolean isZombieVillager(){
-        return ((Byte)data.get(13))!=0;
-    }
-    public boolean isZombieConvering(){
-        return ((Byte)data.get(14))!=0;
+    public boolean isTameableTame() {
+        return (this.getTameableFlags() & 4) == 4;
     }
 
-    //Zombie setters
-    public void setZombieChild(boolean isChild){
-        data.put(12,(byte)(isChild?1:0));
-    }
-    public void setZombieVillager(boolean isVillager){
-        data.put(13,(byte)(isVillager?1:0));
-    }
-    public void setZombieConvering(boolean isConvering){
-        data.put(14,(byte)(isConvering?1:0));
+    public void setTameableTame(boolean tame) {
+        byte b = this.getTameableFlags();
+        this.data.put(16, Byte.valueOf((byte) (tame ? b | 4 : b - (b & 4))));
     }
 
-    //Blaze getters
-    public boolean isBlazeOnFire(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //Blaze setters
-    public void setBlazeOnFire(boolean onFire){
-        data.put(16,(byte)(onFire?1:0));
+    public String getTameableOwner() {
+        return (String) this.data.get(17);
     }
 
-    //Spider getters
-    public boolean isSpiderClimbing(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //Spiger setters
-    public void setSpiderClimbing(boolean climbing){
-        data.put(16,(byte)(climbing?1:0));
+    public void setTameableOwner(String owner) {
+        this.data.put(17, owner);
     }
 
-    //Creeper getters
-    public byte getCreeperState(){
-        return (Byte)data.get(16);
-    }
-    public boolean isCreeperInFuse(){
-        return getCreeperState()!=-1;
-    }
-    public boolean isCreeperPowered(){
-        return ((Byte)data.get(17))!=0;
-    }
-    //Creeper setters
-    public void setCreeperState(byte state){
-        data.put(16,state);
-    }
-    public void setCreeperInFuse(boolean inFuse){
-        data.put(16,(byte)(inFuse?1:-1));
-    }
-    public void setCreeperPowered(boolean isPowered){
-        data.put(17,(byte)(isPowered?1:0));
+    public byte getOcelotType() {
+        return ((Byte) this.data.get(18)).byteValue();
     }
 
-    //Ghast getters
-    public boolean isGhastAttacking(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //Ghast setters
-    public void setGhastAttacking(boolean attacking){
-        data.put(16, (byte)(attacking?1:0));
+    public void setOcelotType(byte ocelotType) {
+        this.data.put(18, Byte.valueOf(ocelotType));
     }
 
-    //Slime getters
-    public byte getSize(){
-        return (Byte)data.get(16);
-    }
-    //Slime setters
-    public void setSize(byte size){
-        data.put(16,size);
+    public byte getWolfFlags() {
+        return ((Byte) this.data.get(16)).byteValue();
     }
 
-    //Skeleton getters
-    public boolean isSkeletonWither(){
-        return ((Byte)data.get(13))==1;
-    }
-    //Skeleton setters
-    public void setSkeletonWither(boolean wither){
-        data.put(13,(byte)(wither?1:0));
+    public void setWolfFlags(byte wolfFlags) {
+        this.data.put(16, Byte.valueOf(wolfFlags));
     }
 
-    //Witch getters
-    public boolean isWitchAgressive(){
-        return ((Byte)data.get(21))!=0;
-    }
-    //Witch setters
-    public void setWitchAgressive(boolean isAgressive){
-        data.put(21,(byte)(isAgressive?1:0));
+    public boolean isWolfAngry() {
+        return (this.getWolfFlags() & 2) == 2;
     }
 
-    //IronGolem getters
-    public boolean isIronGolemPlayerCreated(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //IronGolem setters
-    public void setIronGolemPlayerCreated(boolean isPlayerCreated){
-        data.put(16,(byte)(isPlayerCreated?1:0));
+    public void setWolfAngry(boolean angry) {
+        byte b = ((Byte) this.data.get(16)).byteValue();
+        this.data.put(16, Byte.valueOf((byte) (angry ? b | 2 : b - (b & 2))));
     }
 
-    //Wither getters
-    public int getWitherWatchedTargetEntityId(int targetNumber){
-        if (targetNumber<1||targetNumber>3)
+    public float getWolfHealth() {
+        return ((Float) this.data.get(18)).floatValue();
+    }
+
+    public void setWolfHealth(float wolfHealth) {
+        this.data.put(18, Float.valueOf(wolfHealth));
+    }
+
+    public boolean isWolfBegging() {
+        return ((Byte) this.data.get(19)).byteValue() != 0;
+    }
+
+    public void setWolfBegging(boolean wolfBegging) {
+        this.data.put(19, Byte.valueOf((byte) (wolfBegging ? 1 : 0)));
+    }
+
+    public DyeColor getWolfCollarColor() {
+        return DyeColor.values()[((Byte) this.data.get(20)).byteValue()];
+    }
+
+    public void setWolfCollarColor(DyeColor wolfCollarColor) {
+        this.data.put(20, Byte.valueOf((byte) wolfCollarColor.ordinal()));
+    }
+
+    public boolean hasPigSaddle() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
+    }
+
+    public void setPigSaddle(boolean hasSaddle) {
+        this.data.put(16, Byte.valueOf((byte) (hasSaddle ? 1 : 0)));
+    }
+
+    public byte getRabbitType() {
+        return ((Byte) this.data.get(18)).byteValue();
+    }
+
+    public void setRabbitType(byte rabbitType) {
+        this.data.put(18, Byte.valueOf(rabbitType));
+    }
+
+    public byte getSheepData() {
+        return ((Byte) this.data.get(16)).byteValue();
+    }
+
+    public void setSheepData(byte sheepData) {
+        this.data.put(16, Byte.valueOf(sheepData));
+    }
+
+    public DyeColor getSheepColor() {
+        return DyeColor.values()[this.getSheepData() % 16];
+    }
+
+    public void setSheepColor(DyeColor dc) {
+        byte b = this.getSheepData();
+        this.data.put(16, Byte.valueOf((byte) (b - b % 16 + dc.ordinal())));
+    }
+
+    public boolean isSheepSheared() {
+        return (this.getSheepData() & 16) == 16;
+    }
+
+    public void setSheepSheared(boolean sheared) {
+        byte b = this.getSheepData();
+        this.data.put(16, Byte.valueOf((byte) (sheared ? b | 16 : b - (b & 16))));
+    }
+
+    public VillagerType getVillagerType() {
+        return VillagerType.values()[(Integer) this.data.get(16)];
+    }
+
+    public void setVillagerType(VillagerType type) {
+        this.data.put(16, type.ordinal());
+    }
+
+    public short getEndermanCarriedBlock() {
+        return (Short) this.data.get(16);
+    }
+
+    public void setEndermanCarriedBlock(short carriedBlock) {
+        this.data.put(16, carriedBlock);
+    }
+
+    public byte getEndermanCarriedBlockData() {
+        return ((Byte) this.data.get(17)).byteValue();
+    }
+
+    public void setEndermanCarriedBlockData(byte carriedBlockData) {
+        this.data.put(17, Byte.valueOf(carriedBlockData));
+    }
+
+    public boolean isEndermanScreaming() {
+        return ((Byte) this.data.get(18)).byteValue() != 0;
+    }
+
+    public void setEndermanScreaming(boolean screaming) {
+        this.data.put(18, Byte.valueOf((byte) (screaming ? 1 : 0)));
+    }
+
+    public boolean isZombieChild() {
+        return ((Byte) this.data.get(12)).byteValue() != 0;
+    }
+
+    public void setZombieChild(boolean isChild) {
+        this.data.put(12, Byte.valueOf((byte) (isChild ? 1 : 0)));
+    }
+
+    public boolean isZombieVillager() {
+        return ((Byte) this.data.get(13)).byteValue() != 0;
+    }
+
+    public void setZombieVillager(boolean isVillager) {
+        this.data.put(13, Byte.valueOf((byte) (isVillager ? 1 : 0)));
+    }
+
+    public boolean isZombieConvering() {
+        return ((Byte) this.data.get(14)).byteValue() != 0;
+    }
+
+    public void setZombieConvering(boolean isConvering) {
+        this.data.put(14, Byte.valueOf((byte) (isConvering ? 1 : 0)));
+    }
+
+    public boolean isBlazeOnFire() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
+    }
+
+    public void setBlazeOnFire(boolean onFire) {
+        this.data.put(16, Byte.valueOf((byte) (onFire ? 1 : 0)));
+    }
+
+    public boolean isSpiderClimbing() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
+    }
+
+    public void setSpiderClimbing(boolean climbing) {
+        this.data.put(16, Byte.valueOf((byte) (climbing ? 1 : 0)));
+    }
+
+    public byte getCreeperState() {
+        return ((Byte) this.data.get(16)).byteValue();
+    }
+
+    public void setCreeperState(byte state) {
+        this.data.put(16, Byte.valueOf(state));
+    }
+
+    public boolean isCreeperInFuse() {
+        return this.getCreeperState() != -1;
+    }
+
+    public void setCreeperInFuse(boolean inFuse) {
+        this.data.put(16, Byte.valueOf((byte) (inFuse ? 1 : -1)));
+    }
+
+    public boolean isCreeperPowered() {
+        return ((Byte) this.data.get(17)).byteValue() != 0;
+    }
+
+    public void setCreeperPowered(boolean isPowered) {
+        this.data.put(17, Byte.valueOf((byte) (isPowered ? 1 : 0)));
+    }
+
+    public boolean isGhastAttacking() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
+    }
+
+    public void setGhastAttacking(boolean attacking) {
+        this.data.put(16, Byte.valueOf((byte) (attacking ? 1 : 0)));
+    }
+
+    public byte getSize() {
+        return ((Byte) this.data.get(16)).byteValue();
+    }
+
+    public void setSize(byte size) {
+        this.data.put(16, Byte.valueOf(size));
+    }
+
+    public boolean isSkeletonWither() {
+        return ((Byte) this.data.get(13)).byteValue() == 1;
+    }
+
+    public void setSkeletonWither(boolean wither) {
+        this.data.put(13, Byte.valueOf((byte) (wither ? 1 : 0)));
+    }
+
+    public boolean isWitchAgressive() {
+        return ((Byte) this.data.get(21)).byteValue() != 0;
+    }
+
+    public void setWitchAgressive(boolean isAgressive) {
+        this.data.put(21, Byte.valueOf((byte) (isAgressive ? 1 : 0)));
+    }
+
+    public boolean isIronGolemPlayerCreated() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
+    }
+
+    public void setIronGolemPlayerCreated(boolean isPlayerCreated) {
+        this.data.put(16, Byte.valueOf((byte) (isPlayerCreated ? 1 : 0)));
+    }
+
+    public int getWitherWatchedTargetEntityId(int targetNumber) {
+        if (targetNumber < 1 || targetNumber > 3) {
             throw new IllegalArgumentException("Wither target number must be between 1(inclusively) and 3(inclusively)");
-        return (Integer)data.get(16+targetNumber);
+        }
+        return (Integer) this.data.get(16 + targetNumber);
     }
-    public int getWitherInvulnerableTime(){
-        return (Integer)data.get(20);
+
+    public int getWitherInvulnerableTime() {
+        return (Integer) this.data.get(20);
     }
-    //Wither setters
-    public void setWitherWatchedTargetEntityId(int targetNumber,int targetEntityId){
-        if (targetNumber<1||targetNumber>3)
+
+    public void setWitherInvulnerableTime(int invulnerableTime) {
+        this.data.put(20, invulnerableTime);
+    }
+
+    public void setWitherWatchedTargetEntityId(int targetNumber, int targetEntityId) {
+        if (targetNumber < 1 || targetNumber > 3) {
             throw new IllegalArgumentException("Wither target number must be between 1(inclusively) and 3(inclusively)");
-        data.put(16+targetNumber,targetEntityId);
-    }
-    public void setWitherInvulnerableTime(int invulnerableTime){
-        data.put(20,invulnerableTime);
+        }
+        this.data.put(16 + targetNumber, targetEntityId);
     }
 
-    //Guardian getters
-    public byte getGuardianIsElderly(){
-        return (Byte)data.get(16);
-    }
-    public int getGuardianTargetEntityID(){
-        return (Integer)data.get(17);
-    }
-    //Guardian setters
-    public void setGuardianIsElderly(byte isElderly){
-        data.put(16,isElderly);
-    }
-    public void setGuardianTargetEntityID(int targetEntityID){
-        data.put(17,targetEntityID);
+    public byte getGuardianIsElderly() {
+        return ((Byte) this.data.get(16)).byteValue();
     }
 
-    //Boat getters
-    public int getBoatTimeSinceHit(){
-        return (Integer)data.get(17);
-    }
-    public int getBoatForwardDirection(){
-        return (Integer)data.get(18);
-
-    }
-    public float getBoatDamageTaken(){
-        return (Float)data.get(19);
-    }
-    //Boat setters
-    public void setBoatTimeSinceHit(int timeSinceHit){
-        data.put(17,timeSinceHit);
-    }
-    public void setBoatForwardDirection(int forwardDirection){
-        data.put(18,forwardDirection);
-    }
-    public void setBoatDamageTaken(float damageTaken){
-        data.put(19,damageTaken);
+    public void setGuardianIsElderly(byte isElderly) {
+        this.data.put(16, Byte.valueOf(isElderly));
     }
 
-
-    //Minecart getters
-    public boolean MinecartIsPowered(){
-        return ((Byte)data.get(16))!=0;
-    }
-    //Minecart setters
-    public void setMinecartIsPowered(boolean minecartIsPowered){
-        data.put(16, minecartIsPowered?1:0);
+    public int getGuardianTargetEntityID() {
+        return (Integer) this.data.get(17);
     }
 
-    //FurnaceMinecart getters
+    public void setGuardianTargetEntityID(int targetEntityID) {
+        this.data.put(17, targetEntityID);
+    }
+
+    public int getBoatTimeSinceHit() {
+        return (Integer) this.data.get(17);
+    }
+
+    public void setBoatTimeSinceHit(int timeSinceHit) {
+        this.data.put(17, timeSinceHit);
+    }
+
+    public int getBoatForwardDirection() {
+        return (Integer) this.data.get(18);
+    }
+
+    public void setBoatForwardDirection(int forwardDirection) {
+        this.data.put(18, forwardDirection);
+    }
+
+    public float getBoatDamageTaken() {
+        return ((Float) this.data.get(19)).floatValue();
+    }
+
+    public void setBoatDamageTaken(float damageTaken) {
+        this.data.put(19, Float.valueOf(damageTaken));
+    }
+
+    public boolean MinecartIsPowered() {
+        return ((Byte) this.data.get(16)).byteValue() != 0;
+    }
+
+    public void setMinecartIsPowered(boolean minecartIsPowered) {
+        this.data.put(16, minecartIsPowered ? 1 : 0);
+    }
+
     public boolean FuranceMinecartIsPowered() {
-        return ((Byte)data.get(16))!=0;
-    }
-    //FurnaceMinecart setters
-    public void setFurnaceMinecartIsPowered(boolean furnaceMinecartIsPowered){
-        data.put(16, furnaceMinecartIsPowered?1:0);
+        return ((Byte) this.data.get(16)).byteValue() != 0;
     }
 
-    //Item getters
+    public void setFurnaceMinecartIsPowered(boolean furnaceMinecartIsPowered) {
+        this.data.put(16, furnaceMinecartIsPowered ? 1 : 0);
+    }
+
     public ItemStackWrapper getItem() {
-        return (ItemStackWrapper) data.get(10);
-    }
-    //Item setters
-    public void setItem(ItemStackWrapper item){
-        data.put(10,item);
+        return (ItemStackWrapper) this.data.get(10);
     }
 
-    //Arrow getters
-    public byte getArrowIsCritical(){
-        return (Byte)data.get(16);
+    public void setItem(ItemStackWrapper item) {
+        this.data.put(10, item);
     }
-    //Arrow setters
-    public void setArrowIsCrutical(byte arrowIsCrutical){
-        data.put(16, arrowIsCrutical);
+
+    public byte getArrowIsCritical() {
+        return ((Byte) this.data.get(16)).byteValue();
     }
+
+    public void setArrowIsCrutical(byte arrowIsCrutical) {
+        this.data.put(16, Byte.valueOf(arrowIsCrutical));
+    }
+
+    public enum VillagerType {
+        Farmer,
+        Librarian,
+        Priest,
+        Blacksmith,
+        Butcher;
+
+
+        VillagerType() {
+        }
+    }
+
 }
+

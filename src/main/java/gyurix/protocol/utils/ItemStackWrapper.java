@@ -11,102 +11,123 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 public class ItemStackWrapper {
-    public NBTCompound nbtData;
-    private static final Method createStack,saveStack;
+    private static final Method createStack;
+    private static final Method saveStack;
     private static final Field handle;
     private static final Constructor bukkitStack;
+
     static {
-        Class nms=Reflection.getNMSClass("ItemStack");
-        Class nbt=Reflection.getNMSClass("NBTTagCompound");
-        Class obc=Reflection.getOBCClass("inventory.CraftItemStack");
-        createStack= Reflection.getMethod(nms,"createStack", nbt);
-        saveStack=Reflection.getMethod(nms,"save", nbt);
-        handle=Reflection.getFirstFieldOfType(obc,nms);
-        bukkitStack=Reflection.getConstructor(obc,nms);
+        Class nms = Reflection.getNMSClass("ItemStack");
+        Class nbt = Reflection.getNMSClass("NBTTagCompound");
+        Class obc = Reflection.getOBCClass("inventory.CraftItemStack");
+        createStack = Reflection.getMethod(nms, "createStack", nbt);
+        saveStack = Reflection.getMethod(nms, "save", nbt);
+        handle = Reflection.getFirstFieldOfType(obc, nms);
+        bukkitStack = Reflection.getConstructor(obc, nms);
     }
-    public ItemStackWrapper(){
 
+    public NBTCompound nbtData;
+
+    public ItemStackWrapper() {
     }
+
     public ItemStackWrapper(ItemStack is) {
-        loadFromBukkitStack(is);
+        this.loadFromBukkitStack(is);
     }
+
     public ItemStackWrapper(Object vanillaStack) {
-        loadFromVanillaStack(vanillaStack);
+        this.loadFromVanillaStack(vanillaStack);
     }
 
-    public Material getType(){
-        return Material.getMaterial(getId());
+    public Material getType() {
+        return Material.getMaterial((int) this.getId());
     }
-    public void setType(Material type){
-        if (type==null)
-            type=Material.AIR;
-        setId((short)type.getId());
-    }
-    public short getId(){
 
-        return (Short)(((NBTPrimitive)nbtData.map.get("id")).data);
+    public void setType(Material type) {
+        if (type == null) {
+            type = Material.AIR;
+        }
+        this.setId((short) type.getId());
     }
-    public void setId(short newId){
-        ((NBTPrimitive)nbtData.map.get("id")).data=newId;
+
+    public short getId() {
+        return (Short) ((NBTPrimitive) this.nbtData.map.get("id")).data;
     }
-    public short getDamage(){
-        return (Short)(((NBTPrimitive)nbtData.map.get("Damage")).data);
+
+    public void setId(short newId) {
+        ((NBTPrimitive) this.nbtData.map.get("id")).data = newId;
     }
-    public void setDamage(short damage){
-        ((NBTPrimitive)nbtData.map.get("Damage")).data=damage;
+
+    public short getDamage() {
+        return (Short) ((NBTPrimitive) this.nbtData.map.get("Damage")).data;
     }
-    public byte getCount(){
-        return (Byte)(((NBTPrimitive)nbtData.map.get("Count")).data);
+
+    public void setDamage(short damage) {
+        ((NBTPrimitive) this.nbtData.map.get("Damage")).data = damage;
     }
-    public void setCount(byte count){
-        ((NBTPrimitive)nbtData.map.get("Count")).data=count;
+
+    public byte getCount() {
+        return ((Byte) ((NBTPrimitive) this.nbtData.map.get("Count")).data).byteValue();
     }
-    public void removeMetaData(){
-        nbtData.map.remove("tag");
+
+    public void setCount(byte count) {
+        ((NBTPrimitive) this.nbtData.map.get("Count")).data = Byte.valueOf(count);
     }
-    public NBTCompound getMetaData(){
-        return nbtData.getCompound("tag");
+
+    public void removeMetaData() {
+        this.nbtData.map.remove("tag");
     }
-    public boolean isUnbreakable(){
-        return getMetaData().getBoolean("Unbreakable");
+
+    public NBTCompound getMetaData() {
+        return this.nbtData.getCompound("tag");
     }
-    public void setUnbreakable(boolean unbreakable){
-        if (unbreakable)
-            getMetaData().map.put("Unbreakable",new NBTPrimitive((byte)1));
-        else
-            getMetaData().map.remove("Unbreakable");
+
+    public boolean isUnbreakable() {
+        return this.getMetaData().getBoolean("Unbreakable");
     }
-    public void loadFromVanillaStack(Object is){
-        nbtData=new NBTCompound();
+
+    public void setUnbreakable(boolean unbreakable) {
+        if (unbreakable) {
+            this.getMetaData().map.put("Unbreakable", new NBTPrimitive(Byte.valueOf((byte) 1)));
+        } else {
+            this.getMetaData().map.remove("Unbreakable");
+        }
+    }
+
+    public void loadFromVanillaStack(Object is) {
+        this.nbtData = new NBTCompound();
         try {
-            nbtData.loadFromNMS(saveStack.invoke(is, new NBTCompound().saveToNMS()));
+            this.nbtData.loadFromNMS(saveStack.invoke(is, new NBTCompound().saveToNMS()));
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
-    public void loadFromBukkitStack(ItemStack is){
-        nbtData=new NBTCompound();
+
+    public void loadFromBukkitStack(ItemStack is) {
+        this.nbtData = new NBTCompound();
         try {
-            nbtData.loadFromNMS(saveStack.invoke(handle.get(is), new NBTCompound().saveToNMS()));
+            this.nbtData.loadFromNMS(saveStack.invoke(handle.get(is), new NBTCompound().saveToNMS()));
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
-    public Object toVanillaStack(){
+
+    public Object toVanillaStack() {
         try {
-            return createStack.invoke(null,nbtData.saveToNMS());
+            return createStack.invoke(null, this.nbtData.saveToNMS());
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
         }
     }
-    public ItemStack toBukkitStack(){
+
+    public ItemStack toBukkitStack() {
         try {
-            return (ItemStack) bukkitStack.newInstance(toVanillaStack());
+            return (ItemStack) bukkitStack.newInstance(this.toVanillaStack());
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
         }
     }
-
 }
+

@@ -6,44 +6,54 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 public class BlockLocation {
-    public int x,y,z;
     private static Constructor blockPositionConstructor;
-    private static Method getX,getY,getZ;
+    private static Method getX;
+    private static Method getY;
+    private static Method getZ;
+
     static {
         try {
-            blockPositionConstructor= Reflection.getNMSClass("BlockPosition").getConstructor(int.class,int.class,int.class);
+            blockPositionConstructor = Reflection.getNMSClass("BlockPosition").getConstructor(Integer.TYPE, Integer.TYPE, Integer.TYPE);
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
-        Class cl=Reflection.getNMSClass("BaseBlockPosition");
+        Class cl = Reflection.getNMSClass("BaseBlockPosition");
         try {
-            getX=cl.getMethod("getX");
-            getY=cl.getMethod("getY");
-            getZ=cl.getMethod("getZ");
+            getX = cl.getMethod("getX");
+            getY = cl.getMethod("getY");
+            getZ = cl.getMethod("getZ");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
     }
-    public BlockLocation(Object vanillaBlockLocation){
+
+    public int x;
+    public int y;
+    public int z;
+
+    public BlockLocation(Object vanillaBlockLocation) {
         try {
-            x=(Integer)getX.invoke(vanillaBlockLocation);
-            y=(Integer)getY.invoke(vanillaBlockLocation);
-            z=(Integer)getZ.invoke(vanillaBlockLocation);
+            this.x = (Integer) getX.invoke(vanillaBlockLocation);
+            this.y = (Integer) getY.invoke(vanillaBlockLocation);
+            this.z = (Integer) getZ.invoke(vanillaBlockLocation);
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
-    public BlockLocation(int x,int y,int z){
-        this.x=x;
-        this.y=y;
-        this.z=z;
+
+    public BlockLocation(int x, int y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
     }
-    public Object toVanillaBlockPosition(){
+
+    public Object toVanillaBlockPosition() {
         try {
-            return blockPositionConstructor.newInstance(x,y,z);
+            return blockPositionConstructor.newInstance(this.x, this.y, this.z);
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
         }
     }
 }
+
