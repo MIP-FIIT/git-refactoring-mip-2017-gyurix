@@ -4,27 +4,31 @@ import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.UUID;
 
 public class NametagBar
         extends ScoreboardBar {
     public HashMap<String, Nametag> pls = new HashMap();
-    public HashSet<UUID> viewers = new HashSet();
 
     public NametagBar() {
         super("SBAPI-nametag", "SLNB", 2);
     }
 
     public void addNametag(Nametag nt) {
-        this.pls.put(nt.name, nt);
-        this.sendPackets(nt.getTeamPacket(0), nt.getSetScorePacket());
+        if (pls.containsKey(nt.name))
+            throw new RuntimeException("Adding the same name twice to the NameTagBar");
+        pls.put(nt.name, nt);
+        sendPackets(nt.getTeamPacket(0));
+        if (visible)
+            sendPackets(nt.getSetScorePacket());
     }
 
     public void removeNametag(String name) {
         Nametag nt = this.pls.remove(name);
         if (nt != null) {
-            this.sendPackets(nt.getTeamPacket(1), nt.getRemoveScorePacket());
+            sendPackets(nt.getTeamPacket(1));
+            if (visible)
+                sendPackets(nt.getRemoveScorePacket());
         }
     }
 
@@ -45,75 +49,93 @@ public class NametagBar
             return;
         }
         nt.number = number;
-        this.sendPackets(nt.getSetScorePacket());
+        if (visible)
+            sendPackets(nt.getSetScorePacket());
     }
 
     @Override
     public void addViewer(Player plr) {
-        System.out.println("\u00a7bNB: \u00a7aAdd viewer: " + plr.getName());
         this.viewers.add(plr.getUniqueId());
-        this.sendUpdatePacket(plr);
-        for (Nametag n : this.pls.values()) {
-            SU.tp.sendPacket(plr, n.getTeamPacket(2));
-            SU.tp.sendPacket(plr, n.getSetScorePacket());
+        if (visible) {
+            SU.tp.sendPacket(plr, getObjectivePacket(0));
+            SU.tp.sendPacket(plr, showPacket);
+            for (Nametag n : this.pls.values())
+                SU.tp.sendPacket(plr, n.getSetScorePacket());
         }
-        if (this.visible) {
-            SU.tp.sendPacket(plr, this.showPacket);
-        }
+        for (Nametag n : this.pls.values())
+            SU.tp.sendPacket(plr, n.getTeamPacket(0));
     }
 
     @Override
     public void addViewerFirstBar(Player plr) {
-        System.out.println("\u00a7bNB: \u00a72Add viewer FIRST BAR: " + plr.getName());
-        this.viewers.add(plr.getUniqueId());
-        this.sendCreatePacket(plr);
-        for (Nametag n : this.pls.values()) {
-            SU.tp.sendPacket(plr, n.getTeamPacket(0));
-            SU.tp.sendPacket(plr, n.getSetScorePacket());
-        }
-        if (this.visible) {
-            SU.tp.sendPacket(plr, this.showPacket);
-        }
+        addViewer(plr);
     }
 
     @Override
     public void moveViewer(ScoreboardBar oldBar, Player plr) {
-        System.out.println("\u00a7bNB: \u00a7eMove viewer: " + plr.getName());
-        this.viewers.add(plr.getUniqueId());
         NametagBar old = (NametagBar) oldBar;
-        this.sendUpdatePacket(plr);
-        for (Nametag n2 : ((NametagBar) oldBar).pls.values()) {
-            if (!this.pls.containsKey(n2.name)) continue;
-            SU.tp.sendPacket(plr, n2.getTeamPacket(1));
-            SU.tp.sendPacket(plr, n2.getRemoveScorePacket());
-        }
-        for (Nametag n2 : this.pls.values()) {
-            SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
-            SU.tp.sendPacket(plr, n2.getSetScorePacket());
-        }
-        if (!old.visible && this.visible) {
-            SU.tp.sendPacket(plr, this.showPacket);
-        }
-        if (!this.visible && old.visible) {
-            SU.tp.sendPacket(plr, this.hidePacket);
+        UUID id = plr.getUniqueId();
+        viewers.add(id);
+        old.viewers.remove(id);
+        if (old.visible) {
+            for (Nametag n : old.pls.values()) {
+                if (!pls.containsKey(n.name)) continue;
+                SU.tp.sendPacket(plr, n.getTeamPacket(1));
+                SU.tp.sendPacket(plr, n.getRemoveScorePacket());
+            }
+            if (visible) {
+                getObjectivePacket(2);
+                for (Nametag n2 : this.pls.values()) {
+                    SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
+                    SU.tp.sendPacket(plr, n2.getSetScorePacket());
+                }
+            } else {
+                getObjectivePacket(1);
+                for (Nametag n2 : this.pls.values())
+                    SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
+            }
+        } else {
+            for (Nametag n : pls.values()) {
+                SU.tp.sendPacket(plr, n.getTeamPacket(old.pls.containsKey(n.name) ? 2 : 0));
+                SU.tp.sendPacket(plr, n.getTeamPacket(1));
+            }
+            if (visible) {
+                SU.tp.sendPacket(plr, getObjectivePacket(0));
+                for (Nametag n2 : this.pls.values()) {
+                    SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
+                    SU.tp.sendPacket(plr, n2.getSetScorePacket());
+                }
+            } else {
+                for (Nametag n2 : this.pls.values())
+                    SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
+            }
         }
     }
 
     @Override
     public void removeViewer(Player plr) {
-        System.out.println("\u00a7bNB: \u00a7cRemove viewer: " + plr.getName());
-        if (!this.viewers.remove(plr.getUniqueId())) {
+        if (!this.viewers.remove(plr.getUniqueId()))
             return;
-        }
-        if (!plr.isOnline()) {
+        if (!plr.isOnline())
             return;
-        }
-        for (Nametag n : this.pls.values()) {
+        for (Nametag n : this.pls.values())
             SU.tp.sendPacket(plr, n.getTeamPacket(1));
-            SU.tp.sendPacket(plr, n.getRemoveScorePacket());
-        }
-        if (this.visible) {
-            SU.tp.sendPacket(plr, this.hidePacket);
+        if (visible)
+            SU.tp.sendPacket(plr, getObjectivePacket(1));
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        if (visible != this.visible) {
+            if (visible) {
+                sendPackets(getObjectivePacket(0));
+                for (Nametag n : pls.values()) {
+                    sendPackets(n.getSetScorePacket());
+                }
+                sendPackets(showPacket);
+            } else
+                sendPackets(getObjectivePacket(1));
+            this.visible = visible;
         }
     }
 }

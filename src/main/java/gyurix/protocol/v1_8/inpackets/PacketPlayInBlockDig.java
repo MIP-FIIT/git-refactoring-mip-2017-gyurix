@@ -23,7 +23,7 @@ public class PacketPlayInBlockDig
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.BlockDig.getPacketData(packet);
         this.block = new BlockLocation(data[0]);
-        this.direction = Direction.valueOf(data[1].toString());
+        this.direction = Direction.valueOf(data[1].toString().toUpperCase());
         this.digType = DigType.valueOf(data[2].toString());
     }
 

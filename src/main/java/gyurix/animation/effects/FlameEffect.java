@@ -2,16 +2,14 @@ package gyurix.animation.effects;
 
 import gyurix.animation.CustomEffect;
 import gyurix.configfile.ConfigSerialization;
-
-import java.util.ArrayList;
-import java.util.HashMap;
+import gyurix.spigotlib.SU;
 
 public class FlameEffect
         implements CustomEffect {
     public FlameInfo info;
     public int start;
     public int speed = 1;
-    public HashMap<Integer, ArrayList<FlameEvent>> events = new HashMap();
+    public boolean rotate;
 
     @Override
     public String next(String in) {
@@ -19,39 +17,48 @@ public class FlameEffect
         int strstate = this.start;
         int state = 0;
         if (strstate >= in.length()) {
-            this.step();
+            this.step(in);
             return in;
         }
         if (strstate > 0) {
             out.append(in.substring(0, strstate));
         }
-        while (strstate < in.length() && state < this.info.counts.length) {
-            int count = this.info.counts[state];
-            if (strstate + count > in.length()) {
-                count = in.length() - strstate;
+        for (int i = 0; i < info.counts.length; i++) {
+            out.append(info.pref[i]);
+            if (strstate + info.counts[i] > 0) {
+                int maxid = strstate + info.counts[i];
+                if (maxid > in.length())
+                    break;
+                else {
+                    out.append(in.substring(Math.max(strstate, 0), maxid));
+                }
             }
-            if (strstate > -1) {
-                out.append(this.info.pref[state]);
-                out.append(in.substring(strstate, strstate + count));
-            }
-            strstate += count;
-            ++state;
+            strstate += info.counts[i];
         }
         if (strstate < in.length()) {
-            out.append(in.substring(strstate));
+            out.append(in.substring(Math.max(strstate, 0)));
         }
-        this.step();
-        return out.toString();
+        step(in);
+        return SU.optimizeColorCodes(out.toString());
     }
 
-    private void step() {
-        this.start += this.speed;
-        ArrayList<FlameEvent> list = this.events.get(this.start);
-        if (list != null) {
-            for (FlameEvent e : list) {
-                e.execute(this);
-            }
+    private void step(String in) {
+        int count = 0;
+        for (int c : info.counts) {
+            count += c;
         }
+        count -= info.counts[info.counts.length - 1];
+        if (start >= in.length()) {
+            if (rotate) {
+                speed = -speed;
+            } else {
+                start = -count;
+                return;
+            }
+        } else if (rotate && speed < 0 && start <= -count) {
+            speed = -speed;
+        }
+        start += speed;
     }
 
     @Override
@@ -69,46 +76,8 @@ public class FlameEffect
         fe.info = this.info;
         fe.speed = this.speed;
         fe.start = this.start;
-        fe.events = this.events;
+        fe.rotate = this.rotate;
         return fe;
-    }
-
-    public static class FlameEvent
-            implements ConfigSerialization.StringSerializable {
-        public FlameEventType type;
-        public int value;
-
-        public FlameEvent() {
-        }
-
-        public FlameEvent(FlameEventType type, int value) {
-            this.type = type;
-            this.value = value;
-        }
-
-        public FlameEvent(String in) {
-            String[] d = in.split(" ", 2);
-            this.type = FlameEventType.valueOf(d[0].toUpperCase());
-            this.value = Integer.valueOf(d[1]);
-        }
-
-        public void execute(FlameEffect fe) {
-            if (this.type == FlameEventType.SPEED) {
-                fe.speed = this.value;
-            } else {
-                fe.start = this.value;
-            }
-        }
-
-        public enum FlameEventType {
-            SPEED,
-            START;
-
-
-            FlameEventType() {
-            }
-        }
-
     }
 
     public static class FlameInfo
@@ -129,9 +98,7 @@ public class FlameEffect
                 try {
                     this.pref[i] = d2[0];
                     this.counts[i] = Integer.valueOf(d2[1]);
-                    continue;
-                } catch (Throwable var5_5) {
-                    // empty catch block
+                } catch (Throwable t) {
                 }
             }
         }

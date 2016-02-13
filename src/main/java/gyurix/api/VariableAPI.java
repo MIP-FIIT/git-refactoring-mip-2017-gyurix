@@ -14,7 +14,7 @@ public class VariableAPI {
     public static final HashMap<String, VariableHandler> handlers = new HashMap();
     public static boolean phaHook;
 
-    public static /* varargs */ String fillVariables(String msg, Player plr, Object... oArgs) {
+    public static String fillVariables(String msg, Player plr, Object... oArgs) {
         ArrayList<Object> out = VariableAPI.fill(msg.replace("\\<", "\u0000").replace("\\>", "\u0001"), 0, plr, oArgs);
         out.remove(0);
         String s = StringUtils.join(out, "").replace('\u0000', '<').replace('\u0001', '>');

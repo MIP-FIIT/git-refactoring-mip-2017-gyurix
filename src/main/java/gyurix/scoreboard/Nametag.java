@@ -8,8 +8,8 @@ public class Nametag {
     public boolean hide;
     public int number;
     public String name;
-    public String prefix = "\u00a7e\u00a7lprefix -> \u00a7b";
-    public String suffix = "\u00a7e\u00a7l <- suffix";
+    public String prefix = "§f";
+    public String suffix = "§f";
 
     public Nametag() {
     }

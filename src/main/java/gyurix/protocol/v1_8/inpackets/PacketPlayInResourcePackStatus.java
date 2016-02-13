@@ -20,7 +20,7 @@ public class PacketPlayInResourcePackStatus
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.ResourcePackStatus.getPacketData(packet);
         this.hash = (String) data[0];
-        this.status = (ResourcePackStatus) data[1];
+        this.status = ResourcePackStatus.valueOf(data[1].toString());
     }
 
     public enum ResourcePackStatus {
@@ -32,7 +32,7 @@ public class PacketPlayInResourcePackStatus
         private static final Method valueOf;
 
         static {
-            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInResourcePackStatus$EnumPlayerAction"), "valueOf", String.class);
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("PacketPlayInResourcePackStatus$EnumResourcePackStatus"), "valueOf", String.class);
         }
 
         ResourcePackStatus() {

@@ -11,19 +11,20 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 
 public class ChatAPI {
-    private static Method toICBC;
-    private static Method fromICBC;
+    public static Method toICBC;
+    public static Method fromICBC;
+    public static Class icbcClass;
 
     public static void init() {
         try {
+            icbcClass = Reflection.getNMSClass("IChatBaseComponent");
             if (Reflection.version.equals("v1_8_R1.") || Reflection.version.startsWith("v1_7")) {
                 toICBC = Reflection.getNMSClass("ChatSerializer").getMethod("a", String.class);
             } else {
-                Class icbc = Reflection.getNMSClass("IChatBaseComponent");
-                for (Class c : icbc.getClasses()) {
+                for (Class c : icbcClass.getClasses()) {
                     if (!c.getName().endsWith("ChatSerializer")) continue;
                     toICBC = c.getMethod("a", String.class);
-                    fromICBC = c.getMethod("a", icbc);
+                    fromICBC = c.getMethod("a", icbcClass);
                 }
             }
         } catch (Throwable e) {
@@ -66,6 +67,8 @@ public class ChatAPI {
         Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
         for (Player p : pls) {
             SU.tp.sendPacket(p, packet);
+            if (Config.debug)
+                System.out.println("Sent JSON " + json + " to " + p.getName());
         }
     }
 

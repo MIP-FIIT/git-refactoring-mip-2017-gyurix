@@ -10,6 +10,7 @@ public class AnimationUpdateEvent
     private String text;
 
     public AnimationUpdateEvent(AnimationRunnable runnable, String text) {
+        super(false);
         this.runnable = runnable;
         this.text = text;
     }
@@ -33,5 +34,6 @@ public class AnimationUpdateEvent
     public AnimationRunnable getRunnable() {
         return this.runnable;
     }
+
 }
 

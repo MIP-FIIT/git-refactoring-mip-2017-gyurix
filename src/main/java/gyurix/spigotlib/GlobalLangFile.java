@@ -160,8 +160,7 @@ public class GlobalLangFile {
         }
 
         public void msg(CommandSender sender, String msg, String... repl) {
-            this.getClass();
-            this.msg(this.get(sender instanceof Player ? (Player) sender : null, "prefix"), sender, msg, repl);
+            msg(get(sender instanceof Player ? (Player) sender : null, "prefix"), sender, msg, repl);
         }
 
         public void msg(String prefix, CommandSender sender, String msg, String... repl) {
@@ -173,6 +172,7 @@ public class GlobalLangFile {
                 ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.CHAT, msg, plr);
             }
         }
+
     }
 
 }

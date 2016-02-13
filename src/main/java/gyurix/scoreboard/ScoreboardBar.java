@@ -14,8 +14,8 @@ public abstract class ScoreboardBar {
     public final String teamNamePrefix;
     public final Object showPacket;
     public final Object hidePacket;
+    public final LinkedList<UUID> viewers = new LinkedList<>();
     protected boolean visible = true;
-    LinkedList<UUID> viewers = new LinkedList<>();
     private String title;
     private ScoreboardAPI.ScoreboardDisplayMode displayMode = ScoreboardAPI.ScoreboardDisplayMode.INTEGER;
 
@@ -27,12 +27,17 @@ public abstract class ScoreboardBar {
         this.hidePacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, "");
     }
 
-    public void sendUpdatePacket(Player plr) {
-        SU.tp.sendPacket(plr, PacketOutType.ScoreboardObjective.newPacket(this.barname, this.title, this.displayMode.nmsEnum, 2));
-    }
-
-    public void sendCreatePacket(Player plr) {
-        SU.tp.sendPacket(plr, PacketOutType.ScoreboardObjective.newPacket(this.barname, this.title, this.displayMode.nmsEnum, 0));
+    /**
+     * Creates a ScoreboardObjective packet.
+     *
+     * @param id - the type of the objectivePacket:
+     *           0 - create
+     *           1 - remove
+     *           2 - update
+     * @return The packet.
+     */
+    public Object getObjectivePacket(int id) {
+        return PacketOutType.ScoreboardObjective.newPacket(this.barname, this.title, this.displayMode.nmsEnum, id);
     }
 
     public abstract void addViewer(Player var1);
@@ -51,16 +56,16 @@ public abstract class ScoreboardBar {
         if (this.displayMode == mode) {
             return;
         }
-        this.displayMode = mode;
-        this.sendPackets(PacketOutType.ScoreboardObjective.newPacket(this.barname, this.title, this.displayMode.nmsEnum, 2));
+        displayMode = mode;
+        sendPackets(getObjectivePacket(2));
     }
 
     public void setTitle(String newtitle) {
-        this.title = SU.setLength(newtitle, 32);
-        this.sendPackets(PacketOutType.ScoreboardObjective.newPacket(this.barname, this.title, this.displayMode.nmsEnum, 2));
+        title = SU.setLength(newtitle, 32);
+        sendPackets(getObjectivePacket(2));
     }
 
-    public /* varargs */ void sendPackets(Object... packets) {
+    public void sendPackets(Object... packets) {
         for (Object p : packets) {
             Iterator<UUID> it = this.viewers.iterator();
             while (it.hasNext()) {
@@ -80,9 +85,7 @@ public abstract class ScoreboardBar {
 
     public void setVisible(boolean visible) {
         if (visible != this.visible) {
-            Object[] arrobject = new Object[1];
-            arrobject[0] = visible ? this.showPacket : this.hidePacket;
-            this.sendPackets(arrobject);
+            sendPackets(visible ? this.showPacket : this.hidePacket);
             this.visible = visible;
         }
     }

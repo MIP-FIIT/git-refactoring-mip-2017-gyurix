@@ -1,13 +1,14 @@
 package gyurix.protocol;
 
 import io.netty.channel.Channel;
+import org.bukkit.entity.Player;
 
 public class PacketOutEvent
         extends PacketEvent {
     private final PacketOutType type;
 
-    public PacketOutEvent(Channel channel, Protocol.NewChannelHandler handler, Object packet) {
-        super(channel, handler, packet);
+    public PacketOutEvent(Channel channel, Player plr, Object packet) {
+        super(channel, plr, packet);
         this.type = PacketOutType.getType(packet);
     }
 

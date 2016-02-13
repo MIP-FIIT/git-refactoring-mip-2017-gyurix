@@ -25,6 +25,8 @@ public class ConfigHook {
     public static HashMap<String, Object> data = new HashMap();
 
     public static void registerSerializers() {
+        if (Config.errors == null)
+            Config.errors = new ArrayList<>();
         ConfigSerialization.errors = Config.errors;
         ConfigSerialization.serializers.put(Vector.class, new ConfigSerialization.Serializer() {
 
@@ -146,6 +148,21 @@ public class ConfigHook {
                 return StringUtils.join(inside, "").split(" ");
             }
         });
+        VariableAPI.handlers.put("splitlen", new VariableAPI.VariableHandler() {
+
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                String[] s = StringUtils.join(inside, "").split(" ", 3);
+                Integer max = Integer.valueOf(s[0]);
+                String pref = SU.unescapeText(s[1]);
+                String text = s[2];
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < text.length(); i += max) {
+                    sb.append('\n').append(pref).append(text.substring(i, Math.min(text.length(), i + max)));
+                }
+                return sb.length() == 0 ? "" : sb.substring(1);
+            }
+        });
         VariableAPI.handlers.put("noout", new VariableAPI.VariableHandler() {
 
             @Override
@@ -157,8 +174,16 @@ public class ConfigHook {
 
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String lang = SU.getPlayerConfig(plr).getString("lang");
-                return lang.isEmpty() ? Config.defaultLang : lang;
+                String s = StringUtils.join(inside, "");
+                return GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), s);
+            }
+        });
+        VariableAPI.handlers.put("booltest", new VariableAPI.VariableHandler() {
+
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                String[] s = StringUtils.join(inside, "").split(";");
+                return Boolean.valueOf(s[0]) ? s[1] : s[2];
             }
         });
         VariableAPI.handlers.put("args", new VariableAPI.VariableHandler() {
@@ -224,7 +249,7 @@ public class ConfigHook {
                 return TPSMeter.tps;
             }
         });
-        VariableAPI.handlers.put("realtime", new VariableAPI.VariableHandler() {
+        VariableAPI.handlers.put("real", new VariableAPI.VariableHandler() {
 
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
@@ -246,7 +271,7 @@ public class ConfigHook {
 
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                if (inside == null) {
+                if (inside == null || inside.isEmpty()) {
                     return EconomyAPI.balanceTypes.get("default").format(EconomyAPI.getBalance(plr.getUniqueId()));
                 }
                 String str = StringUtils.join(inside, "");

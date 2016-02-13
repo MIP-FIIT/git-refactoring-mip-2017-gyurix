@@ -38,7 +38,8 @@ public class AnimationRunnable
 
     @Override
     public void run() {
-        AnimationUpdateEvent e = new AnimationUpdateEvent(this, VariableAPI.fillVariables(this.frames.next(""), this.plr, this));
+        AnimationUpdateEvent e = new AnimationUpdateEvent(this,
+                SU.optimizeColorCodes(VariableAPI.fillVariables(this.frames.next(""), this.plr, this)));
         SU.pm.callEvent(e);
         this.running = AnimationAPI.sch.schedule(this, this.frames.delay, TimeUnit.MILLISECONDS);
     }

@@ -16,18 +16,11 @@ public class ScoreboardAPI {
     public static Object setScore;
     public static Object removeScore;
     public static Object updateTabName;
-    public static HashMap<UUID, Tabbar> tabbars;
-    public static HashMap<UUID, Sidebar> sidebars;
-    public static HashMap<UUID, NametagBar> nametags;
+    public static HashMap<UUID, Tabbar> tabbars = new HashMap<>();
+    public static HashMap<UUID, Sidebar> sidebars = new HashMap<>();
+    public static HashMap<UUID, NametagBar> nametags = new HashMap<>();
     public static Constructor tabPlayer;
-    public static int id;
-
-    static {
-        tabbars = new HashMap();
-        sidebars = new HashMap();
-        nametags = new HashMap();
-        id = 1;
-    }
+    public static int id = 1;
 
     public static void init() {
         String s;
@@ -132,6 +125,7 @@ public class ScoreboardAPI {
             if (sb != null) {
                 sb.removeViewer(plr);
             }
+            sidebars.remove(uuid);
             return;
         }
         if (sb == null) {
@@ -159,6 +153,7 @@ public class ScoreboardAPI {
             if (tb != null) {
                 tb.removeViewer(plr);
             }
+            tabbars.remove(uuid);
             return;
         }
         if (tb == null) {
@@ -186,6 +181,7 @@ public class ScoreboardAPI {
             if (nb != null) {
                 nb.removeViewer(plr);
             }
+            nametags.remove(uuid);
             return;
         }
         if (nb == null) {

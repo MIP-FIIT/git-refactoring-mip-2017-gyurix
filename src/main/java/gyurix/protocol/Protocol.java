@@ -1,262 +1,163 @@
 package gyurix.protocol;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.MapMaker;
-import com.mojang.authlib.GameProfile;
 import gyurix.spigotlib.Config;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
-import io.netty.channel.*;
-import org.bukkit.Bukkit;
+import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class Protocol
-        implements Listener {
-    public static final Field handshakeNextState = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PacketHandshakingInSetProtocol"), Reflection.getNMSClass("EnumProtocol"));
-    private static final Class networkManagerClass = Reflection.getNMSClass("NetworkManager");
-    private static final Class minecraftServerClass = Reflection.getNMSClass("MinecraftServer");
-    private static final Class serverConnectionClass = Reflection.getNMSClass("ServerConnection");
-    private static final Method getPlayerHandle = Reflection.getMethod(Reflection.getOBCClass("entity.CraftPlayer"), "getHandle");
-    private static final Field getConnection = Reflection.getField(Reflection.getNMSClass("EntityPlayer"), "playerConnection");
-    private static final Field getManager = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PlayerConnection"), networkManagerClass);
-    private static final Field getChannel = Reflection.getFirstFieldOfType(Reflection.getNMSClass("NetworkManager"), Channel.class);
-    private static final Field getGameProfile = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PacketLoginInStart"), GameProfile.class);
-    private final Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
-    private final List<Channel> serverChannels = Lists.newArrayList();
-    Object minecraftServer;
-    Object serverConnection;
-    List networkManagers;
-    List<ChannelFuture> channelFutures;
-    private ChannelInboundHandlerAdapter serverChannel;
-    private ChannelInitializer<Channel> beginInit;
-    private ChannelInitializer<Channel> endInit;
-    private boolean closed;
+public abstract class Protocol implements Listener {
+    private static final ConcurrentHashMap<PacketInType, ArrayList<PacketInListener>> inListeners = new ConcurrentHashMap<>();
+    private static final HashMap<PacketOutType, ArrayList<PacketOutListener>> outListeners = new HashMap<>();
+    private static final HashMap<PacketInListener, PacketInType> inListenerTypes = new HashMap<>();
+    private static final HashMap<PacketOutListener, PacketOutType> outListenerTypes = new HashMap<>();
+    private static final HashMap<Plugin, ArrayList<PacketInListener>> pluginInListeners = new HashMap<>();
+    private static final HashMap<Plugin, ArrayList<PacketOutListener>> pluginOutListeners = new HashMap<>();
 
-    public Protocol() {
-        try {
-            this.minecraftServer = Reflection.getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
-            this.serverConnection = Reflection.getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(this.minecraftServer);
-            this.channelFutures = (List) Reflection.getFirstFieldOfType(serverConnectionClass, List.class).get(this.serverConnection);
-            this.networkManagers = (List) Reflection.getLastFieldOfType(serverConnectionClass, List.class).get(this.serverConnection);
-            this.registerChannelHandler();
-            this.registerPlayers();
-        } catch (Throwable e) {
-            System.err.println("Error on initializing Protocol.");
-            e.printStackTrace();
-        }
+    /**
+     * Sends the given vanilla packet to a player
+     *
+     * @param player - The target player
+     * @param packet - The sendable packet
+     */
+    public abstract void sendPacket(Player player, Object packet);
+
+    /**
+     * Sends the given vanilla packet to a channel
+     *
+     * @param channel - The target players channel
+     * @param packet  - The sendable packet
+     */
+    public abstract void sendPacket(Channel channel, Object packet);
+
+
+    /**
+     * Simulates receiving the given vanilla packet from a player
+     *
+     * @param player - The sender player
+     * @param packet - The sendable packet
+     */
+    public abstract void receivePacket(Player player, Object packet);
+
+    /**
+     * Simulates receiving the given vanilla packet from a channel
+     *
+     * @param channel - The sender players channel
+     * @param packet  - The sendable packet
+     */
+    public abstract void receivePacket(Channel channel, Object packet);
+
+    /**
+     * Returns the channel of a Player
+     *
+     * @param plr - The target Player
+     * @return The channel of the target Player
+     */
+    public abstract Channel getChannel(Player plr);
+
+    /**
+     * Returns the Player belonging to the given channel
+     *
+     * @param channel - The target Player
+     * @return The Player for who is the given channel belongs to, or null if the Channel and the Player object is not yet matched.
+     */
+    public abstract Player getPlayer(Channel channel);
+
+    public void registerIncomingListener(Plugin plugin, PacketInListener listener, PacketInType packetType) {
+        if (inListenerTypes.containsKey(listener))
+            throw new RuntimeException("The given listener is already registered.");
+        ArrayList<PacketInListener> pil = inListeners.get(packetType);
+        if (pil == null)
+            inListeners.put(packetType, Lists.newArrayList(listener));
+        else
+            pil.add(listener);
+        inListenerTypes.put(listener, packetType);
+        pil = pluginInListeners.get(plugin);
+        if (pil == null)
+            pluginInListeners.put(plugin, Lists.newArrayList(listener));
+        else
+            pil.add(listener);
     }
 
-    private void createServerChannelHandler() {
-        this.endInit = new ChannelInitializer<Channel>() {
+    public void registerOutgoingListener(Plugin plugin, PacketOutListener listener, PacketOutType packetType) {
+        if (outListenerTypes.containsKey(listener))
+            throw new RuntimeException("The given listener is already registered.");
+        ArrayList<PacketOutListener> pol = outListeners.get(packetType);
+        if (pol == null)
+            outListeners.put(packetType, Lists.newArrayList(listener));
+        else
+            pol.add(listener);
+        outListenerTypes.put(listener, packetType);
+        pol = pluginOutListeners.get(plugin);
+        if (pol == null)
+            pluginOutListeners.put(plugin, Lists.newArrayList(listener));
+        else
+            pol.add(listener);
+    }
 
-            protected void initChannel(Channel channel) throws Exception {
+    public void unregisterIncomingListener(Plugin pl) {
+        ArrayList<PacketInListener> pol = pluginInListeners.remove(pl);
+        if (pol == null)
+            return;
+        for (PacketInListener l : pol)
+            inListeners.remove(inListenerTypes.remove(l));
+    }
+
+    public void unregisterOutgoingListener(Plugin pl) {
+        ArrayList<PacketOutListener> pol = pluginOutListeners.remove(pl);
+        if (pol == null)
+            return;
+        for (PacketOutListener l : pol)
+            outListeners.remove(outListenerTypes.remove(l));
+    }
+
+    public void dispatchPacketInEvent(PacketInEvent event) {
+        ArrayList<PacketInListener> ll = inListeners.get(event.getType());
+        if (ll != null)
+            for (PacketInListener l : ll) {
                 try {
-                    List list = Protocol.this.networkManagers;
-                    if (!Protocol.this.closed) {
-                        Protocol.this.injectChannelInternal(channel);
-                    }
+                    l.onPacketIN(event);
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    System.err.println("Error on dispatching PacketInEvent for packet type " + event.getType() + ".");
+                    if (Config.debug)
+                        e.printStackTrace();
                 }
             }
-        };
-        this.beginInit = new ChannelInitializer<Channel>() {
-
-            protected void initChannel(Channel channel) throws Exception {
-                channel.pipeline().addLast(Protocol.this.endInit);
-            }
-        };
-        this.serverChannel = new ChannelInboundHandlerAdapter() {
-
-            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                Channel channel = (Channel) msg;
-                channel.pipeline().addFirst(Protocol.this.beginInit);
-                ctx.fireChannelRead(msg);
-            }
-        };
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerLogin(PlayerLoginEvent e) {
-        if (this.closed) {
-            return;
-        }
-        Channel channel = this.getChannel(e.getPlayer());
-        this.injectPlayer(e.getPlayer());
-    }
-
-    private void registerChannelHandler() {
-        this.createServerChannelHandler();
-        for (ChannelFuture ch : this.channelFutures) {
-            Channel serverChannel = ch.channel();
-            this.serverChannels.add(serverChannel);
-            serverChannel.pipeline().addFirst(this.serverChannel);
-        }
-    }
-
-    private void unregisterChannelHandler() {
-        if (this.serverChannel == null) {
-            return;
-        }
-        for (Channel ch : this.serverChannels) {
-            final ChannelPipeline pipeline = ch.pipeline();
-            ch.eventLoop().execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        pipeline.remove(Protocol.this.serverChannel);
-                    } catch (Throwable var1_1) {
-                        // empty catch block
-                    }
+    public void dispatchPacketOutEvent(PacketOutEvent event) {
+        ArrayList<PacketOutListener> ll = outListeners.get(event.getType());
+        if (ll != null)
+            for (PacketOutListener l : ll) {
+                try {
+                    l.onPacketOUT(event);
+                } catch (Throwable e) {
+                    System.err.println("Error on dispatching PacketOutEvent for packet type " + event.getType() + ".");
+                    if (Config.debug)
+                        e.printStackTrace();
                 }
-            });
-        }
-    }
-
-    private void registerPlayers() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            this.injectPlayer(player);
-        }
-    }
-
-    public void sendPacket(Player player, Object packet) {
-        this.sendPacket(this.getChannel(player), packet);
-    }
-
-    public void sendPacket(Channel channel, Object packet) {
-        channel.pipeline().writeAndFlush(packet);
-    }
-
-    public void receivePacket(Player player, Object packet) {
-        this.receivePacket(this.getChannel(player), packet);
-    }
-
-    public void receivePacket(Channel channel, Object packet) {
-        channel.pipeline().context("encoder").fireChannelRead(packet);
-    }
-
-    public void injectPlayer(Player player) {
-        this.injectChannelInternal(this.getChannel(player)).player = player;
-    }
-
-    private NewChannelHandler injectChannelInternal(final Channel channel) {
-        NewChannelHandler interceptor = (NewChannelHandler) channel.pipeline().get("SpigotLib");
-        if (interceptor == null) {
-            final NewChannelHandler newInterceptor = interceptor = new NewChannelHandler();
-            try {
-                channel.pipeline().addBefore("packet_handler", "SpigotLib", newInterceptor);
-            } catch (Throwable e) {
-                System.err.println("Scheduled interception");
-                SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            channel.pipeline().addBefore("packet_handler", "SpigotLib", newInterceptor);
-                        } catch (Throwable e) {
-                            System.err.println("Failed interception");
-                        }
-                    }
-                });
             }
-        }
-        return interceptor;
     }
 
-    public Channel getChannel(Player player) {
-        Channel channel = this.channelLookup.get(player.getName());
-        if (channel == null) {
-            try {
-                Object connection = getConnection.get(getPlayerHandle.invoke(player));
-                Object manager = getManager.get(connection);
-                channel = (Channel) getChannel.get(manager);
-                this.channelLookup.put(player.getName(), channel);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-        return channel;
+    /**
+     * Closes the PacketAPI
+     */
+    public abstract void close();
+
+    public abstract PacketCapture getCapturer(Player plr);
+
+    public abstract void setCapturer(Player plr, PacketCapture packetCapture);
+
+    public interface PacketInListener{
+        void onPacketIN(PacketInEvent e);
     }
 
-    public void uninjectPlayer(Player player) {
-        this.uninjectChannel(this.getChannel(player));
+    public interface PacketOutListener {
+        void onPacketOUT(PacketOutEvent e);
     }
-
-    public void uninjectChannel(final Channel channel) {
-        channel.eventLoop().execute(new Runnable() {
-
-            @Override
-            public void run() {
-                channel.pipeline().remove("SpigotLib");
-            }
-        });
-    }
-
-    public boolean hasInjected(Player player) {
-        return this.hasInjected(this.getChannel(player));
-    }
-
-    public boolean hasInjected(Channel channel) {
-        return channel.pipeline().get("SpigotLib") != null;
-    }
-
-    public final void close() {
-        if (!this.closed) {
-            this.closed = true;
-            for (Player player : SU.srv.getOnlinePlayers()) {
-                this.uninjectPlayer(player);
-            }
-            HandlerList.unregisterAll(this);
-            this.unregisterChannelHandler();
-        }
-    }
-
-    public final class NewChannelHandler
-            extends ChannelDuplexHandler {
-        public Player player;
-
-        public void channelRead(ChannelHandlerContext ctx, Object packet) throws Exception {
-            try {
-                Channel channel = ctx.channel();
-                PacketInEvent e = new PacketInEvent(channel, this, packet);
-                if (e.getType() == PacketInType.LoginInStart) {
-                    GameProfile profile = (GameProfile) getGameProfile.get(packet);
-                    Protocol.this.channelLookup.put(profile.getName(), channel);
-                }
-                if (Config.packetAPI)
-                    SU.pm.callEvent(e);
-                if (!e.isCancelled()) {
-                    super.channelRead(ctx, packet);
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
-            try {
-                PacketOutEvent e = new PacketOutEvent(ctx.channel(), this, packet);
-                if (Config.packetAPI)
-                    SU.pm.callEvent(e);
-                if (!e.isCancelled()) {
-                    super.write(ctx, packet, promise);
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
 }
-

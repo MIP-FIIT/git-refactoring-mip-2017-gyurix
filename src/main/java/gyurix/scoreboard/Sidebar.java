@@ -85,7 +85,7 @@ public class Sidebar
     @Override
     public void addViewer(Player plr) {
         this.viewers.add(plr.getUniqueId());
-        this.sendUpdatePacket(plr);
+        SU.tp.sendPacket(plr, getObjectivePacket(2));
         for (SidebarLine line : this.lines) {
             if (line.hide) continue;
             line.show(plr);
@@ -98,7 +98,7 @@ public class Sidebar
     @Override
     public void addViewerFirstBar(Player plr) {
         this.viewers.add(plr.getUniqueId());
-        this.sendCreatePacket(plr);
+        SU.tp.sendPacket(plr, getObjectivePacket(0));
         for (SidebarLine line : this.lines) {
             if (line.hide) continue;
             line.show(plr);
@@ -119,7 +119,7 @@ public class Sidebar
             old.lines.get(i).hide(plr);
             this.lines.get(i).show(plr);
         }
-        this.sendUpdatePacket(plr);
+        SU.tp.sendPacket(plr, getObjectivePacket(2));
         if (!old.visible && this.visible) {
             SU.tp.sendPacket(plr, this.showPacket);
         }

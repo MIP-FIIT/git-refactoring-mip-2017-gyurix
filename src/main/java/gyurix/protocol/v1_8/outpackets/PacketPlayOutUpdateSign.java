@@ -1,14 +1,14 @@
-package gyurix.protocol.v1_8.inpackets;
+package gyurix.protocol.v1_8.outpackets;
 
 import gyurix.chat.ChatTag;
-import gyurix.protocol.PacketInType;
+import gyurix.protocol.PacketOutType;
 import gyurix.protocol.WrappedPacket;
 import gyurix.protocol.utils.BlockLocation;
 import gyurix.spigotlib.ChatAPI;
 
 import java.lang.reflect.Array;
 
-public class PacketPlayInUpdateSign extends WrappedPacket {
+public class PacketPlayOutUpdateSign extends WrappedPacket {
     public BlockLocation block;
     public ChatTag[] lines;
 
@@ -18,15 +18,15 @@ public class PacketPlayInUpdateSign extends WrappedPacket {
         for (int i = 0; i < 4; ++i) {
             lines[i] = this.lines[i].toICBC();
         }
-        return PacketInType.UpdateSign.newPacket(this.block.toVanillaBlockPosition(), lines);
+        return PacketOutType.UpdateSign.newPacket(null, block.toVanillaBlockPosition(), lines);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        Object[] data = PacketInType.UpdateSign.getPacketData(packet);
-        block = new BlockLocation(data[0]);
+        Object[] data = PacketOutType.UpdateSign.getPacketData(packet);
+        block = new BlockLocation(data[1]);
         lines = new ChatTag[4];
-        Object[] packetLines = (Object[]) data[1];
+        Object[] packetLines = (Object[]) data[2];
         for (int i = 0; i < 4; ++i) {
             lines[i] = ChatTag.fromICBC(packetLines[i]);
         }

@@ -2,11 +2,11 @@ package gyurix.spigotlib;
 
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
-import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigFile;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.protocol.Protocol;
 import gyurix.protocol.Reflection;
+import gyurix.spigotutils.BackendType;
 import gyurix.utils.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
  * SpigotLib utilities class
  *
  */
-public class SU {
+public final class SU {
     /**
      * The main instance of the CraftServer object.
      */
@@ -53,9 +54,14 @@ public class SU {
      */
     public static PluginManager pm;
     /**
+     * The main instance of the Messenger object.
+     */
+    public static Messenger msg;
+    /**
      * Player configuration file instance (players.yml file in the SpigotLib)
      */
     public static ConfigFile pf;
+
     /**
      * The main instance of the BukkitScheduler object.
      */
@@ -132,7 +138,7 @@ public class SU {
      *         if the given player UUID is null.
      */
     public static ConfigFile getPlayerConfig(UUID plr) {
-        ConfigData pln = new ConfigData(plr == null ? "CONSOLE" : plr.toString());
+        String pln = plr == null ? "CONSOLE" : plr.toString();
         if (pf.data.mapData == null)
             pf.data.mapData = new LinkedHashMap();
         return pf.subConfig(pln);
@@ -513,8 +519,6 @@ public class SU {
                         bmeta.setAuthor(text);
                     } else if (s[0].equals("TITLE")) {
                         bmeta.setTitle(text);
-                    } else if (s[0].equals("BOOK")) {
-                        bmeta.setPages(Config.books.get(text));
                     } else if (s[0].equals("PAGE")) {
                         bmeta.addPage(text);
                     }
@@ -760,5 +764,62 @@ public class SU {
                 .replace("|", "\\|")
                 .replace(" ", "_")
                 .replace("\n", "|");
+    }
+
+    public static String[] filterStart(String[] data, String start, boolean caseSensitive) {
+        if (!caseSensitive)
+            start = start.toLowerCase();
+        ArrayList<String> ld = new ArrayList<>();
+        for (String s : data) {
+            String comp = caseSensitive ? s : s.toLowerCase();
+            if (comp.startsWith(start))
+                ld.add(s);
+        }
+        Collections.sort(ld);
+        String[] out = new String[ld.size()];
+        return ld.toArray(out);
+    }
+
+    public static String[] filterStart(Iterable<String> data, String start, boolean caseSensitive) {
+        if (!caseSensitive)
+            start = start.toLowerCase();
+        ArrayList<String> ld = new ArrayList<>();
+        for (String s : data) {
+            String comp = caseSensitive ? s : s.toLowerCase();
+            if (comp.startsWith(start))
+                ld.add(s);
+        }
+        Collections.sort(ld);
+        String[] out = new String[ld.size()];
+        return ld.toArray(out);
+    }
+
+    public static void savePlayerConfig(UUID uid) {
+        String key = uid == null ? "CONSOLE" : uid.toString();
+        switch (Config.PlayerFile.backend) {
+            case FILE:
+                pf.save();
+                return;
+            case MYSQL: {
+                ArrayList<String> list = new ArrayList<>();
+                pf.subConfig(key, "uuid='" + key + "'").mysqlUpdate(list, null);
+                pf.db.batch(list, null);
+            }
+        }
+    }
+
+    public static boolean unloadPlayerConfig(UUID uid) {
+        if (Config.PlayerFile.backend == BackendType.MYSQL) {
+            String key = uid == null ? "CONSOLE" : uid.toString();
+            return pf.removeData(key);
+        }
+        return false;
+    }
+
+    public static void loadPlayerConfig(UUID uid) {
+        if (Config.PlayerFile.backend == BackendType.MYSQL) {
+            String key = uid == null ? "CONSOLE" : uid.toString();
+            pf.mysqlLoad(key, "uuid='" + key + "'");
+        }
     }
 }

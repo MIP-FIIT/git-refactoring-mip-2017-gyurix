@@ -13,7 +13,7 @@ public class TabAPI {
         TabAPI.setLocalHeaderFooter(header, footer, Bukkit.getOnlinePlayers());
     }
 
-    public static /* varargs */ void setLocalHeaderFooter(String header, String footer, Player... plrs) {
+    public static void setLocalHeaderFooter(String header, String footer, Player... plrs) {
         Object h = ChatAPI.toICBC(ChatAPI.TextToJson(header));
         Object f = ChatAPI.toICBC(ChatAPI.TextToJson(footer));
         Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(h, f);
@@ -29,6 +29,10 @@ public class TabAPI {
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
         }
+    }
+
+    public static void setGlobalTabName(Player p, String value) {
+
     }
 }
 

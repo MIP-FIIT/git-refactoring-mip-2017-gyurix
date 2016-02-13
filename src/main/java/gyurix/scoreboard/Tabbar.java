@@ -5,7 +5,6 @@ import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -13,7 +12,6 @@ public class Tabbar
         extends ScoreboardBar {
     public String header = "\u00a7b\u00a7lTest header";
     public String footer = "\u00a7c\u00a7l--------------------\nTabbar, made by gyuriX\n\u00a7c\u00a7l--------------------";
-    public ArrayList<UUID> viewers = new ArrayList();
     public HashMap<UUID, TabPlayer> pls = new HashMap();
 
     public Tabbar() {
@@ -59,7 +57,7 @@ public class Tabbar
     public void addViewer(Player plr) {
         System.out.println("\u00a7cTB: \u00a7aAdd viewer: " + plr.getName());
         this.viewers.add(plr.getUniqueId());
-        this.sendUpdatePacket(plr);
+        SU.tp.sendPacket(plr, getObjectivePacket(2));
         for (TabPlayer p : this.pls.values()) {
             SU.tp.sendPacket(plr, p.getSetScorePacket());
             SU.tp.sendPacket(plr, p.getTabnameSetPacket());
@@ -74,7 +72,7 @@ public class Tabbar
     public void addViewerFirstBar(Player plr) {
         System.out.println("\u00a7cTB: \u00a72Add viewer FIRST BAR: " + plr.getName());
         this.viewers.add(plr.getUniqueId());
-        this.sendCreatePacket(plr);
+        SU.tp.sendPacket(plr, getObjectivePacket(0));
         for (TabPlayer p : this.pls.values()) {
             SU.tp.sendPacket(plr, p.getSetScorePacket());
             SU.tp.sendPacket(plr, p.getTabnameSetPacket());
@@ -90,7 +88,7 @@ public class Tabbar
         System.out.println("\u00a7cTB: \u00a7eMove viewer: " + plr.getName());
         Tabbar old = (Tabbar) oldBar;
         this.viewers.add(plr.getUniqueId());
-        this.sendUpdatePacket(plr);
+        SU.tp.sendPacket(plr, getObjectivePacket(2));
         for (TabPlayer p2 : this.pls.values()) {
             TabPlayer op = old.pls.get(p2.profile.getId());
             if (op == null || op.number != p2.number) {

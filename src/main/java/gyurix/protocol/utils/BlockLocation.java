@@ -1,6 +1,8 @@
 package gyurix.protocol.utils;
 
 import gyurix.protocol.Reflection;
+import org.bukkit.Location;
+import org.bukkit.block.Block;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -45,6 +47,14 @@ public class BlockLocation {
         this.x = x;
         this.y = y;
         this.z = z;
+    }
+
+    public BlockLocation(Block bl) {
+        this(bl.getX(), bl.getY(), bl.getZ());
+    }
+
+    public BlockLocation(Location loc) {
+        this(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public Object toVanillaBlockPosition() {
