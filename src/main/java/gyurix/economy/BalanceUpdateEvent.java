@@ -11,11 +11,11 @@ public final class BalanceUpdateEvent
         extends Event
         implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final UUID target;
-    private final BigDecimal before;
     private final EconomyAPI.BalanceData balanceType;
-    private boolean cancel;
+    private final BigDecimal before;
+    private final UUID target;
     private BigDecimal after;
+    private boolean cancel;
 
     BalanceUpdateEvent(UUID target, BigDecimal before, BigDecimal after, EconomyAPI.BalanceData balanceType) {
         this.target = target;
@@ -26,14 +26,6 @@ public final class BalanceUpdateEvent
 
     public static HandlerList getHandlerList() {
         return handlers;
-    }
-
-    public UUID getTarget() {
-        return this.target;
-    }
-
-    public BigDecimal getBefore() {
-        return this.before;
     }
 
     public BigDecimal getAfter() {
@@ -48,16 +40,24 @@ public final class BalanceUpdateEvent
         return this.balanceType;
     }
 
+    public BigDecimal getBefore() {
+        return this.before;
+    }
+
+    public HandlerList getHandlers() {
+        return handlers;
+    }
+
+    public UUID getTarget() {
+        return this.target;
+    }
+
     public boolean isCancelled() {
         return this.cancel;
     }
 
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
-    }
-
-    public HandlerList getHandlers() {
-        return handlers;
     }
 }
 

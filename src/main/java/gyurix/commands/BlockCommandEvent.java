@@ -9,8 +9,8 @@ public class BlockCommandEvent
         extends Event implements Cancellable {
     private static final HandlerList hl = new HandlerList();
     private final BlockCommandSender sender;
-    private String command;
     private boolean cancel;
+    private String command;
 
     public BlockCommandEvent(BlockCommandSender sender, String command) {
         this.sender = sender;
@@ -21,16 +21,16 @@ public class BlockCommandEvent
         return hl;
     }
 
-    public HandlerList getHandlers() {
-        return hl;
-    }
-
     public String getCommand() {
         return this.command;
     }
 
     public void setCommand(String command) {
         this.command = command;
+    }
+
+    public HandlerList getHandlers() {
+        return hl;
     }
 
     public BlockCommandSender getSender() {

@@ -1,15 +1,13 @@
 package gyurix.scoreboard;
 
-import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
-import gyurix.protocol.PacketOutType;
-import gyurix.spigotlib.ChatAPI;
+import gyurix.protocol.event.PacketOutType;
 import org.bukkit.entity.Player;
 
 public class TabPlayer {
-    public String tabname;
-    public GameProfile profile;
     public int number;
+    public GameProfile profile;
+    public String tabname;
 
     public TabPlayer(GameProfile profile) {
     }
@@ -20,30 +18,30 @@ public class TabPlayer {
         this.number = ScoreboardAPI.id++;
     }
 
-    public Object getTabnameSetPacket() {
-        try {
-            return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList((Object[]) new Object[]{ScoreboardAPI.tabPlayer.newInstance(PacketOutType.PlayerInfo.newPacket(), this.profile, 0, null, ChatAPI.toICBC(ChatAPI.TextToJson(this.tabname)))}));
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public Object getTabnameRestorePacket() {
-        try {
-            return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList((Object[]) new Object[]{ScoreboardAPI.tabPlayer.newInstance(null, this.profile, 0, null, null)}));
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
+    public Object getRemoveScorePacket() {
+        return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", 0, ScoreboardAPI.removeScore);
     }
 
     public Object getSetScorePacket() {
         return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", this.number, ScoreboardAPI.setScore);
     }
 
-    public Object getRemoveScorePacket() {
-        return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", 0, ScoreboardAPI.removeScore);
+    public Object getTabnameRestorePacket() {
+        try {
+            //return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList((Object[]) new Object[]{ScoreboardAPI.tabPlayer.newInstance(null, this.profile, 0, null, null)}));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Object getTabnameSetPacket() {
+        try {
+            //return PacketOutType.PlayerInfo.newPacket(ScoreboardAPI.updateTabName, Lists.newArrayList((Object[]) new Object[]{ScoreboardAPI.tabPlayer.newInstance(PacketOutType.PlayerInfo.newPacket(), this.profile, 0, null, ChatAPI.toICBC(ChatAPI.TextToJson(this.tabname)))}));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
 

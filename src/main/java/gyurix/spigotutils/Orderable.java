@@ -25,15 +25,15 @@ public class Orderable implements Comparable<Orderable> {
     }
 
     @Override
-    public int hashCode() {
-        return key.hashCode() * 100000 + value.hashCode();
-    }
-
-    @Override
     public int compareTo(Orderable o) {
         if (value.compareTo(o.value) == 0)
             return key.toString().compareTo(o.key.toString());
         return 0 - value.compareTo(o.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return key.hashCode() * 100000 + value.hashCode();
     }
 
     @Override

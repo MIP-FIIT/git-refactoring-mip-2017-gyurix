@@ -7,9 +7,9 @@ import org.bukkit.block.BlockState;
 
 public class BlockData
         implements ConfigSerialization.StringSerializable {
-    public int id;
-    public byte data;
     public boolean anydata = true;
+    public byte data;
+    public int id;
 
     public BlockData(Block b) {
         this.id = b.getTypeId();
@@ -38,8 +38,19 @@ public class BlockData
             this.data = Byte.valueOf(s[1]).byteValue();
             this.anydata = false;
         } catch (Throwable e) {
-            // empty catch block
         }
+    }
+
+    public boolean equals(Object obj) {
+        if (obj == null || obj.getClass() != this.getClass()) {
+            return false;
+        }
+        BlockData bd = (BlockData) obj;
+        return bd.id == this.id && (bd.data == this.data || bd.anydata || this.anydata);
+    }
+
+    public int hashCode() {
+        return this.id * 16 + this.data;
     }
 
     public boolean isBlock(Block b) {
@@ -61,18 +72,6 @@ public class BlockData
         Material m = Material.getMaterial(this.id);
         String sid = m == null ? "" + this.id : m.name();
         return this.anydata ? sid : sid + ":" + this.data;
-    }
-
-    public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != this.getClass()) {
-            return false;
-        }
-        BlockData bd = (BlockData) obj;
-        return bd.id == this.id && (bd.data == this.data || bd.anydata || this.anydata);
-    }
-
-    public int hashCode() {
-        return this.id * 16 + this.data;
     }
 }
 

@@ -1,6 +1,6 @@
 package gyurix.nbt;
 
-import gyurix.utils.ArrayUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Field;
@@ -20,6 +20,22 @@ public class NBTList
 
     public NBTList(Object tag) {
         this.loadFromNMS(tag);
+    }
+
+    public NBTList addAll(Collection col) {
+        for (Object o : col) {
+            if (o == null) continue;
+            this.list.add(NBTTag.make(o));
+        }
+        return this;
+    }
+
+    public NBTList addAll(Object... col) {
+        for (Object o : col) {
+            if (o == null) continue;
+            this.list.add(NBTTag.make(o));
+        }
+        return this;
     }
 
     @Override
@@ -59,22 +75,6 @@ public class NBTList
             e.printStackTrace();
             return null;
         }
-    }
-
-    public NBTList addAll(Collection col) {
-        for (Object o : col) {
-            if (o == null) continue;
-            this.list.add(NBTTag.make(o));
-        }
-        return this;
-    }
-
-    public /* varargs */ NBTList addAll(Object... col) {
-        for (Object o : col) {
-            if (o == null) continue;
-            this.list.add(NBTTag.make(o));
-        }
-        return this;
     }
 
     public String toString() {

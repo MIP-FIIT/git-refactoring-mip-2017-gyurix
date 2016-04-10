@@ -7,14 +7,14 @@ import java.util.Iterator;
 
 public class ScrollerEffect
         implements CustomEffect {
-    public int start;
-    public int max = 80;
-    public int size = 16;
-    public int speed = 1;
-    public String text;
-    public boolean reversed;
-    public boolean skipColors = true;
     public char fill = 32;
+    public int max = 80;
+    public boolean reversed;
+    public int size = 16;
+    public boolean skipColors = true;
+    public int speed = 1;
+    public int start;
+    public String text;
 
     public ScrollerEffect() {
     }
@@ -31,6 +31,21 @@ public class ScrollerEffect
         this.reversed = reversed;
         this.skipColors = skipColors;
         this.fill = fill;
+        this.text = text;
+    }
+
+    @Override
+    public CustomEffect clone() {
+        return new ScrollerEffect(this.max, this.size, this.speed, this.start, this.reversed, this.skipColors, this.fill, this.text);
+    }
+
+    @Override
+    public String getText() {
+        return this.text;
+    }
+
+    @Override
+    public void setText(String text) {
         this.text = text;
     }
 
@@ -102,21 +117,6 @@ public class ScrollerEffect
             }
         }
         return sb.toString();
-    }
-
-    @Override
-    public String getText() {
-        return this.text;
-    }
-
-    @Override
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    @Override
-    public CustomEffect clone() {
-        return new ScrollerEffect(this.max, this.size, this.speed, this.start, this.reversed, this.skipColors, this.fill, this.text);
     }
 }
 

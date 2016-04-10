@@ -2,8 +2,9 @@ package gyurix.spigotlib;
 
 import gyurix.chat.ChatTag;
 import gyurix.json.JsonAPI;
-import gyurix.protocol.PacketOutType;
 import gyurix.protocol.Reflection;
+import gyurix.protocol.event.PacketOutType;
+import gyurix.spigotutils.ServerVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -11,67 +12,62 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 
 public class ChatAPI {
-    public static Method toICBC;
+    /**
+     * Method for converting IChatBaseComponent to raw JSON.
+     */
     public static Method fromICBC;
+    /**
+     * The IChatBaseComponent class
+     */
     public static Class icbcClass;
+    /**
+     * Method for converting raw json to IChatBaseComponent.
+     */
+    public static Method toICBC;
 
+    /**
+     * Converts the given message to raw JSON format
+     *
+     * @param msg - The message
+     * @return The conversion result raw json
+     */
+    public static String TextToJson(String msg) {
+        return ChatTag.fromExtraText(msg).toString();
+    }
+
+    /**
+     * Initializes the ChatAPI. Do not use this method.
+     */
     public static void init() {
         try {
             icbcClass = Reflection.getNMSClass("IChatBaseComponent");
-            if (Reflection.version.equals("v1_8_R1.") || Reflection.version.startsWith("v1_7")) {
-                toICBC = Reflection.getNMSClass("ChatSerializer").getMethod("a", String.class);
-            } else {
-                for (Class c : icbcClass.getClasses()) {
-                    if (!c.getName().endsWith("ChatSerializer")) continue;
-                    toICBC = c.getMethod("a", String.class);
-                    fromICBC = c.getMethod("a", icbcClass);
-                }
+            for (Class c : icbcClass.getClasses()) {
+                if (!c.getName().endsWith("ChatSerializer")) continue;
+                toICBC = c.getMethod("a", String.class);
+                fromICBC = c.getMethod("a", icbcClass);
             }
         } catch (Throwable e) {
-            Main.errorLog(null, e);
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
     }
 
-    public static Object toICBC(String json) {
-        try {
-            if (json == null) {
-                return null;
-            }
-            return toICBC.invoke(null, json);
-        } catch (Throwable e) {
-            Main.errorLog(null, e);
-            throw new RuntimeException(e);
-        }
+    /**
+     * Converts a string to it's json format
+     *
+     * @param value - The convertable String
+     * @return The conversion result
+     */
+    public static String quoteJson(String value) {
+        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
     }
 
-    public static String toJson(Object icbc) {
-        try {
-            if (icbc == null) {
-                return null;
-            }
-            return (String) fromICBC.invoke(null, icbc);
-        } catch (Throwable e) {
-            Main.errorLog(null, e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void sendRawJson(ChatMessageType type, String json, Player... pls) {
-        Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
-        for (Player p : pls) {
-            SU.tp.sendPacket(p, packet);
-        }
-    }
-
-    public static void sendRawJson(ChatMessageType type, String json, Collection<? extends Player> pls) {
-        Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
-        for (Player p : pls) {
-            SU.tp.sendPacket(p, packet);
-            if (Config.debug)
-                System.out.println("Sent JSON " + json + " to " + p.getName());
-        }
-    }
-
+    /**
+     * Sends the given type json message to the given players or to every online player
+     *
+     * @param type - The type of the sendable JSON message
+     * @param msg  - The json message
+     * @param pls  -  The receiver list, if it is empty then all the online players will get the message
+     */
     public static void sendJsonMsg(ChatMessageType type, String msg, Player... pls) {
         if (pls.length == 0) {
             ChatAPI.sendJsonMsg(type, msg, Bukkit.getOnlinePlayers());
@@ -81,11 +77,97 @@ public class ChatAPI {
         ChatAPI.sendRawJson(type, json, pls);
     }
 
+    /**
+     * Sends the given type json message to the given players or to every online player
+     *
+     * @param type - The type of the sendable JSON message
+     * @param msg  - The json message
+     * @param pls  -  The receiver list, if it is empty then all the online players will get the message
+     */
     public static void sendJsonMsg(ChatMessageType type, String msg, Collection<? extends Player> pls) {
-        String json = type == ChatMessageType.ACTION_BAR ? ChatAPI.quoteJson(msg) : ChatAPI.TextToJson(msg);
-        ChatAPI.sendRawJson(type, json, pls);
+        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+            String json = type == ChatMessageType.ACTION_BAR ? ChatAPI.quoteJson(msg) : ChatAPI.TextToJson(msg);
+            ChatAPI.sendRawJson(type, json, pls);
+        } else {
+            msg = ChatTag.stripExtras(msg);
+            for (Player p : pls)
+                p.sendMessage(msg);
+        }
     }
 
+    /**
+     * Sends a raw Json message to the given players
+     *
+     * @param type - The type of the sendable JSON message
+     * @param json - The raw json
+     * @param pls  - The receiver list
+     */
+    public static void sendRawJson(ChatMessageType type, String json, Player... pls) {
+        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+            Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
+            for (Player p : pls)
+                SU.tp.sendPacket(p, packet);
+        } else {
+            json = JsonAPI.deserialize(json, ChatTag.class).toColoredString();
+            for (Player p : pls) {
+                p.sendMessage(json);
+            }
+        }
+    }
+
+    /**
+     * Sends a raw Json message to the given players
+     *
+     * @param type - The type of the sendable JSON message
+     * @param json - The raw json
+     * @param pls  - The receiver list
+     */
+    public static void sendRawJson(ChatMessageType type, String json, Collection<? extends Player> pls) {
+        Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
+        for (Player p : pls)
+            SU.tp.sendPacket(p, packet);
+    }
+
+    /**
+     * Converts a raw json message to vanilla IChatBaseComponent
+     * @param json - The raw json
+     * @return The vanilla IChatBaseComponent
+     */
+    public static Object toICBC(String json) {
+        try {
+            if (json == null) {
+                return null;
+            }
+            return toICBC.invoke(null, json);
+        } catch (Throwable e) {
+            SU.cs.sendMessage("§cError on converting JSON §f" + json + "§c to IChatBaseComponent.");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            return null;
+        }
+    }
+
+    /**
+     * Converts a vanilla IChatBaseComponent to a raw Json message
+     * @param icbc - The vanilla IChatBaseComponent
+     * @return The raw json message
+     */
+    public static String toJson(Object icbc) {
+        try {
+            if (icbc == null) {
+                return null;
+            }
+            return (String) fromICBC.invoke(null, icbc);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            return null;
+        }
+    }
+
+    /**
+     * Escapes an unicode character
+     * @param ch - The escapeable character
+     * @return The unicode escaped character in String
+     */
     public static String unicodeEscape(char ch) {
         StringBuilder sb = new StringBuilder();
         sb.append("\\u");
@@ -97,18 +179,14 @@ public class ChatAPI {
         return sb.toString();
     }
 
-    public static String quoteJson(String value) {
-        return "\"" + JsonAPI.escape(value) + "\"";
-    }
-
-    public static String TextToJson(String msg) {
-        return ChatTag.fromExtraText(msg).toString();
-    }
-
+    /**
+     * Enum of the available ChatMessageTypes
+     */
     public enum ChatMessageType {
         CHAT,
         SYSTEM,
         ACTION_BAR;
+
         ChatMessageType() {
         }
     }

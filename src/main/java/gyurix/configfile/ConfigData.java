@@ -1,7 +1,7 @@
 package gyurix.configfile;
 
+import com.google.common.primitives.Primitives;
 import gyurix.mysql.MySQLDatabase;
-import gyurix.utils.Primitives;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -10,11 +10,11 @@ import java.util.Map;
 
 public class ConfigData {
     public String comment;
-    public String stringData;
-    public Object objectData;
-    public Type[] types;
     public ArrayList<ConfigData> listData;
     public LinkedHashMap<ConfigData, ConfigData> mapData;
+    public Object objectData;
+    public String stringData;
+    public Type[] types;
 
     public ConfigData() {
     }
@@ -31,34 +31,6 @@ public class ConfigData {
         this.stringData = stringData;
         if (comment != null && !comment.isEmpty())
             this.comment = comment;
-    }
-
-    public static ConfigData serializeObject(Object obj, Type... parameters) {
-        return serializeObject(obj, false, parameters);
-    }
-
-    public static ConfigData serializeObject(Object obj, boolean className, Type... parameters) {
-        if (obj == null) {
-            return null;
-        }
-        Class c = Primitives.wrap(obj.getClass());
-        if (c.isArray()) {
-            className = true;
-            parameters = new Type[]{c.getComponentType()};
-        }
-        ConfigSerialization.Serializer s = ConfigSerialization.getSerializer(c);
-        ConfigData cd = s.toData(obj, parameters);
-        if ((cd.stringData != null) && (cd.stringData.startsWith("‼")))
-            cd.stringData = ("\\" + cd.stringData);
-        if (className) {
-            String prefix = "‼" + ConfigSerialization.getAlias(obj.getClass());
-            for (Type t : parameters) {
-                prefix = prefix + "-" + ConfigSerialization.getAlias((Class) t);
-            }
-            prefix = prefix + "‼";
-            cd.stringData = (prefix + cd.stringData);
-        }
-        return cd;
     }
 
     public static String escape(String in) {
@@ -100,6 +72,34 @@ public class ConfigData {
             out.append('n');
         }
         return out.toString();
+    }
+
+    public static ConfigData serializeObject(Object obj, boolean className, Type... parameters) {
+        if (obj == null) {
+            return null;
+        }
+        Class c = Primitives.wrap(obj.getClass());
+        if (c.isArray()) {
+            className = true;
+            parameters = new Type[]{c.getComponentType()};
+        }
+        ConfigSerialization.Serializer s = ConfigSerialization.getSerializer(c);
+        ConfigData cd = s.toData(obj, parameters);
+        if ((cd.stringData != null) && (cd.stringData.startsWith("‼")))
+            cd.stringData = ("\\" + cd.stringData);
+        if (className) {
+            String prefix = "‼" + ConfigSerialization.getAlias(obj.getClass());
+            for (Type t : parameters) {
+                prefix = prefix + "-" + ConfigSerialization.getAlias((Class) t);
+            }
+            prefix = prefix + "‼";
+            cd.stringData = (prefix + cd.stringData);
+        }
+        return cd;
+    }
+
+    public static ConfigData serializeObject(Object obj, Type... parameters) {
+        return serializeObject(obj, false, parameters);
     }
 
     public static String unescape(String in) {
@@ -151,10 +151,10 @@ public class ConfigData {
         return out.toString().replaceAll("\n +#", "\n#");
     }
 
-    public Object deserialize(Class c, Type... types) {
+    public <T> T deserialize(Class<T> c, Type... types) {
         this.types = types;
         if (this.objectData != null)
-            return this.objectData;
+            return (T) this.objectData;
         String str = this.stringData == null ? "" : this.stringData;
 
         if (str.startsWith("‼")) {
@@ -179,7 +179,33 @@ public class ConfigData {
         this.stringData = null;
         this.mapData = null;
         this.listData = null;
-        return this.objectData;
+        return (T) this.objectData;
+    }
+
+    public boolean equals(Object obj) {
+        return obj != null && obj instanceof ConfigData ? (((ConfigData) obj).stringData + "").equals("" + stringData) : false;
+    }
+
+    public int hashCode() {
+        return this.stringData == null ? this.objectData == null ? this.listData == null ? this.mapData == null ? 0 :
+                this.mapData.hashCode() : this.listData.hashCode() : this.objectData.hashCode() : this.stringData.hashCode();
+    }
+
+    public void saveToMySQL(ArrayList<String> l, String dbTable, String args, String key) {
+        DefaultSerializers.leftPad = 16;
+        ConfigData cd = objectData == null ? this : serializeObject(objectData, types);
+        if (cd.mapData != null) {
+            if (!key.isEmpty())
+                key += ".";
+            for (Map.Entry<ConfigData, ConfigData> e : cd.mapData.entrySet()) {
+                e.getValue().saveToMySQL(l, dbTable, args.replace("<key>", MySQLDatabase.escape(key) + "<key>"), e.getKey().toString());
+            }
+        } else {
+            String value = cd.toString();
+            if (value != null)
+                l.add("INSERT INTO " + dbTable + " VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", "" + MySQLDatabase.escape(value)) + ")");
+        }
+        DefaultSerializers.leftPad = 0;
     }
 
     public String toString() {
@@ -221,32 +247,5 @@ public class ConfigData {
         if (out.length() == 0)
             return null;
         return out.toString();
-    }
-
-    public boolean equals(Object obj) {
-        return obj != null && obj instanceof ConfigData ? (((ConfigData) obj).stringData + "").equals("" + stringData) : false;
-    }
-
-
-    public int hashCode() {
-        return this.stringData == null ? this.objectData == null ? this.listData == null ? this.mapData == null ? 0 :
-                this.mapData.hashCode() : this.listData.hashCode() : this.objectData.hashCode() : this.stringData.hashCode();
-    }
-
-    public void saveToMySQL(ArrayList<String> l, String dbTable, String args, String key) {
-        DefaultSerializers.leftPad = 16;
-        ConfigData cd = objectData == null ? this : serializeObject(objectData, types);
-        if (cd.mapData != null) {
-            if (!key.isEmpty())
-                key += ".";
-            for (Map.Entry<ConfigData, ConfigData> e : cd.mapData.entrySet()) {
-                e.getValue().saveToMySQL(l, dbTable, args.replace("<key>", MySQLDatabase.escape(key) + "<key>"), e.getKey().toString());
-            }
-        } else {
-            String value = cd.toString();
-            if (value != null)
-                l.add("INSERT INTO " + dbTable + " VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", "" + MySQLDatabase.escape(value)) + ")");
-        }
-        DefaultSerializers.leftPad = 0;
     }
 }

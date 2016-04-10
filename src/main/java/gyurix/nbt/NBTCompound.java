@@ -6,8 +6,8 @@ import java.util.Map;
 
 public class NBTCompound
         extends NBTTag {
-    static Class nmsClass;
     static Field mapField;
+    static Class nmsClass;
     public HashMap<String, NBTTag> map = new HashMap();
 
     public NBTCompound() {
@@ -15,6 +15,37 @@ public class NBTCompound
 
     public NBTCompound(Object nmsTag) {
         this.loadFromNMS(nmsTag);
+    }
+
+    public NBTCompound addAll(Map<?, ?> o) {
+        for (Map.Entry e : o.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) continue;
+            this.map.put(e.getKey().toString(), NBTTag.make(e.getValue()));
+        }
+        return this;
+    }
+
+    public boolean getBoolean(String key) {
+        NBTTag tag = this.map.get(key);
+        return tag != null && tag instanceof NBTPrimitive && ((Byte) ((NBTPrimitive) tag).data).byteValue() == 1;
+    }
+
+    public NBTCompound getCompound(String key) {
+        NBTTag tag = this.map.get(key);
+        if (tag == null || !(tag instanceof NBTCompound)) {
+            tag = new NBTCompound();
+            this.map.put(key, tag);
+        }
+        return (NBTCompound) tag;
+    }
+
+    public NBTList getList(String key) {
+        NBTTag tag = this.map.get(key);
+        if (tag == null || !(tag instanceof NBTList)) {
+            tag = new NBTList();
+            this.map.put(key, tag);
+        }
+        return (NBTList) tag;
     }
 
     @Override
@@ -53,37 +84,6 @@ public class NBTCompound
         }
     }
 
-    public NBTCompound getCompound(String key) {
-        NBTTag tag = this.map.get(key);
-        if (tag == null || !(tag instanceof NBTCompound)) {
-            tag = new NBTCompound();
-            this.map.put(key, tag);
-        }
-        return (NBTCompound) tag;
-    }
-
-    public NBTList getList(String key) {
-        NBTTag tag = this.map.get(key);
-        if (tag == null || !(tag instanceof NBTList)) {
-            tag = new NBTList();
-            this.map.put(key, tag);
-        }
-        return (NBTList) tag;
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, NBTTag> e : this.map.entrySet()) {
-            sb.append("\n\u00a7e").append((Object) e.getKey()).append(":\u00a7b ").append(e.getValue());
-        }
-        return sb.length() == 0 ? "{}" : "{" + sb.substring(1) + "}";
-    }
-
-    public boolean getBoolean(String key) {
-        NBTTag tag = this.map.get(key);
-        return tag != null && tag instanceof NBTPrimitive && ((Byte) ((NBTPrimitive) tag).data).byteValue() == 1;
-    }
-
     public NBTCompound set(String key, Object value) {
         if (value == null) {
             this.map.remove(key);
@@ -93,12 +93,12 @@ public class NBTCompound
         return this;
     }
 
-    public NBTCompound addAll(Map<?, ?> o) {
-        for (Map.Entry e : o.entrySet()) {
-            if (e.getKey() == null || e.getValue() == null) continue;
-            this.map.put(e.getKey().toString(), NBTTag.make(e.getValue()));
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, NBTTag> e : this.map.entrySet()) {
+            sb.append("\n\u00a7e").append((Object) e.getKey()).append(":\u00a7b ").append(e.getValue());
         }
-        return this;
+        return sb.length() == 0 ? "{}" : "{" + sb.substring(1) + "}";
     }
 }
 

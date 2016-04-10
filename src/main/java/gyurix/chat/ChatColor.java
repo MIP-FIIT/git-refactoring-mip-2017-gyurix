@@ -18,8 +18,8 @@ public enum ChatColor {
         }
     }
 
-    final char id;
     final boolean format;
+    final char id;
 
     ChatColor(char id) {
         this.id = id;

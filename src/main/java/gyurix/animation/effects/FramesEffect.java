@@ -10,22 +10,46 @@ import java.util.Iterator;
 
 public class FramesEffect
         implements CustomEffect {
-    public ArrayList<Frame> frames = new ArrayList();
-    public boolean random;
-    @ConfigSerialization.ConfigOptions(defaultValue = "9223372036854775807")
-    public long frameTime = Long.MAX_VALUE;
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    public int state = -1;
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    public Iterator<Long> delays;
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    public Iterator<Long> repeats;
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    public long repeat;
     @ConfigSerialization.ConfigOptions(serialize = false)
     public long delay;
     @ConfigSerialization.ConfigOptions(serialize = false)
+    public Iterator<Long> delays;
+    @ConfigSerialization.ConfigOptions(serialize = false)
     public Frame f;
+    @ConfigSerialization.ConfigOptions(defaultValue = "9223372036854775807")
+    public long frameTime = Long.MAX_VALUE;
+    public ArrayList<Frame> frames = new ArrayList();
+    public boolean random;
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    public long repeat;
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    public Iterator<Long> repeats;
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    public int state = -1;
+
+    @Override
+    public CustomEffect clone() {
+        FramesEffect fe = new FramesEffect();
+        fe.frameTime = this.frameTime;
+        fe.state = this.state;
+        fe.frames = this.frames;
+        fe.random = this.random;
+        fe.f = this.f;
+        fe.delay = this.delay;
+        fe.delays = this.delays;
+        fe.repeats = this.repeats;
+        fe.repeat = this.repeat;
+        return fe;
+    }
+
+    @Override
+    public String getText() {
+        return this.f != null ? this.f.text : "";
+    }
+
+    @Override
+    public void setText(String newText) {
+    }
 
     @Override
     public String next(String in) {
@@ -50,30 +74,6 @@ public class FramesEffect
         }
         --this.repeat;
         return this.f.text;
-    }
-
-    @Override
-    public String getText() {
-        return this.f != null ? this.f.text : "";
-    }
-
-    @Override
-    public void setText(String newText) {
-    }
-
-    @Override
-    public CustomEffect clone() {
-        FramesEffect fe = new FramesEffect();
-        fe.frameTime = this.frameTime;
-        fe.state = this.state;
-        fe.frames = this.frames;
-        fe.random = this.random;
-        fe.f = this.f;
-        fe.delay = this.delay;
-        fe.delays = this.delays;
-        fe.repeats = this.repeats;
-        fe.repeat = this.repeat;
-        return fe;
     }
 }
 

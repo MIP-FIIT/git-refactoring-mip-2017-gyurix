@@ -12,17 +12,18 @@ public class MySQLDatabase {
     @ConfigSerialization.ConfigOptions(serialize = false)
     private static ExecutorService executeThread = Executors.newSingleThreadExecutor(), prepareThread = Executors.newSingleThreadExecutor(), runnableThread = Executors.newSingleThreadExecutor();
     public String table;
-    private String host;
-    private String username;
-    private String password;
-    private String database;
-    private int timeout = 10000;
     @ConfigSerialization.ConfigOptions(serialize = false)
     private Connection con;
+    private String database;
+    private String host;
+    private String password;
+    private int timeout = 10000;
+    private String username;
 
     public MySQLDatabase() {
 
     }
+
     public MySQLDatabase(String host, String database, String username, String password) {
         this.host = host;
         this.username = username;
@@ -63,16 +64,23 @@ public class MySQLDatabase {
         return out.toString();
     }
 
-    public boolean openConnection() {
+    public void batch(Iterable<String> commands) {
+        prepareThread.submit(new MySQLPrepare(commands, null));
+    }
+
+    public void batch(Iterable<String> commands, Runnable r) {
+        prepareThread.submit(new MySQLPrepare(commands, r));
+    }
+
+    public boolean command(String cmd) {
+        PreparedStatement st;
         try {
-            this.con = (Connection) DriverManager.getConnection("jdbc:mysql://" + this.host + "/" + this.database + "?autoReconnect=true", this.username, this.password);
-            this.con.setAutoReconnect(true);
-            this.con.setConnectTimeout(timeout);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return false;
+            st = this.getConnection().prepareStatement(cmd);
+            return st.execute();
+        } catch (Throwable ex) {
+            ex.printStackTrace();
         }
-        return true;
+        return false;
     }
 
     private Connection getConnection() {
@@ -84,6 +92,18 @@ public class MySQLDatabase {
             e.printStackTrace();
         }
         return this.con;
+    }
+
+    public boolean openConnection() {
+        try {
+            this.con = (Connection) DriverManager.getConnection("jdbc:mysql://" + this.host + "/" + this.database + "?autoReconnect=true", this.username, this.password);
+            this.con.setAutoReconnect(true);
+            this.con.setConnectTimeout(timeout);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
     public ResultSet querry(String cmd) {
@@ -111,19 +131,25 @@ public class MySQLDatabase {
         }
     }
 
-    public boolean command(String cmd) {
-        PreparedStatement st;
-        try {
-            st = this.getConnection().prepareStatement(cmd);
-            return st.execute();
-        } catch (Throwable ex) {
-            ex.printStackTrace();
-        }
-        return false;
-    }
+    public class MySQLExecute implements Runnable {
+        private final Runnable r;
+        private final Statement st;
 
-    public void batch(Iterable<String> commands, Runnable r) {
-        prepareThread.submit(new MySQLPrepare(commands, r));
+        public MySQLExecute(Statement st, Runnable r) {
+            this.st = st;
+            this.r = r;
+        }
+
+        @Override
+        public void run() {
+            try {
+                st.executeBatch();
+                if (r != null)
+                    runnableThread.submit(r);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public class MySQLPrepare implements Runnable {
@@ -157,27 +183,6 @@ public class MySQLDatabase {
                 }
 
             } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public class MySQLExecute implements Runnable {
-        private final Statement st;
-        private final Runnable r;
-
-        public MySQLExecute(Statement st, Runnable r) {
-            this.st = st;
-            this.r = r;
-        }
-
-        @Override
-        public void run() {
-            try {
-                st.executeBatch();
-                if (r != null)
-                    runnableThread.submit(r);
-            } catch (SQLException e) {
                 e.printStackTrace();
             }
         }

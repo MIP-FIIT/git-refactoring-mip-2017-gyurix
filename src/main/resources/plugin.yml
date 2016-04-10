@@ -1,9 +1,9 @@
 name: SpigotLib
 main: gyurix.spigotlib.Main
 author: gyuriX
-version: 2.0
+version: 3.5
 loadbefore: [ProtocolLib]
-softdepend: [ProtocolSupport,Vault,Essentials,PlaceholderAPI]
+softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI]
 commands:
   spigotlib:
     description: Main command

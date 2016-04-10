@@ -2,6 +2,7 @@ package gyurix.api;
 
 import gyurix.json.JsonAPI;
 import gyurix.protocol.utils.GameProfile;
+import gyurix.spigotlib.SU;
 import org.apache.commons.io.IOUtils;
 
 import java.net.HttpURLConnection;
@@ -15,6 +16,57 @@ import java.util.UUID;
  * Created by GyuriX on 2015.12.27..
  */
 public class MojangAPI {
+    public static String get(String urlString) {
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ArrayList<NameData> getNameHistory(UUID id) {
+        try {
+            return (ArrayList<NameData>) JsonAPI.deserialize(get("https://api.mojang.com/user/profiles/" + id.toString().replace("-", "") + "/names"), ArrayList.class, NameData.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static GameProfile getProfile(String name, long time) {
+        try {
+            return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time), GameProfile.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static GameProfile getProfile(String name) {
+        try {
+            return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name), GameProfile.class);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
+    }
+
+    public static GameProfile getProfileWithSkin(UUID id) throws Throwable {
+        return JsonAPI.deserialize(get("https://sessionserver.mojang.com/session/minecraft/profile/" + id.toString().replace("-", "") + "?unsigned=false"), GameProfile.class);
+    }
+
+    public static ArrayList<GameProfile> getProfiles(String... names) {
+        try {
+            return (ArrayList<GameProfile>) JsonAPI.deserialize(post("https://api.mojang.com/profiles/minecraft", JsonAPI.serialize(names)), ArrayList.class, GameProfile.class);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
+    }
+
     public static HashMap<String, MojangServerState> getServerState() {
         HashMap<String, MojangServerState> out = new HashMap<>();
         try {
@@ -29,62 +81,6 @@ public class MojangAPI {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public static GameProfile getProfile(String name, long time) {
-        try {
-            return (GameProfile) JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time), GameProfile.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static GameProfile getProfile(String name) {
-        try {
-            return (GameProfile) JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name), GameProfile.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static GameProfile getProfileWithSkin(UUID id) {
-        try {
-            return (GameProfile) JsonAPI.deserialize(get("https://sessionserver.mojang.com/session/minecraft/profile/" + id.toString().replace("-", "") + "?unsigned=false"), GameProfile.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static ArrayList<NameData> getNameHistory(UUID id) {
-        try {
-            return (ArrayList<NameData>) JsonAPI.deserialize(get("https://api.mojang.com/user/profiles/" + id.toString().replace("-", "") + "/names"), ArrayList.class, NameData.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static ArrayList<GameProfile> getProfiles(String... names) {
-        try {
-            return (ArrayList<GameProfile>) JsonAPI.deserialize(post("https://api.mojang.com/profiles/minecraft", JsonAPI.serialize(names)), ArrayList.class, GameProfile.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static String get(String urlString) {
-        try {
-            URL url = new URL(urlString);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     public static String post(String urlString, String req) {
@@ -105,12 +101,12 @@ public class MojangAPI {
     }
 
     public enum MojangServerState {
-        RED, GREEN, YELLOW;
+        RED, GREEN, YELLOW
     }
 
     public static class NameData {
-        public String name;
         public long changedToAt;
+        public String name;
 
         @Override
         public String toString() {

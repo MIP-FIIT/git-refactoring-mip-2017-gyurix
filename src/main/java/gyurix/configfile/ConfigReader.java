@@ -6,8 +6,8 @@ import java.util.LinkedHashMap;
 
 public class ConfigReader {
     final int blockLvl;
-    final ConfigData value;
     final ConfigData key;
+    final ConfigData value;
     private boolean keyRead = false;
 
     ConfigReader(int lvl, ConfigData data) {
@@ -22,10 +22,6 @@ public class ConfigReader {
         this.value = value;
     }
 
-    public ConfigData getData() {
-        return this.keyRead ? this.key : this.value;
-    }
-
     public void addComment(String com) {
         ConfigData data = getData();
         if (data.comment == null) {
@@ -33,6 +29,10 @@ public class ConfigReader {
         } else {
             data.comment += '\n' + com;
         }
+    }
+
+    public ConfigData getData() {
+        return this.keyRead ? this.key : this.value;
     }
 
     public void handleInput(ArrayList<ConfigReader> readers, String line, int lvl) {

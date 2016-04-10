@@ -5,10 +5,8 @@ import gyurix.api.TitleAPI;
 import gyurix.api.VariableAPI;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.economy.EconomyAPI;
-import gyurix.inventory.InventoryAPI;
-import gyurix.protocol.PacketOutType;
+import gyurix.protocol.event.PacketOutType;
 import gyurix.spigotlib.ChatAPI;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.bukkit.*;
@@ -23,10 +21,10 @@ import java.util.HashMap;
 
 public class Command implements ConfigSerialization.StringSerializable {
     public static HashMap<String, CustomCommandHandler> customCommands = new HashMap();
-    CommandType type = CommandType.LOG;
     String cmd;
     String customCMD;
     int delay = -1;
+    CommandType type = CommandType.LOG;
 
     public Command(String in) {
         if (in.startsWith("{")) {
@@ -106,7 +104,7 @@ public class Command implements ConfigSerialization.StringSerializable {
                     String arg = (String) args[0];
                     int id = arg.indexOf(' ');
                     arg = arg.substring(id + 1);
-                    SU.tp.sendPacket(plr, PacketOutType.TabComplete.newPacket(SU.filterStart(text.split("\\|"), arg, Config.TabComplete.caseSensitive)));
+                    SU.tp.sendPacket(plr, PacketOutType.TabComplete.newPacket(SU.filterStart(text.split("\\|"), arg).toArray()));
                     return true;
                 }
                 case COMPLETENAMES: {
@@ -118,7 +116,7 @@ public class Command implements ConfigSerialization.StringSerializable {
                     String arg = (String) args[0];
                     int id = arg.indexOf(' ');
                     arg = arg.substring(id + 1);
-                    SU.tp.sendPacket(plr, PacketOutType.TabComplete.newPacket(SU.filterStart(names, arg, Config.TabComplete.caseSensitive)));
+                    SU.tp.sendPacket(plr, PacketOutType.TabComplete.newPacket(SU.filterStart(names, arg).toArray()));
                     return true;
                 }
                 case CONSOLE: {
@@ -282,12 +280,6 @@ public class Command implements ConfigSerialization.StringSerializable {
                     }
                     return true;
                 }
-                case OPENINV: {
-                    String[] data = text.split(" ", 2);
-                    InventoryAPI.getView(data[0], data.length == 1 ? plr : SU.getPlayer(data[1]));
-                    System.out.println("INV OPENED");
-                    return true;
-                }
                 case CUSTOM: {
                     return customCommands.get(this.customCMD).handle(sender, this.customCMD, text.split(" "), args);
                 }
@@ -317,6 +309,7 @@ public class Command implements ConfigSerialization.StringSerializable {
     public String toString() {
         return this.type == CommandType.CUSTOM ? this.customCMD + ":" + this.cmd : this.type.name() + ":" + this.cmd;
     }
+
     public enum CommandType {
         NOCMD, NORMAL, OP, POTION, COMPLETE, COMPLETENAMES, CONSOLE, LOG, ABM, MSG, TS, TITLE, SUBTITLE, ARGS, ECON, ECONSET,
         XP, XPLEVEL, HP, MAXHP, SOUND, PARTICLE, NOTE, GSOUND, GPARTICLE, GNOTE, OPENINV, CUSTOM, SEND, KICK;

@@ -5,14 +5,36 @@ import gyurix.configfile.ConfigSerialization;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Map;
 
 public class RangedData<T extends Comparable> {
-    public Comparable min;
     public Comparable max;
+    public Comparable min;
+
+    public RangedData() {
+
+    }
 
     public RangedData(T min, T max) {
         this.min = min;
         this.max = max;
+    }
+
+    public static Object get(Map<?, ?> map, Comparable value) {
+        Object notFound = null;
+        for (Map.Entry e : map.entrySet()) {
+            RangedData rd = (RangedData) e.getKey();
+            if (rd.any())
+                notFound = e.getValue();
+            else if (rd.contains(value)) {
+                return e.getValue();
+            }
+        }
+        return notFound;
+    }
+
+    public boolean any() {
+        return (this.min == null) && (this.max == null);
     }
 
     public boolean contains(T value) {
@@ -22,7 +44,7 @@ public class RangedData<T extends Comparable> {
     public static class RangedDataSerializer
             implements ConfigSerialization.Serializer {
         @Override
-        public /* varargs */ Object fromData(ConfigData data, Class cl, Type... types) {
+        public Object fromData(ConfigData data, Class cl, Type... types) {
             String[] s = data.stringData.split(":", 2);
             Type[] t = types[0] instanceof ParameterizedType ? ((ParameterizedType) types[0]).getActualTypeArguments() : new Type[]{};
             Comparable min = s[0].isEmpty() ? null : (Comparable) new ConfigData(s[0]).deserialize((Class) types[0], t);
@@ -31,7 +53,7 @@ public class RangedData<T extends Comparable> {
         }
 
         @Override
-        public /* varargs */ ConfigData toData(Object obj, Type... types) {
+        public ConfigData toData(Object obj, Type... types) {
             RangedData rd = (RangedData) obj;
             StringBuilder out = new StringBuilder();
             if (rd.min != null) {

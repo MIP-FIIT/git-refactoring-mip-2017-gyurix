@@ -1,47 +1,22 @@
 package gyurix.protocol.utils;
 
 import gyurix.protocol.Reflection;
+import gyurix.spigotlib.SU;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-public class BlockLocation {
-    private static Constructor blockPositionConstructor;
-    private static Method getX;
-    private static Method getY;
-    private static Method getZ;
-
-    static {
-        try {
-            blockPositionConstructor = Reflection.getNMSClass("BlockPosition").getConstructor(Integer.TYPE, Integer.TYPE, Integer.TYPE);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-        Class cl = Reflection.getNMSClass("BaseBlockPosition");
-        try {
-            getX = cl.getMethod("getX");
-            getY = cl.getMethod("getY");
-            getZ = cl.getMethod("getZ");
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-    }
-
+public class BlockLocation implements WrappedData {
+    private static final Class cl = Reflection.getNMSClass("BaseBlockPosition");
+    private static final Constructor con = Reflection.getConstructor(cl, int.class, int.class, int.class);
+    private static final Method getX = Reflection.getMethod(cl, "getX");
+    private static final Method getY = Reflection.getMethod(cl, "getY");
+    private static final Method getZ = Reflection.getMethod(cl, "getZ");
     public int x;
     public int y;
     public int z;
-
-    public BlockLocation(Object vanillaBlockLocation) {
-        try {
-            this.x = (Integer) getX.invoke(vanillaBlockLocation);
-            this.y = (Integer) getY.invoke(vanillaBlockLocation);
-            this.z = (Integer) getZ.invoke(vanillaBlockLocation);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
 
     public BlockLocation(int x, int y, int z) {
         this.x = x;
@@ -57,13 +32,24 @@ public class BlockLocation {
         this(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
-    public Object toVanillaBlockPosition() {
+    public BlockLocation(Object nmsData) {
         try {
-            return blockPositionConstructor.newInstance(this.x, this.y, this.z);
+            x = (int) getX.invoke(nmsData);
+            y = (int) getY.invoke(nmsData);
+            z = (int) getZ.invoke(nmsData);
         } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
+    }
+
+    @Override
+    public Object toNMS() {
+        try {
+            return con.newInstance(x, y, z);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
     }
 }
 

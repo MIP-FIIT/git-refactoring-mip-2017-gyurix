@@ -1,6 +1,6 @@
 package gyurix.scoreboard;
 
-import gyurix.protocol.PacketOutType;
+import gyurix.protocol.event.PacketOutType;
 import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -11,14 +11,21 @@ import java.util.UUID;
 
 public abstract class ScoreboardBar {
     public final String barname;
-    public final String teamNamePrefix;
-    public final Object showPacket;
     public final Object hidePacket;
+    public final Object showPacket;
+    public final String teamNamePrefix;
     public final LinkedList<UUID> viewers = new LinkedList<>();
     protected boolean visible = true;
-    private String title;
     private ScoreboardAPI.ScoreboardDisplayMode displayMode = ScoreboardAPI.ScoreboardDisplayMode.INTEGER;
+    private String title;
 
+    /**
+     * Construct new ScoreboardBar
+     *
+     * @param barname        - The name of this ScoreboardBar
+     * @param teamNamePrefix - The prefix of the Scoreboard team packets
+     * @param displaySlot    - The slot of this ScoreboardBar (0: list, 1: sidebar, 2: below name)
+     */
     public ScoreboardBar(String barname, String teamNamePrefix, int displaySlot) {
         this.barname = barname;
         this.title = barname;
@@ -27,31 +34,19 @@ public abstract class ScoreboardBar {
         this.hidePacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, "");
     }
 
-    /**
-     * Creates a ScoreboardObjective packet.
-     *
-     * @param id - the type of the objectivePacket:
-     *           0 - create
-     *           1 - remove
-     *           2 - update
-     * @return The packet.
-     */
-    public Object getObjectivePacket(int id) {
-        return PacketOutType.ScoreboardObjective.newPacket(this.barname, this.title, this.displayMode.nmsEnum, id);
-    }
-
     public abstract void addViewer(Player var1);
 
     public abstract void addViewerFirstBar(Player var1);
-
-    public abstract void moveViewer(ScoreboardBar var1, Player var2);
-
-    public abstract void removeViewer(Player var1);
 
     public ScoreboardAPI.ScoreboardDisplayMode getDisplayMode() {
         return this.displayMode;
     }
 
+    /**
+     * Sets the display mode of this Scoreboard, it has no effect on sidebar.
+     *
+     * @param mode - The new displaymode
+     */
     public void setDisplayMode(ScoreboardAPI.ScoreboardDisplayMode mode) {
         if (this.displayMode == mode) {
             return;
@@ -60,10 +55,40 @@ public abstract class ScoreboardBar {
         sendPackets(getObjectivePacket(2));
     }
 
-    public void setTitle(String newtitle) {
-        title = SU.setLength(newtitle, 32);
-        sendPackets(getObjectivePacket(2));
+    /**
+     * Creates a ScoreboardObjective packet.
+     *
+     * @param id - the type of the objectivePacket: 0 - create 1 - remove 2 - update
+     * @return The packet.
+     */
+    Object getObjectivePacket(int id) {
+        return PacketOutType.ScoreboardObjective.newPacket(barname, title, displayMode.nmsEnum, id);
     }
+
+    /**
+     * Check if this scoreboard bar is visible or not
+     *
+     * @return The scoreboard bars visibility
+     */
+    public boolean isVisible() {
+        return this.visible;
+    }
+
+    /**
+     * Toggles the visibility of this scoreboard bar
+     *
+     * @param visible - The new visibility state
+     */
+    public void setVisible(boolean visible) {
+        if (visible != this.visible) {
+            sendPackets(visible ? this.showPacket : this.hidePacket);
+            this.visible = visible;
+        }
+    }
+
+    public abstract void moveViewer(ScoreboardBar oldBar, Player plr);
+
+    public abstract void removeViewer(Player plr);
 
     public void sendPackets(Object... packets) {
         for (Object p : packets) {
@@ -79,15 +104,14 @@ public abstract class ScoreboardBar {
         }
     }
 
-    public boolean isVisible() {
-        return this.visible;
-    }
-
-    public void setVisible(boolean visible) {
-        if (visible != this.visible) {
-            sendPackets(visible ? this.showPacket : this.hidePacket);
-            this.visible = visible;
-        }
+    /**
+     * Sets the title of this scoreboard bar.
+     *
+     * @param newtitle - The new title
+     */
+    public void setTitle(String newtitle) {
+        title = SU.setLength(newtitle, 32);
+        sendPackets(getObjectivePacket(2));
     }
 }
 

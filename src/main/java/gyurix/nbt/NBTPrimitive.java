@@ -8,8 +8,8 @@ import java.util.HashMap;
 
 public class NBTPrimitive
         extends NBTTag {
-    private static HashMap<Class, Field> f = new HashMap();
     private static HashMap<Class, Constructor> c = new HashMap();
+    private static HashMap<Class, Field> f = new HashMap();
     public Object data;
 
     public NBTPrimitive() {

@@ -1,7 +1,8 @@
 package gyurix.configfile;
 
 import gyurix.mysql.MySQLDatabase;
-import gyurix.utils.ArrayUtils;
+import gyurix.spigotlib.SU;
+import org.apache.commons.lang.ArrayUtils;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -19,13 +20,13 @@ import java.util.concurrent.Executors;
 public class ConfigFile {
     public static final ExecutorService fileIO = Executors.newFixedThreadPool(1);
     public static final ExecutorService sqlIO = Executors.newFixedThreadPool(1);
-    public final Charset charset = Charset.forName("UTF-8");
     public final String addressSplit = "\\.";
+    public final Charset charset = Charset.forName("UTF-8");
     public String backup = "";
-    public File file;
+    public ConfigData data = new ConfigData();
     public MySQLDatabase db;
     public String dbTable, dbKey, dbValue, dbArgs = null;
-    public ConfigData data = new ConfigData();
+    public File file;
 
     public ConfigFile() {
     }
@@ -45,6 +46,11 @@ public class ConfigFile {
         dbValue = value;
     }
 
+    public ConfigFile(File file, Class cl, Type... types) {
+        load(file);
+        data.deserialize(cl, types);
+    }
+
     public ConfigFile(String in) {
         load(in);
     }
@@ -53,40 +59,130 @@ public class ConfigFile {
         this.data = d;
     }
 
-    public boolean reload() {
-        if (file == null) {
-            System.err.println("Error on reloading ConfigFile, missing file data.");
-            return false;
-        }
-        this.data = new ConfigData();
-        return load(this.file);
+    public <T> T get(String adress, Class<T> cl) {
+        return getData(adress).deserialize(cl);
     }
 
-    public boolean save() {
-        if (db != null && dbArgs != null) {
-            ArrayList<String> sl = new ArrayList<>();
-            mysqlUpdate(sl, dbArgs);
-            db.batch(sl, null);
-            return true;
-        } else if (file != null) {
-            fileIO.submit(new SaveRunnable(toString()));
-            return true;
-        }
-        System.err.println("Failed to save ConfigFile: Missing file / valid MySQL data.");
-        return false;
+    public <T> T get(String adress, Class<T> cl, Type... types) {
+        return getData(adress).deserialize(cl, types);
     }
 
-    public boolean save(OutputStream out) {
+    public boolean getBoolean(String address) {
+        return (boolean) (Boolean) getData(address).deserialize(Boolean.class);
+    }
+
+    public byte getByte(String address) {
+        return (byte) (Byte) getData(address).deserialize(Byte.class);
+    }
+
+    public ConfigData getData(ConfigData key) {
+        if (data.mapData == null)
+            data.mapData = new LinkedHashMap<>();
+        ConfigData out = data.mapData.get(key);
+        if (out == null)
+            data.mapData.put(key, out = new ConfigData(""));
+        return out;
+    }
+
+    public ConfigData getData(String address) {
+        String[] parts = address.split(this.addressSplit);
+        ConfigData d = data;
+        for (String p : parts) {
+            if (p.matches("#\\d+")) {
+                int num = Integer.valueOf(p.substring(1));
+                if (d.listData == null || d.listData.size() <= num)
+                    return new ConfigData("");
+                d = d.listData.get(num);
+            } else {
+                ConfigData key = new ConfigData(p);
+                if (d.mapData == null)
+                    return new ConfigData("");
+                if (d.mapData.containsKey(key)) {
+                    d = d.mapData.get(key);
+                } else {
+                    return new ConfigData("");
+                }
+            }
+        }
+        return d;
+    }
+
+    public ConfigData getData(String address, boolean autoCreate) {
+        if (!autoCreate)
+            return getData(address);
+        String[] parts = address.split(this.addressSplit);
+        ConfigData d = data;
+        for (String p : parts) {
+            if (p.matches("#\\d+")) {
+                int num = Integer.valueOf(p.substring(1));
+                if (d.listData == null) {
+                    d.listData = new ArrayList<>();
+                }
+                while (d.listData.size() <= num) {
+                    d.listData.add(new ConfigData(""));
+                }
+                d = d.listData.get(num);
+            } else {
+                ConfigData key = new ConfigData(p);
+                if (d.mapData == null)
+                    d.mapData = new LinkedHashMap<>();
+                if (d.mapData.containsKey(key)) {
+                    d = d.mapData.get(key);
+                } else {
+                    d.mapData.put(key, d = new ConfigData(""));
+                }
+            }
+        }
+        return d;
+    }
+
+    public double getDouble(String address) {
+        return (double) (Double) getData(address).deserialize(Double.class);
+    }
+
+    public float getFloat(String address) {
+        return (float) (Float) getData(address).deserialize(Float.class);
+    }
+
+    public int getInt(String address) {
+        return (int) (Integer) getData(address).deserialize(Integer.class);
+    }
+
+    public long getLong(String address) {
+        return (long) (Long) getData(address).deserialize(Long.class);
+    }
+
+    public short getShort(String address) {
+        return (short) (Short) getData(address).deserialize(Short.class);
+    }
+
+    public String getString(String address) {
+        String out = getData(address).stringData;
+        return out == null ? "" : out;
+    }
+
+    public ArrayList<String> getStringKeyList() {
+        ArrayList<String> out = new ArrayList<>();
         try {
-            byte[] data = toString().getBytes(charset);
-            out.write(data);
-            out.flush();
-            out.close();
-            return true;
+            for (ConfigData cd : data.mapData.keySet()) {
+                out.add(cd.stringData);
+            }
         } catch (Throwable e) {
-            e.printStackTrace();
-            return false;
+
         }
+        return out;
+    }
+
+    public ArrayList<String> getStringKeyList(String key) {
+        ArrayList<String> out = new ArrayList<>();
+        try {
+            for (ConfigData cd : getData(key).mapData.keySet()) {
+                out.add(cd.stringData);
+            }
+        } catch (Throwable e) {
+
+        }
+        return out;
     }
 
     public boolean load(File f) {
@@ -97,7 +193,7 @@ public class ConfigFile {
             load(new String(b, this.charset));
             return true;
         } catch (Throwable e) {
-            ConfigSerialization.errorLog(e);
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return false;
     }
@@ -108,16 +204,14 @@ public class ConfigFile {
             stream.read(b);
             return load(new String(b, this.charset));
         } catch (Throwable e) {
-            ConfigSerialization.errorLog(e);
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return false;
     }
 
     public boolean load(String in) {
         ArrayList<ConfigReader> readers = new ArrayList<ConfigReader>();
-
         readers.add(new ConfigReader(-1, this.data));
-
         for (String s : in.split("\r?\n")) {
             int blockLvl = 0;
             while ((s.length() > blockLvl) && (s.charAt(blockLvl) == ' '))
@@ -140,39 +234,39 @@ public class ConfigFile {
         return true;
     }
 
-    public ConfigData getData(ConfigData key) {
-        if (data.mapData == null)
-            data.mapData = new LinkedHashMap<>();
-        ConfigData out = data.mapData.get(key);
-        if (out == null)
-            data.mapData.put(key, out = new ConfigData(""));
-        return out;
+    public void mysqlLoad(String key, String args) {
+        String q = "SELECT `" + dbKey + "`, `" + dbValue + "` FROM " + dbTable + " WHERE " + args;
+        try {
+            ResultSet rs = db.querry(q);
+            while (rs.next()) {
+                String k = rs.getString(dbKey);
+                String v = rs.getString(dbValue);
+                setData(key + "." + k, new ConfigFile(v).data);
+            }
+        } catch (Throwable e) {
+            SU.cs.sendMessage("§cFailed to load data from MySQL database.\n" +
+                    "The used querry command:\n");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            e.printStackTrace();
+        }
     }
 
-    public ConfigData getData(String address) {
-        String[] parts = address.split(this.addressSplit);
-        ConfigData d = data;
-        for (String p : parts) {
-            if (p.matches("#\\d+")) {
-                int num = Integer.valueOf(p.substring(1));
-                if (d.listData == null)
-                    d.listData = new ArrayList<>();
-                while (d.listData.size() <= num) {
-                    d.listData.add(new ConfigData(""));
-                }
-                d = d.listData.get(num);
-            } else {
-                ConfigData key = new ConfigData(p);
-                if (d.mapData == null)
-                    d.mapData = new LinkedHashMap<>();
-                if (d.mapData.containsKey(key)) {
-                    d = d.mapData.get(key);
-                } else {
-                    d.mapData.put(key, d = new ConfigData(""));
-                }
-            }
+    public void mysqlUpdate(ArrayList<String> l, String args) {
+        if (dbArgs == null || dbTable == null)
+            return;
+        l.add("DELETE FROM " + dbTable + " WHERE " + dbArgs);
+        if (args == null)
+            args = dbArgs.substring(dbArgs.indexOf("=") + 1) + ",'<key>','<value>'";
+        data.saveToMySQL(l, dbTable, args, "");
+    }
+
+    public boolean reload() {
+        if (file == null) {
+            System.err.println("Error on reloading ConfigFile, missing file data.");
+            return false;
         }
-        return d;
+        this.data = new ConfigData();
+        return load(this.file);
     }
 
     public boolean removeData(String address) {
@@ -204,79 +298,87 @@ public class ConfigFile {
         return d.mapData == null || d.mapData.remove(new ConfigData(allParts[len])) != null;
     }
 
-    public Object get(String adress, Class cl) {
-        return getData(adress).deserialize(cl);
+    public boolean save() {
+        if (db != null && dbArgs != null) {
+            ArrayList<String> sl = new ArrayList<>();
+            mysqlUpdate(sl, dbArgs);
+            db.batch(sl, null);
+            return true;
+        } else if (file != null) {
+            fileIO.submit(new SaveRunnable(toString()));
+            return true;
+        }
+        System.err.println("Failed to save ConfigFile: Missing file / valid MySQL data.");
+        return false;
     }
 
-    public Object get(String adress, Class cl, Type... types) {
-        return getData(adress).deserialize(cl, types);
+    public boolean save(OutputStream out) {
+        try {
+            byte[] data = toString().getBytes(charset);
+            out.write(data);
+            out.flush();
+            out.close();
+            return true;
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    public double getDouble(String address) {
-        return (double) (Double) getData(address).deserialize(Double.class);
+    public boolean saveNoAsync() {
+        if (db != null && dbArgs != null) {
+            ArrayList<String> sl = new ArrayList<>();
+            mysqlUpdate(sl, dbArgs);
+            db.batch(sl, null);
+            return true;
+        } else if (file != null) {
+            new SaveRunnable(toString()).run();
+            return true;
+        }
+        System.err.println("Failed to save ConfigFile: Missing file / valid MySQL data.");
+        return false;
     }
 
-    public float getFloat(String address) {
-        return (float) (Float) getData(address).deserialize(Float.class);
+    public void setData(String address, ConfigData cd) {
+        String[] parts = address.split(addressSplit);
+        ConfigData last = data;
+        ConfigData lastKey = data;
+        ConfigData d = data;
+        for (String p : parts) {
+            ConfigData key = new ConfigData(p);
+            if (d.mapData == null)
+                d.mapData = new LinkedHashMap<>();
+            last = d;
+            lastKey = key;
+            if (d.mapData.containsKey(key)) {
+                d = d.mapData.get(key);
+            } else {
+                d.mapData.put(key, d = new ConfigData(""));
+            }
+        }
+        last.mapData.put(lastKey, cd);
     }
 
-    public long getLong(String address) {
-        return (long) (Long) getData(address).deserialize(Long.class);
+    public void setObject(String address, Object obj) {
+        getData(address, true).objectData = obj;
     }
 
-    public int getInt(String address) {
-        return (int) (Integer) getData(address).deserialize(Integer.class);
-    }
-
-    public short getShort(String address) {
-        return (short) (Short) getData(address).deserialize(Short.class);
-    }
-
-    public byte getByte(String address) {
-        return (byte) (Byte) getData(address).deserialize(Byte.class);
-    }
-
-    public boolean getBoolean(String address) {
-        return (boolean) (Boolean) getData(address).deserialize(Boolean.class);
+    public void setString(String adress, String value) {
+        getData(adress, true).stringData = value;
     }
 
     public ConfigFile subConfig(String address) {
-        return new ConfigFile(getData(address));
+        return new ConfigFile(getData(address, true));
     }
 
     public ConfigFile subConfig(String address, String dbArgs) {
-        ConfigFile kf = new ConfigFile(getData(address));
+        ConfigFile kf = new ConfigFile(getData(address, true));
         kf.db = db;
         kf.dbTable = dbTable;
         kf.dbKey = dbKey;
         kf.dbValue = dbValue;
         kf.dbArgs = dbArgs;
         return kf;
-    }
-
-    public void mysqlLoad(String key, String args) {
-        String q = "SELECT `" + dbKey + "`, `" + dbValue + "` FROM " + dbTable + " WHERE " + args;
-        try {
-            ResultSet rs = db.querry(q);
-            while (rs.next()) {
-                String k = rs.getString(dbKey);
-                String v = rs.getString(dbValue);
-                getData(key + "." + k).stringData = v;
-            }
-        } catch (Throwable e) {
-            System.err.println("Failed to load data from MySQL database.\n" +
-                    "The used querry command: " + q);
-            e.printStackTrace();
-        }
-    }
-
-    public void mysqlUpdate(ArrayList<String> l, String args) {
-        if (dbArgs == null || dbTable == null)
-            return;
-        l.add("DELETE FROM " + dbTable + " WHERE " + dbArgs);
-        if (args == null)
-            args = dbArgs.substring(dbArgs.indexOf("=") + 1) + ",'<key>','<value>'";
-        data.saveToMySQL(l, dbTable, args, "");
     }
 
     public ConfigFile subConfig(ConfigData key) {
@@ -287,24 +389,9 @@ public class ConfigFile {
         try {
             return new ConfigFile(this.data.listData.get(id));
         } catch (Throwable e) {
-            ConfigSerialization.errorLog(e);
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
-    }
-
-
-    public String getString(String address) {
-        String out = getData(address).stringData;
-        return out == null ? "" : out;
-    }
-
-
-    public void setString(String adress, String value) {
-        getData(adress).stringData = value;
-    }
-
-    public void setObject(String address, Object obj) {
-        getData(address).objectData = obj;
     }
 
     public String toString() {
@@ -314,30 +401,6 @@ public class ConfigFile {
         } catch (Throwable e) {
             return "";
         }
-    }
-
-    public ArrayList<String> getStringKeyList() {
-        ArrayList<String> out = new ArrayList<>();
-        try {
-            for (ConfigData cd : data.mapData.keySet()) {
-                out.add(cd.stringData);
-            }
-        } catch (Throwable e) {
-
-        }
-        return out;
-    }
-
-    public ArrayList<String> getStringKeyList(String key) {
-        ArrayList<String> out = new ArrayList<>();
-        try {
-            for (ConfigData cd : getData(key).mapData.keySet()) {
-                out.add(cd.stringData);
-            }
-        } catch (Throwable e) {
-
-        }
-        return out;
     }
 
     private class SaveRunnable implements Runnable {
@@ -361,7 +424,7 @@ public class ConfigFile {
                         System.out.println("Failed to save backup file, the backup file \"" + f + "\" already exists");
                     } catch (Throwable e) {
                         e.printStackTrace();
-                        ConfigSerialization.errorLog(e);
+                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
                     }
                 }
                 File tempf = new File(file + ".tmp");
@@ -372,7 +435,7 @@ public class ConfigFile {
                 file.delete();
                 tempf.renameTo(file);
             } catch (Throwable e) {
-                ConfigSerialization.errorLog(e);
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
         }
     }

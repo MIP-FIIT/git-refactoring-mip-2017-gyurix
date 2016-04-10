@@ -25,11 +25,7 @@ public class ConfigHook {
     public static HashMap<String, Object> data = new HashMap();
 
     public static void registerSerializers() {
-        if (Config.errors == null)
-            Config.errors = new ArrayList<>();
-        ConfigSerialization.errors = Config.errors;
         ConfigSerialization.serializers.put(Vector.class, new ConfigSerialization.Serializer() {
-
             @Override
             public Object fromData(ConfigData data, Class paramClass, Type... paramVarArgs) {
                 String[] s = data.stringData.split(" ", 3);
@@ -43,7 +39,6 @@ public class ConfigHook {
             }
         });
         ConfigSerialization.serializers.put(Location.class, new ConfigSerialization.Serializer() {
-
             @Override
             public Object fromData(ConfigData data, Class paramClass, Type... paramVarArgs) {
                 String[] s = data.stringData.split(" ", 6);

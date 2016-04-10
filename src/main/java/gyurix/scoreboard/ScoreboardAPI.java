@@ -1,59 +1,131 @@
 package gyurix.scoreboard;
 
-import com.mojang.authlib.GameProfile;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.UUID;
 
 public class ScoreboardAPI {
+    public static NametagBar defaultNB;
     public static Sidebar defaultSB;
     public static Tabbar defaultTB;
-    public static NametagBar defaultNB;
-    public static Object setScore;
-    public static Object removeScore;
-    public static Object updateTabName;
-    public static HashMap<UUID, Tabbar> tabbars = new HashMap<>();
-    public static HashMap<UUID, Sidebar> sidebars = new HashMap<>();
-    public static HashMap<UUID, NametagBar> nametags = new HashMap<>();
-    public static Constructor tabPlayer;
     public static int id = 1;
+    public static HashMap<UUID, NametagBar> nametags = new HashMap<>();
+    public static Object removeScore;
+    public static Object setScore;
+    public static HashMap<UUID, Sidebar> sidebars = new HashMap<>();
+    public static HashMap<UUID, Tabbar> tabbars = new HashMap<>();
+    public static Object updateTabName;
 
     public static void init() {
-        String s;
         Class cl = Reflection.getNMSClass("IScoreboardCriteria$EnumScoreboardHealthDisplay");
-        for (Object o22 : cl.getEnumConstants()) {
-            s = o22.toString();
-            if (s.equals("INTEGER")) {
-                ScoreboardDisplayMode.INTEGER.nmsEnum = o22;
-                continue;
-            }
-            if (!s.equals("HEARTS")) continue;
-            ScoreboardDisplayMode.HEARTS.nmsEnum = o22;
-        }
+        ScoreboardDisplayMode.INTEGER.nmsEnum = Reflection.getEnum(cl, "INTEGER");
+        ScoreboardDisplayMode.HEARTS.nmsEnum = Reflection.getEnum(cl, "HEARTS");
         cl = Reflection.getNMSClass("PacketPlayOutScoreboardScore$EnumScoreboardAction");
-        for (Object o22 : cl.getEnumConstants()) {
-            s = o22.toString();
-            if (s.equals("CHANGE")) {
-                setScore = o22;
-                continue;
-            }
-            if (!s.equals("REMOVE")) continue;
-            removeScore = o22;
-        }
+        setScore = Reflection.getEnum(cl, "CHANGE");
+        removeScore = Reflection.getEnum(cl, "REMOVE");
         cl = Reflection.getNMSClass("PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
-        for (Object o22 : cl.getEnumConstants()) {
-            s = o22.toString();
-            if (!s.equals("UPDATE_DISPLAY_NAME")) continue;
-            updateTabName = o22;
-        }
-        tabPlayer = Reflection.getConstructor(Reflection.getNMSClass("PacketPlayOutPlayerInfo$PlayerInfoData"), Reflection.getNMSClass("PacketPlayOutPlayerInfo"), GameProfile.class, Integer.TYPE, Reflection.getNMSClass("WorldSettings$EnumGamemode"), Reflection.getNMSClass("IChatBaseComponent"));
+        updateTabName = Reflection.getEnum(cl, "UPDATE_DISPLAY_NAME");
         defaultSB = new Sidebar();
         defaultTB = new Tabbar();
         defaultNB = new NametagBar();
+    }
+
+    public static void playerJoin(Player plr) {
+        defaultTB.addPlayer(plr.getUniqueId(), new TabPlayer(plr));
+        defaultNB.addNametag(new Nametag(plr));
+    }
+
+    public static void playerLeave(Player plr) {
+        UUID id = plr.getUniqueId();
+        tabbars.remove(id);
+        sidebars.remove(id);
+        nametags.remove(id);
+        defaultNB.removeNametag(plr.getName());
+        defaultTB.removePlayer(id);
+    }
+
+    public static void setNametagBar(Player plr, NametagBar bar) {
+        boolean remove = bar == null;
+        UUID uuid = plr.getUniqueId();
+        boolean first = !nametags.containsKey(uuid);
+        if (first && remove) {
+            return;
+        }
+        NametagBar nb = nametags.get(uuid);
+        nametags.put(uuid, bar);
+        if (first) {
+            bar.addViewerFirstBar(plr);
+            return;
+        }
+        if (remove) {
+            if (nb != null) {
+                nb.removeViewer(plr);
+            }
+            nametags.remove(uuid);
+            return;
+        }
+        if (nb == null) {
+            bar.addViewer(plr);
+        } else {
+            bar.moveViewer(nb, plr);
+        }
+    }
+
+    public static void setSidebar(Player plr, Sidebar bar) {
+        boolean remove = bar == null;
+        UUID uuid = plr.getUniqueId();
+        boolean first = !sidebars.containsKey(uuid);
+        if (first && remove) {
+            return;
+        }
+        Sidebar sb = sidebars.get(uuid);
+        sidebars.put(uuid, bar);
+        if (first) {
+            bar.addViewerFirstBar(plr);
+            return;
+        }
+        if (remove) {
+            if (sb != null) {
+                sb.removeViewer(plr);
+            }
+            sidebars.put(uuid, null);
+            return;
+        }
+        if (sb == null) {
+            bar.addViewer(plr);
+        } else {
+            bar.moveViewer(sb, plr);
+        }
+    }
+
+    public static void setTabbar(Player plr, Tabbar bar) {
+        boolean remove = bar == null;
+        UUID uuid = plr.getUniqueId();
+        boolean first = !tabbars.containsKey(uuid);
+        if (first && remove) {
+            return;
+        }
+        Tabbar tb = tabbars.get(uuid);
+        tabbars.put(uuid, bar);
+        if (first) {
+            bar.addViewerFirstBar(plr);
+            return;
+        }
+        if (remove) {
+            if (tb != null) {
+                tb.removeViewer(plr);
+            }
+            tabbars.remove(uuid);
+            return;
+        }
+        if (tb == null) {
+            bar.addViewer(plr);
+        } else {
+            bar.moveViewer(tb, plr);
+        }
     }
 
     static String[] specialSplit(String in, char uniqueChar) {
@@ -88,107 +160,6 @@ public class ScoreboardAPI {
             out[2] = in.substring(id);
         }
         return out;
-    }
-
-    public static void playerJoin(Player plr) {
-        defaultTB.addPlayer(plr.getUniqueId(), new TabPlayer(plr));
-        defaultNB.addNametag(new Nametag(plr));
-    }
-
-    public static void playerLeave(Player plr) {
-        Tabbar tb = tabbars.remove(plr.getUniqueId());
-        if (tb != null) {
-            tb.removePlayer(plr.getUniqueId());
-        }
-        Sidebar sb = sidebars.remove(plr.getUniqueId());
-        NametagBar nt = nametags.remove(plr.getUniqueId());
-        if (nt != null) {
-            defaultNB.removeViewer(plr);
-        }
-    }
-
-    public static void setSidebar(Player plr, Sidebar bar) {
-        boolean first;
-        boolean remove = bar == null;
-        UUID uuid = plr.getUniqueId();
-        boolean bl = first = !sidebars.containsKey(uuid);
-        if (first && remove) {
-            return;
-        }
-        Sidebar sb = sidebars.get(uuid);
-        sidebars.put(uuid, bar);
-        if (first) {
-            bar.addViewerFirstBar(plr);
-            return;
-        }
-        if (remove) {
-            if (sb != null) {
-                sb.removeViewer(plr);
-            }
-            sidebars.remove(uuid);
-            return;
-        }
-        if (sb == null) {
-            bar.addViewer(plr);
-        } else {
-            bar.moveViewer(sb, plr);
-        }
-    }
-
-    public static void setTabbar(Player plr, Tabbar bar) {
-        boolean first;
-        boolean remove = bar == null;
-        UUID uuid = plr.getUniqueId();
-        boolean bl = first = !tabbars.containsKey(uuid);
-        if (first && remove) {
-            return;
-        }
-        Tabbar tb = tabbars.get(uuid);
-        tabbars.put(uuid, bar);
-        if (first) {
-            bar.addViewerFirstBar(plr);
-            return;
-        }
-        if (remove) {
-            if (tb != null) {
-                tb.removeViewer(plr);
-            }
-            tabbars.remove(uuid);
-            return;
-        }
-        if (tb == null) {
-            bar.addViewer(plr);
-        } else {
-            bar.moveViewer(tb, plr);
-        }
-    }
-
-    public static void setNametagBar(Player plr, NametagBar bar) {
-        boolean first;
-        boolean remove = bar == null;
-        UUID uuid = plr.getUniqueId();
-        boolean bl = first = !nametags.containsKey(uuid);
-        if (first && remove) {
-            return;
-        }
-        NametagBar nb = nametags.get(uuid);
-        nametags.put(uuid, bar);
-        if (first) {
-            bar.addViewerFirstBar(plr);
-            return;
-        }
-        if (remove) {
-            if (nb != null) {
-                nb.removeViewer(plr);
-            }
-            nametags.remove(uuid);
-            return;
-        }
-        if (nb == null) {
-            bar.addViewer(plr);
-        } else {
-            bar.moveViewer(nb, plr);
-        }
     }
 
     public enum ScoreboardDisplayMode {

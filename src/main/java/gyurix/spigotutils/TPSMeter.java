@@ -3,56 +3,53 @@ package gyurix.spigotutils;
 import gyurix.animation.AnimationAPI;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.spigotlib.Main;
+import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
 
-import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class TPSMeter
-        implements Runnable {
+public class TPSMeter implements Runnable {
+    /**
+     * Update the servers tps metrics result in every here configured milliseconds
+     */
+    public static long checkTime = 10000;
+    /**
+     * The tps limit, if the servers tps is bellow this value, then you will see a warning in the console
+     */
+    public static int limit = 15;
+    /**
+     * The instance of the TPS meter future, it is stopped on SpigotLib shutdown
+     */
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    public static ScheduledFuture meter;
+    /**
+     * Ticks elapsed from the last tps metrics result update
+     */
     @ConfigSerialization.ConfigOptions(serialize = false)
     public static int ticks = 0;
-    public static long checkTime = 2000;
-    public static long startupDelay = 15000;
-    public static int limit = 15;
+    /**
+     * The current tps value of the server
+     */
     @ConfigSerialization.ConfigOptions(serialize = false)
     public static double tps = 20.0;
-    public static boolean noreport;
-
-    public void start() {
-        AnimationAPI.sch.scheduleAtFixedRate(this, startupDelay, checkTime, TimeUnit.MILLISECONDS);
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-
-            @Override
-            public void run() {
-                ++TPSMeter.ticks;
-            }
-        }, 0, 1);
-    }
 
     @Override
     public void run() {
         tps = (double) ticks * 1000.0 / (double) checkTime;
         ticks = 0;
-        if (tps < (double) limit) {
-            if (noreport) {
-                return;
+        if (tps < (double) limit)
+            SU.cs.sendMessage("§9[§b TPS Meter §9]§e The servers TPS is bellow §c" + tps + "§e, is it lagging or crashed?");
+    }
+
+    public void start() {
+        meter = AnimationAPI.sch.scheduleAtFixedRate(this, checkTime, checkTime, TimeUnit.MILLISECONDS);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+            @Override
+            public void run() {
+                ++TPSMeter.ticks;
             }
-            StringBuilder out = new StringBuilder();
-            out.append("\n------> TPS is bellow ").append(limit).append("! Printing thread stacktraces <------\n");
-            for (Map.Entry<Thread, StackTraceElement[]> e : Thread.getAllStackTraces().entrySet()) {
-                Thread t = e.getKey();
-                out.append("---------------------------------------------------------------\n").append("--> \u00a7bTHREAD ").append(t.getName()).append(", priority: ").append(t.getPriority()).append("\u00a7b, state: \u00a7f").append(t.getState()).append("\n").append("---------------------------------------------------------------\n");
-                for (StackTraceElement se : e.getValue()) {
-                    out.append(se.toString()).append('\n');
-                }
-                out.append("---------------------------------------------------------------\n");
-            }
-            Main.log.severe(out.substring(0, out.length() - 1));
-            noreport = true;
-        } else {
-            noreport = false;
-        }
+        }, 0, 1);
     }
 
 }

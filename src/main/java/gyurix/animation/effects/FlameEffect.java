@@ -7,9 +7,28 @@ import gyurix.spigotlib.SU;
 public class FlameEffect
         implements CustomEffect {
     public FlameInfo info;
-    public int start;
-    public int speed = 1;
     public boolean rotate;
+    public int speed = 1;
+    public int start;
+
+    @Override
+    public CustomEffect clone() {
+        FlameEffect fe = new FlameEffect();
+        fe.info = this.info;
+        fe.speed = this.speed;
+        fe.start = this.start;
+        fe.rotate = this.rotate;
+        return fe;
+    }
+
+    @Override
+    public String getText() {
+        return "";
+    }
+
+    @Override
+    public void setText(String newText) {
+    }
 
     @Override
     public String next(String in) {
@@ -59,25 +78,6 @@ public class FlameEffect
             speed = -speed;
         }
         start += speed;
-    }
-
-    @Override
-    public String getText() {
-        return "";
-    }
-
-    @Override
-    public void setText(String newText) {
-    }
-
-    @Override
-    public CustomEffect clone() {
-        FlameEffect fe = new FlameEffect();
-        fe.info = this.info;
-        fe.speed = this.speed;
-        fe.start = this.start;
-        fe.rotate = this.rotate;
-        return fe;
     }
 
     public static class FlameInfo

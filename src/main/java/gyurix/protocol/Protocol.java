@@ -1,7 +1,13 @@
 package gyurix.protocol;
 
 import com.google.common.collect.Lists;
+import gyurix.protocol.event.PacketInEvent;
+import gyurix.protocol.event.PacketInType;
+import gyurix.protocol.event.PacketOutEvent;
+import gyurix.protocol.event.PacketOutType;
+import gyurix.protocol.manager.PacketCapture;
 import gyurix.spigotlib.Config;
+import gyurix.spigotlib.SU;
 import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -12,29 +18,87 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Protocol implements Listener {
-    private static final ConcurrentHashMap<PacketInType, ArrayList<PacketInListener>> inListeners = new ConcurrentHashMap<>();
-    private static final HashMap<PacketOutType, ArrayList<PacketOutListener>> outListeners = new HashMap<>();
     private static final HashMap<PacketInListener, PacketInType> inListenerTypes = new HashMap<>();
+    private static final ConcurrentHashMap<PacketInType, ArrayList<PacketInListener>> inListeners = new ConcurrentHashMap<>();
     private static final HashMap<PacketOutListener, PacketOutType> outListenerTypes = new HashMap<>();
+    private static final HashMap<PacketOutType, ArrayList<PacketOutListener>> outListeners = new HashMap<>();
+    private static final String pa = "§5[§dPacketAPI§5] §e";
     private static final HashMap<Plugin, ArrayList<PacketInListener>> pluginInListeners = new HashMap<>();
     private static final HashMap<Plugin, ArrayList<PacketOutListener>> pluginOutListeners = new HashMap<>();
 
     /**
-     * Sends the given vanilla packet to a player
-     *
-     * @param player - The target player
-     * @param packet - The sendable packet
+     * Closes the PacketAPI
      */
-    public abstract void sendPacket(Player player, Object packet);
+    public abstract void close();
+    /**
+     * Dispatches an incoming packet event
+     * @param event - The packet event
+     */
+    public void dispatchPacketInEvent(PacketInEvent event) {
+        String pn = event.getPacket().getClass().getSimpleName();
+        if (event.getType() == null) {
+            SU.cs.sendMessage(pa + "Missing in packet type:§c " + pn + "§e.");
+            return;
+        }
+        ArrayList<PacketInListener> ll = inListeners.get(event.getType());
+        if (ll != null)
+            for (PacketInListener l : ll) {
+                try {
+                    l.onPacketIN(event);
+                } catch (Throwable e) {
+                    SU.cs.sendMessage(pa + "Error on dispatching PacketInEvent for packet type:§c " + pn + "§e.");
+                    if (Config.debug)
+                        e.printStackTrace();
+                }
+            }
+    }
 
     /**
-     * Sends the given vanilla packet to a channel
-     *
-     * @param channel - The target players channel
-     * @param packet  - The sendable packet
+     * Dispatches an outgoing packet event
+     * @param event - The packet event
      */
-    public abstract void sendPacket(Channel channel, Object packet);
+    public void dispatchPacketOutEvent(PacketOutEvent event) {
+        String pn = event.getPacket().getClass().getSimpleName();
+        if (event.getType() == null) {
+            SU.cs.sendMessage(pa + "Missing out packet type:§c " + pn + "§e.");
+            return;
+        }
+        ArrayList<PacketOutListener> ll = outListeners.get(event.getType());
+        if (ll != null)
+            for (PacketOutListener l : ll) {
+                try {
+                    l.onPacketOUT(event);
+                } catch (Throwable e) {
+                    SU.cs.sendMessage(pa + "Error on dispatching PacketOutEvent for packet type:§c " + pn + "§e.");
+                    if (Config.debug)
+                        e.printStackTrace();
+                }
+            }
+    }
 
+    /**
+     * Returns the PacketCapturer, which captures the packets
+     * going through the given players connection
+     * @param plr - The player having PacketCapturer
+     * @return The PacketCapturer or null if there is no PacketCapturer setup
+     */
+    public abstract PacketCapture getCapturer(Player plr);
+
+    /**
+     * Returns the channel of a Player
+     *
+     * @param plr - The target Player
+     * @return The channel of the target Player
+     */
+    public abstract Channel getChannel(Player plr);
+
+    /**
+     * Returns the Player belonging to the given channel
+     *
+     * @param channel - The target Player
+     * @return The Player for who is the given channel belongs to, or null if the Channel and the Player object is not yet matched.
+     */
+    public abstract Player getPlayer(Channel channel);
 
     /**
      * Simulates receiving the given vanilla packet from a player
@@ -53,21 +117,12 @@ public abstract class Protocol implements Listener {
     public abstract void receivePacket(Channel channel, Object packet);
 
     /**
-     * Returns the channel of a Player
+     * Registers an incoming packet listener
      *
-     * @param plr - The target Player
-     * @return The channel of the target Player
+     * @param plugin     - The plugin for which the listener belongs to
+     * @param listener   - The packet listener
+     * @param packetType - The listenable packet type
      */
-    public abstract Channel getChannel(Player plr);
-
-    /**
-     * Returns the Player belonging to the given channel
-     *
-     * @param channel - The target Player
-     * @return The Player for who is the given channel belongs to, or null if the Channel and the Player object is not yet matched.
-     */
-    public abstract Player getPlayer(Channel channel);
-
     public void registerIncomingListener(Plugin plugin, PacketInListener listener, PacketInType packetType) {
         if (inListenerTypes.containsKey(listener))
             throw new RuntimeException("The given listener is already registered.");
@@ -84,6 +139,12 @@ public abstract class Protocol implements Listener {
             pil.add(listener);
     }
 
+    /**
+     * Registers an outgoing packet listener
+     * @param plugin - The plugin for which the listener belongs to
+     * @param listener - The packet listener
+     * @param packetType - The listenable packet type
+     */
     public void registerOutgoingListener(Plugin plugin, PacketOutListener listener, PacketOutType packetType) {
         if (outListenerTypes.containsKey(listener))
             throw new RuntimeException("The given listener is already registered.");
@@ -100,6 +161,34 @@ public abstract class Protocol implements Listener {
             pol.add(listener);
     }
 
+    /**
+     * Sends the given vanilla packet to a player
+     *
+     * @param player - The target player
+     * @param packet - The sendable packet
+     */
+    public abstract void sendPacket(Player player, Object packet);
+
+    /**
+     * Sends the given vanilla packet to a channel
+     *
+     * @param channel - The target players channel
+     * @param packet  - The sendable packet
+     */
+    public abstract void sendPacket(Channel channel, Object packet);
+
+    /**
+     * Sets the PacketCapturer of a players channel
+     *
+     * @param plr           - Target player
+     * @param packetCapture - The PacketCapturer object
+     */
+    public abstract void setCapturer(Player plr, PacketCapture packetCapture);
+
+    /**
+     * Unregisters ALL the incoming packet listeners of a plugin
+     * @param pl - Target plugin
+     */
     public void unregisterIncomingListener(Plugin pl) {
         ArrayList<PacketInListener> pol = pluginInListeners.remove(pl);
         if (pol == null)
@@ -108,6 +197,18 @@ public abstract class Protocol implements Listener {
             inListeners.remove(inListenerTypes.remove(l));
     }
 
+    public void unregisterIncomingListener(PacketInListener listener) {
+        inListeners.remove(inListenerTypes.remove(listener));
+    }
+
+    public void unregisterOutgoingListener(PacketOutListener listener) {
+        outListeners.remove(outListenerTypes.remove(listener));
+    }
+
+    /**
+     * Unregisters ALL the outgoing packet listeners of a plugin
+     * @param pl - Target plugin
+     */
     public void unregisterOutgoingListener(Plugin pl) {
         ArrayList<PacketOutListener> pol = pluginOutListeners.remove(pl);
         if (pol == null)
@@ -116,47 +217,16 @@ public abstract class Protocol implements Listener {
             outListeners.remove(outListenerTypes.remove(l));
     }
 
-    public void dispatchPacketInEvent(PacketInEvent event) {
-        ArrayList<PacketInListener> ll = inListeners.get(event.getType());
-        if (ll != null)
-            for (PacketInListener l : ll) {
-                try {
-                    l.onPacketIN(event);
-                } catch (Throwable e) {
-                    System.err.println("Error on dispatching PacketInEvent for packet type " + event.getType() + ".");
-                    if (Config.debug)
-                        e.printStackTrace();
-                }
-            }
-    }
-
-    public void dispatchPacketOutEvent(PacketOutEvent event) {
-        ArrayList<PacketOutListener> ll = outListeners.get(event.getType());
-        if (ll != null)
-            for (PacketOutListener l : ll) {
-                try {
-                    l.onPacketOUT(event);
-                } catch (Throwable e) {
-                    System.err.println("Error on dispatching PacketOutEvent for packet type " + event.getType() + ".");
-                    if (Config.debug)
-                        e.printStackTrace();
-                }
-            }
-    }
-
     /**
-     * Closes the PacketAPI
+     * Interface used for listening to incoming packets
      */
-    public abstract void close();
-
-    public abstract PacketCapture getCapturer(Player plr);
-
-    public abstract void setCapturer(Player plr, PacketCapture packetCapture);
-
-    public interface PacketInListener{
+    public interface PacketInListener {
         void onPacketIN(PacketInEvent e);
     }
 
+    /**
+     * Interface used for listening to outgoing packets
+     */
     public interface PacketOutListener {
         void onPacketOUT(PacketOutEvent e);
     }

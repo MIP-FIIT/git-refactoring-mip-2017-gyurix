@@ -10,16 +10,16 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import java.util.ArrayList;
 
 public class ChatTag {
-    public ChatTag parent;
-    public String text, translate, selector, insertion;
-    public ArrayList<ChatTag> with;
-    public ChatScoreData score;
-    public ArrayList<ChatTag> extra;
     @JsonSettings(defaultValue = "false")
     public boolean bold, italic, underlined, strikethrough, obfuscated;
-    public ChatColor color;
     public ChatClickEvent clickEvent;
+    public ChatColor color;
+    public ArrayList<ChatTag> extra;
     public ChatHoverEvent hoverEvent;
+    public ChatTag parent;
+    public ChatScoreData score;
+    public String text, translate, selector, insertion;
+    public ArrayList<ChatTag> with;
 
     public ChatTag() {
 
@@ -29,20 +29,12 @@ public class ChatTag {
         text = in;
     }
 
-    public static ChatTag fromExtraText(String extraText) {
-        String[] parts = extraText.split("\\\\\\|");
-        ArrayList<ChatTag> tags = new ArrayList<>();
-        for (String part : parts) {
-            String[] sa = part.split("\\\\-");
-            ChatTag tag = ChatTag.fromColoredText(sa[0]);
-            for (int i = 1; i < sa.length; i++) {
-                if (sa[i].length() > 0) {
-                    tag.setExtra(sa[i].charAt(0), sa[i].substring(1));
-                }
-            }
-            tags.add(tag);
+    public static ChatTag fromBaseComponents(BaseComponent[] baseComponents) {
+        StringBuilder data = new StringBuilder();
+        for (BaseComponent bc : baseComponents) {
+            data.append(bc.toLegacyText());
         }
-        return ChatTag.fromSeveralTag(tags);
+        return ChatTag.fromColoredText(data.toString());
     }
 
     public static ChatTag fromColoredText(String colText) {
@@ -98,6 +90,26 @@ public class ChatTag {
         return ChatTag.fromSeveralTag(ctl);
     }
 
+    public static ChatTag fromExtraText(String extraText) {
+        String[] parts = extraText.split("\\\\\\|");
+        ArrayList<ChatTag> tags = new ArrayList<>();
+        for (String part : parts) {
+            String[] sa = part.split("\\\\-");
+            ChatTag tag = ChatTag.fromColoredText(sa[0]);
+            for (int i = 1; i < sa.length; i++) {
+                if (sa[i].length() > 0) {
+                    tag.setExtra(sa[i].charAt(0), sa[i].substring(1));
+                }
+            }
+            tags.add(tag);
+        }
+        return ChatTag.fromSeveralTag(tags);
+    }
+
+    public static ChatTag fromICBC(Object icbc) {
+        return (ChatTag) JsonAPI.deserialize(ChatAPI.toJson(icbc), ChatTag.class);
+    }
+
     public static ChatTag fromSeveralTag(ArrayList<ChatTag> ctl) {
         if (ctl.size() == 1)
             return ctl.iterator().next();
@@ -115,23 +127,6 @@ public class ChatTag {
         return out.toString();
     }
 
-    public static ChatTag fromBaseComponents(BaseComponent[] baseComponents) {
-        StringBuilder data = new StringBuilder();
-        for (BaseComponent bc : baseComponents) {
-            data.append(bc.toLegacyText());
-        }
-        return ChatTag.fromColoredText(data.toString());
-    }
-
-    public static ChatTag fromICBC(Object icbc) {
-        return (ChatTag) JsonAPI.deserialize(ChatAPI.toJson(icbc), ChatTag.class);
-    }
-
-    public boolean isSimpleText() {
-        return translate == null && selector == null && insertion == null && with == null && score == null && extra == null &&
-                bold == italic == underlined == strikethrough == obfuscated == false && color == null && clickEvent == null && hoverEvent == null;
-    }
-
     public ChatTag cloneFormat(ChatTag target) {
         target.bold = bold;
         target.italic = italic;
@@ -140,30 +135,6 @@ public class ChatTag {
         target.obfuscated = obfuscated;
         target.color = color;
         return target;
-    }
-
-    @Override
-    public String toString() {
-        return JsonAPI.serialize(this);
-    }
-
-    public String toFormatlessString() {
-        ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
-        StringBuilder out = new StringBuilder();
-        for (ChatTag tag : tags) {
-            out.append(tag.text);
-        }
-        return out.toString();
-    }
-
-    public String toColoredString() {
-        ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
-        StringBuilder out = new StringBuilder();
-        for (ChatTag tag : tags) {
-            out.append(tag.getFormatPrefix());
-            out.append(tag.text);
-        }
-        return SU.optimizeColorCodes(out.toString());
     }
 
     public String getFormatPrefix() {
@@ -183,9 +154,14 @@ public class ChatTag {
         return pref.toString();
     }
 
+    public boolean isSimpleText() {
+        return translate == null && selector == null && insertion == null && with == null && score == null && extra == null &&
+                bold == italic == underlined == strikethrough == obfuscated == false && color == null && clickEvent == null && hoverEvent == null;
+    }
+
     /**
      * Sets an extra data for this ChatTag. Available extra types:
-     * <p>
+     * <p/>
      * T - Hover event, show text
      * I - Hover event, show item
      * A - Hover event, show achievement
@@ -221,8 +197,32 @@ public class ChatTag {
         return this;
     }
 
+    public String toColoredString() {
+        ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
+        StringBuilder out = new StringBuilder();
+        for (ChatTag tag : tags) {
+            out.append(tag.getFormatPrefix());
+            out.append(tag.text);
+        }
+        return SU.optimizeColorCodes(out.toString());
+    }
+
+    public String toFormatlessString() {
+        ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
+        StringBuilder out = new StringBuilder();
+        for (ChatTag tag : tags) {
+            out.append(tag.text);
+        }
+        return out.toString();
+    }
+
     public Object toICBC() {
         return ChatAPI.toICBC(JsonAPI.serialize(this));
+    }
+
+    @Override
+    public String toString() {
+        return JsonAPI.serialize(this);
     }
 }
 

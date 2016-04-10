@@ -2,7 +2,9 @@ package gyurix.spigotlib;
 
 import gyurix.chat.ChatTag;
 import gyurix.configfile.ConfigData;
-import gyurix.utils.ArrayUtils;
+import gyurix.protocol.Reflection;
+import gyurix.spigotutils.ServerVersion;
+import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -14,7 +16,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 public class GlobalLangFile {
-    public static final HashMap<String, HashMap<String, String>> map = new HashMap();
+    public static final HashMap<String, HashMap<String, String>> map = new HashMap<>();
 
     public static String get(String lang, String adr) {
         HashMap<String, String> m;
@@ -26,69 +28,24 @@ public class GlobalLangFile {
                 if (msg != null) {
                     return msg;
                 }
-                Main.log.severe("\u00a7cThe requested key (" + adr + ") is missing from language " + lang + ". Using servers default language...");
+                SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from language " + lang + ". Using servers default language...");
             }
-            Main.log.severe("\u00a7cThe requested language (" + lang + ") is not available.");
+            SU.log(Main.pl, "§cThe requested language (" + lang + ") is not available.");
         }
         if ((m = map.get(Config.defaultLang)) != null) {
             msg = m.get(adr);
             if (msg != null) {
                 return msg;
             }
-            Main.log.severe("\u00a7cThe requested key (" + adr + ") is missing from servers default language (" + Config.defaultLang + "). Trying to find it in any other language...");
+            SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from servers default language (" + Config.defaultLang + "). Trying to find it in any other language...");
         }
         for (HashMap<String, String> l : map.values()) {
             String msg2 = l.get(adr);
             if (msg2 == null) continue;
             return msg2;
         }
-        Main.log.severe("\u00a7cThe requested key (" + adr + ") wasn't found in any language.");
+        SU.log(Main.pl, "§cThe requested key (" + adr + ") wasn't found in any language.");
         return lang + "." + adr;
-    }
-
-    public static PluginLang loadLF(String pn, String fn) {
-        try {
-            GlobalLangFile.load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
-            return new PluginLang(pn);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static PluginLang loadLF(String pn, InputStream stream, String fn) {
-        try {
-            byte[] bytes = new byte[stream.available()];
-            stream.read(bytes);
-            GlobalLangFile.load(new String(bytes, "UTF-8").split("\r?\n"));
-            GlobalLangFile.load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
-            return new PluginLang(pn);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    public static void unloadLF(PluginLang lng) {
-        for (HashMap<String, String> m : map.values()) {
-            Iterator<Map.Entry<String, String>> i = m.entrySet().iterator();
-            while (i.hasNext()) {
-                Map.Entry<String, String> e = i.next();
-                if (!e.getKey().matches(".*\\." + lng.pln + ".*")) continue;
-                i.remove();
-            }
-        }
-    }
-
-    private static void put(String adr, String value) {
-        if (!adr.contains(".")) {
-            if (!map.containsKey(adr)) {
-                map.put(adr, new HashMap());
-            }
-        } else {
-            HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf(".")));
-            m.put(adr.substring(adr.indexOf(".") + 1), value);
-        }
     }
 
     private static void load(String[] data) {
@@ -97,9 +54,10 @@ public class GlobalLangFile {
         int lvl = 0;
         int line = 0;
         for (String s : data) {
-            int blockLvl;
+            int blockLvl = 0;
             ++line;
-            for (blockLvl = 0; s.length() > blockLvl && s.charAt(blockLvl) == ' '; ++blockLvl) {
+            while (s.charAt(blockLvl) == ' ') {
+                ++blockLvl;
             }
             String[] d = ((s = s.substring(blockLvl)) + " ").split(" *: +", 2);
             if (d.length == 1) {
@@ -132,6 +90,51 @@ public class GlobalLangFile {
         GlobalLangFile.put(adr.substring(1), cs.toString());
     }
 
+    public static PluginLang loadLF(String pn, InputStream stream, String fn) {
+        try {
+            byte[] bytes = new byte[stream.available()];
+            stream.read(bytes);
+            GlobalLangFile.load(new String(bytes, "UTF-8").split("\r?\n"));
+            GlobalLangFile.load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
+            return new PluginLang(pn);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static PluginLang loadLF(String pn, String fn) {
+        try {
+            GlobalLangFile.load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
+            return new PluginLang(pn);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static void put(String adr, String value) {
+        if (!adr.contains(".")) {
+            if (!map.containsKey(adr)) {
+                map.put(adr, new HashMap());
+            }
+        } else {
+            HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf(".")));
+            m.put(adr.substring(adr.indexOf(".") + 1), value);
+        }
+    }
+
+    public static void unloadLF(PluginLang lng) {
+        for (HashMap<String, String> m : map.values()) {
+            Iterator<Map.Entry<String, String>> i = m.entrySet().iterator();
+            while (i.hasNext()) {
+                Map.Entry<String, String> e = i.next();
+                if (!e.getKey().matches(".*\\." + lng.pln + ".*")) continue;
+                i.remove();
+            }
+        }
+    }
+
     public static class PluginLang {
         public final String pln;
         public final String prefixLink = "prefix";
@@ -143,11 +146,10 @@ public class GlobalLangFile {
         public String get(Player plr, String adr, String... repl) {
             String msg = GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), this.pln + "." + adr);
             for (String s : (">" + msg + "<").split(">[^<]*<")) {
-                String[] pm;
                 String r;
                 int spaceID = s.indexOf(" ");
                 String name = spaceID == -1 ? s : s.substring(0, spaceID);
-                String[] arrstring = pm = spaceID == -1 ? new String[]{} : s.substring(spaceID + 1).split(" ");
+                String[] pm = spaceID == -1 ? new String[]{} : s.substring(spaceID + 1).split(" ");
                 if (name.startsWith("*")) {
                     msg = msg.replace("<" + s + ">", this.get(plr, name.substring(1), pm));
                     continue;
@@ -166,7 +168,7 @@ public class GlobalLangFile {
         public void msg(String prefix, CommandSender sender, String msg, String... repl) {
             Player plr = sender instanceof Player ? (Player) sender : null;
             msg = prefix + this.get(plr, msg, repl);
-            if (plr == null) {
+            if (plr == null || (Reflection.ver != ServerVersion.v1_8 && Reflection.ver != ServerVersion.v1_9)) {
                 sender.sendMessage(ChatTag.stripExtras(msg));
             } else {
                 ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.CHAT, msg, plr);

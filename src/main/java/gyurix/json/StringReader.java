@@ -1,15 +1,11 @@
 package gyurix.json;
 
 public class StringReader {
-    public char[] str;
     public int id;
+    public char[] str;
 
     public StringReader(String in) {
         this.str = in.toCharArray();
-    }
-
-    public char next() {
-        return this.str[this.id++];
     }
 
     public boolean hasNext() {
@@ -18,6 +14,10 @@ public class StringReader {
 
     public char last() {
         return this.str[this.id - 1];
+    }
+
+    public char next() {
+        return this.str[this.id++];
     }
 }
 

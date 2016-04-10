@@ -2,11 +2,6 @@ en:
   spigotlib:
     prefix: §6§lＳＬ ► §e
     wrongsyntax: §cFailed to execute command, enter /sl and check it's syntax.
-    lang:
-      list: §b§lAvailable languages: §e§l<langs>
-      lang: §e§l<player>§b has §e§l<lang> §blanguage selected.
-      set: §e§l<player>§b players language has been set to §e§l<lang>§b.
-        own: §a§lYou have changed your language to §e§l<lang>§a§l!
     noperm: §c§lYou don't have permission for using SpigotLib commands.
       command: §c§lYou don't have permission for using this SpigotLib subcommand.
     help: §5§l－＞  ＭＥＳＳＡＧＥ  ＳＥＮＤＩＮＧ  ＜－
@@ -57,13 +52,23 @@ en:
         hover: \\-T§d /sl chm [p:<players|*>] <message>:§f
                Send hoverable/clickable chat message
         click: \\-S/sl chm p:*
+    errors: Found errors from server startup:<errors>
+    lang:
+      list: §6§lAvailable languages: §e<langs>
+      other: §6§l<player>§e has §6§l<lang>§e language selected.
+      own: You have §6§l<lang>§e language selected.
+      set: §6§l<player>§e players language has been set to language §6§l<lang>§e.
+        own: §eYou have changed your own language to §6§l<lang>§e!
     vars: Available variables:§f <vars>
       fillformat: §eFor <player>: §f<value>
       filled: Filling variables in string §f<original>§e...
         <filled>
-    permission:
-      yes: §2<player> §ahas the given permission.
-      no: §4<player> §cdoesn't have the given permission.
+    perms:
+      yes: §6§l<player> §ahas§e  permission §6§l<perm>§e.
+      no: §6§l<player> §cdoesn't§e have permission §6§l<perm>§e.
+      fillformat: Player §6§l<player>§e has the following permissions:§f <perms>
+      denyformat: §c<perm>
+      allowformat: §a<perm>
     executed: The entered command has been executed successfully.
     item:
       own: You are holding the following item: \|<item>\-T§bClick to insert the item name to chat\-S<item>
@@ -90,19 +95,6 @@ en:
         out: §cThe given outgoing packet (§e§l<packet>§c) was not found.
     notdone: §cSorry, this feature is not yet done!
     noconsole: §cSorry, this feature is not accessible from the console currently
-    signhack: §4§lAntiSignHack ► §c§l
-      limit: Don't try to write too long lines in signs.
-      json: Don't try to put special json tags in sign lines.
-      characters: Don't try to use these characters in sign lines.
-    itemhack: §4§lAntiItemHack ► §c§l
-      invalidslot: Don't try to edit an invalid inventoryslot.
-      craftitem: Don't try to edit your mini crafting table slots in creative gamemode.
-      helmet: Don't try to use this item as your helmet.
-      chestplate: Don't try to use this item as your chestplate.
-      leggings: Don't try to use this item as your leggings.
-      boots: Don't try to use this item as your boots.
-      stacksize: Don't try to bypass the stack size limitation for this item.
-      invaliditem: Don't try to give yourself this item.
     invalidcmd: §cThe requested command doesn't exists!
 de:
   spigotlib:

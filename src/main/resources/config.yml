@@ -1,93 +1,15 @@
-#The version of the config.
-version: 2
+start: §eStarting server...
+#Debug mode, if disabled, then some of the stack traces won't be visible in console.
+debug: -
 #Servers default language.
 defaultLang: en
-#Hook to the clips PlaceholderAPI in order to obtain more variables.
-phaHook: +
-#Log commands
-commandLog: +
-debug: -
-backup: plugins/SpigotLib/backups/config-backup(<time>).yml
-tpsMeter:
-  limit: 5
-  checkTime: 10000
-  startupDelay: 35000
-customCommands:
-  plugins:
-  - TS:10 100 10
-  - SUBTITLE:§cYour entered command is incorrent
-  - TITLE:§4§lACCESS DENIED
-  pl:
-  - TS:10 100 10
-  - SUBTITLE:§cYour entered command is incorrent
-  - TITLE:§4§lACCESS DENIED
-  ?:
-  - TS:10 100 10
-  - SUBTITLE:§cYour entered command is incorrent
-  - TITLE:§4§lACCESS DENIED
-connectionLog:
-  enabled: +
-  #You can blacklist here some ips, which you would not like to see in the log.
-  blacklist:
-  - 0.0.0.0
-  - 127.0.0.1
-  time: {MM.dd} [HH:mm:ss]
-  ping: Player <name>(<uuid>), tried to ping to the server from ip <ip>.
-  pingmore: One of the following players tried to ping to the server from ip <ip>:
-  pingunknown: Unknown player tried to ping to the server from ip <ip>.
-  loginunknown: Unknown player tried to login to the server from ip <ip>.
-  login: Player <name>(<uuid>), tried to login to the server from ip <ip>.
-  loginmore: One of the following players tried to login to the server from ip <ip>:
-bungeeSettings:
-  enabled: +
-  serverIps: 5000
-  playerCounts: 5000
-  players: 5000
-  uuids: 5000
-  serverNames: 5000
-  currentServerName: 5000
-  uuidOnJoin: +
-  ipOnJoin: +
-playerFile:
-  file: players.yml
-  mysql:
-    host: 127.0.0.1
-    username: root
-    password: root
-    database: SpigotLib
-    timeout: 10000
-    table: SpigotLib
-  #Used backend: FILE or MYSQL
-  backend: FILE
-#Chat settings.
-chat:
-  #Enable SpigotLib chat management.
-  enabled: +
-  #List here all the color codes, that should be replaced, if the player has chat.color.<colorcode> perm.
-  colors: 0123456789abcdefklmnor
-  #The prefix before colorcodes.
-  colorPrefix: &
-  #Set the new line character, set it to empty for disabling this feature.
-  #You need the chat.multiline permission for using this character.
-  newLineCharacter: \\n
-  #Allow writing empty lines with more then one, newline characters, if you have the chat.emptyLines permission.
-  allowEmptyLines: +
-  #Configuration for long messages.
-  longMessage:
-    #Enable using this feature, if you have chat.longer perm.
-    enabled: +
-    #If you write more, than the bellow set amount of characters, your message will be puffered, if not, your whole message will be sent.
-    pufferAfter: 90
-    #Limit maximum length of longer messages, per permissionly (chat.longerlimit.<group> permissions)
-    lengthLimit:
-      player: 150
-      ranked: 300
-      admin: 500
-antiSignHack:
-  enabled: +
-  limit: 50
 #EconomyAPI settings
 economy:
+  balanceTypes:
+    default:
+      name: default
+      suffix: $
+      defaultValue: 100
 #Migrate all the Economy data through Vault from an other Economy plugin, i.e. Essentials.
   migrate: -
 #The type of SpigotLibs vault hook, available options:
@@ -95,35 +17,34 @@ economy:
 #USER - hook to Vault as an Economy user (suggested if you don't want to use SpigotLibs Economy management)
 #PROVIDER - hook to Vault as an Economy provider (override other Economy plugins, like Essentials)
   vaultHookType: USER
-#Here you can configure the available balance types on your server
-  balanceTypes:
-    default:
-      prefix:
-      defaultValue: 100
-      name: default
-      suffix: $
-packetMapping:
-  v1_8_R2:
-    PacketPlayInPosition: PacketPlayInFlying$PacketPlayInPosition
-    PacketPlayInRelPositionLook: PacketPlayInFlying$PacketPlayInPositionLook
-    PacketPlayInLook: PacketPlayInFlying$PacketPlayInLook
-    PacketPlayOutRelEntityMove: PacketPlayOutEntity$PacketPlayOutRelEntityMove
-    PacketPlayOutRelEntityMoveLook: PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook
-    PacketPlayOutEntityLook: PacketPlayOutEntity$PacketPlayOutEntityLook
-    ChatSerializer: IChatBaseComponent$ChatSerializer
-  v1_8_R3:
-    PacketPlayInPosition: PacketPlayInFlying$PacketPlayInPosition
-    PacketPlayInRelPositionLook: PacketPlayInFlying$PacketPlayInPositionLook
-    PacketPlayInLook: PacketPlayInFlying$PacketPlayInLook
-    PacketPlayOutRelEntityMove: PacketPlayOutEntity$PacketPlayOutRelEntityMove
-    PacketPlayOutRelEntityMoveLook: PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook
-    PacketPlayOutEntityLook: PacketPlayOutEntity$PacketPlayOutEntityLook
-    ChatSerializer: IChatBaseComponent$ChatSerializer
-  v1_8_R4:
-    PacketPlayInPosition: PacketPlayInFlying$PacketPlayInPosition
-    PacketPlayInRelPositionLook: PacketPlayInFlying$PacketPlayInPositionLook
-    PacketPlayInLook: PacketPlayInFlying$PacketPlayInLook
-    PacketPlayOutRelEntityMove: PacketPlayOutEntity$PacketPlayOutRelEntityMove
-    PacketPlayOutRelEntityMoveLook: PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook
-    PacketPlayOutEntityLook: PacketPlayOutEntity$PacketPlayOutEntityLook
-    ChatSerializer: IChatBaseComponent$ChatSerializer
+#Enable / disable packet events which costs some performance, but gives
+#ability for developers to catch packets and code awesome plugin features :)
+packetAPI: -
+#Hook to the clips PlaceholderAPI in order to obtain more variables.
+phaHook: +
+#PlayerFile settings
+playerFile:
+  backend: FILE
+  file: players.yml
+  mysql:
+    table: SpigotLib
+    host: 127.0.0.1
+    username: root
+    password: root
+    database: SpigotLib
+    timeout: 10000
+#BungeeAPI
+bungee:
+  playerCount: 100
+  playerList: 100
+  servers: 1000000
+  currentServerName: 1000000
+  uuidAll: 1000000
+  serverIP: 1000000
+  ipOnJoin: +
+  uuidOnJoin: +
+#Allows sync and async metrics of the truth server tps, for the <tps>
+#variable, it also helps to detect informations about possible server crashes.
+tpsMeter:
+  checkTime: 10000
+  limit: 15

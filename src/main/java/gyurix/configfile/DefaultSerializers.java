@@ -1,9 +1,11 @@
 package gyurix.configfile;
 
-import gyurix.utils.ArrayUtils;
-import gyurix.utils.Primitives;
-import gyurix.utils.RangedData;
-import org.apache.commons.lang3.StringUtils;
+import com.google.gson.internal.Primitives;
+import gyurix.protocol.Reflection;
+import gyurix.spigotlib.SU;
+import gyurix.spigotutils.RangedData;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.*;
 import java.math.BigDecimal;
@@ -60,106 +62,6 @@ public class DefaultSerializers {
         ConfigSerialization.interfaceBasedClasses.put(java.util.List.class, java.util.ArrayList.class);
         ConfigSerialization.interfaceBasedClasses.put(java.util.Set.class, java.util.HashSet.class);
         ConfigSerialization.interfaceBasedClasses.put(Map.class, HashMap.class);
-        new Primitives();
-    }
-
-    public static class StringSerializer implements ConfigSerialization.Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            return input.stringData;
-        }
-
-        public ConfigData toData(Object input, Type... parameters) {
-            return new ConfigData((String) input);
-        }
-    }
-
-    public static class UUIDSerializer implements ConfigSerialization.Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            return UUID.fromString(input.stringData);
-        }
-
-        public ConfigData toData(Object input, Type... parameters) {
-            return new ConfigData(input.toString());
-        }
-    }
-
-    private static class ClassSerializer implements ConfigSerialization.Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            try {
-                return Class.forName(input.stringData);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
-
-        public ConfigData toData(Object input, Type... parameters) {
-            return new ConfigData(((Class) input).getName());
-        }
-    }
-
-    public static class CharacterSerializer implements ConfigSerialization.Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            return input.stringData.charAt(0);
-        }
-
-        public ConfigData toData(Object in, Type... parameters) {
-            return new ConfigData("" + in);
-        }
-    }
-
-    public static class BooleanSerializer implements ConfigSerialization.Serializer {
-        public static final java.util.regex.Pattern trueRegex = java.util.regex.Pattern.compile("\\+||true||yes");
-
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            return trueRegex.matcher(input.stringData).matches();
-        }
-
-        public ConfigData toData(Object in, Type... parameters) {
-            return new ConfigData((Boolean) in ? "+" : "-");
-        }
-    }
-
-    public static class NumberSerializer implements ConfigSerialization.Serializer {
-        public static final HashMap<Class, Method> methods = new HashMap();
-
-        static {
-            try {
-                methods.put(Short.class, Short.class.getMethod("decode", String.class));
-                methods.put(Integer.class, Integer.class.getMethod("decode", String.class));
-                methods.put(Long.class, Long.class.getMethod("decode", String.class));
-                methods.put(Float.class, Float.class.getMethod("valueOf", String.class));
-                methods.put(Double.class, Double.class.getMethod("valueOf", String.class));
-                methods.put(Byte.class, Byte.class.getMethod("valueOf", String.class));
-            } catch (Throwable e) {
-                ConfigSerialization.errorLog(e);
-            }
-        }
-
-        public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
-            Method m = methods.get(Primitives.wrap(fixClass));
-            try {
-                String s = StringUtils.stripStart(input.stringData.replace(" ", ""), "0");
-                return m.invoke(null, s.isEmpty() ? "0" : s);
-            } catch (Throwable e) {
-                System.out.println("INVALID NUMBER: " + input);
-                ConfigSerialization.errorLog(e);
-                try {
-                    return m.invoke(null, "0");
-                } catch (Throwable e2) {
-                    System.out.println("Not a number class: " + fixClass.getSimpleName());
-                    ConfigSerialization.errorLog(e);
-                }
-            }
-            return null;
-        }
-
-        public ConfigData toData(Object input, Type... parameters) {
-            String s = input.toString();
-            int id = (s + ".").indexOf(".");
-            return new ConfigData(StringUtils.leftPad(s, Math.max(leftPad + s.length() - id, 0), '0'));
-
-        }
     }
 
     public static class ArraySerializer implements ConfigSerialization.Serializer {
@@ -207,6 +109,43 @@ public class DefaultSerializers {
         }
     }
 
+    public static class BooleanSerializer implements ConfigSerialization.Serializer {
+        public static final java.util.regex.Pattern trueRegex = java.util.regex.Pattern.compile("\\+||true||yes");
+
+        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+            return trueRegex.matcher(input.stringData).matches();
+        }
+
+        public ConfigData toData(Object in, Type... parameters) {
+            return new ConfigData((Boolean) in ? "+" : "-");
+        }
+    }
+
+    public static class CharacterSerializer implements ConfigSerialization.Serializer {
+        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+            return input.stringData.charAt(0);
+        }
+
+        public ConfigData toData(Object in, Type... parameters) {
+            return new ConfigData("" + in);
+        }
+    }
+
+    private static class ClassSerializer implements ConfigSerialization.Serializer {
+        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+            try {
+                return Class.forName(input.stringData);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        public ConfigData toData(Object input, Type... parameters) {
+            return new ConfigData(((Class) input).getName());
+        }
+    }
+
     public static class CollectionSerializer implements ConfigSerialization.Serializer {
         public Object fromData(ConfigData input, Class fixClass, Type... parameterTypes) {
             try {
@@ -236,7 +175,7 @@ public class DefaultSerializers {
                 }
                 return col;
             } catch (Throwable e) {
-                ConfigSerialization.errorLog(e);
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
             return null;
         }
@@ -262,6 +201,16 @@ public class DefaultSerializers {
                 d.listData.add(ConfigData.serializeObject(o, o.getClass() != cl, types));
             }
             return d;
+        }
+    }
+
+    public static class ConfigDataSerializer implements ConfigSerialization.Serializer {
+        public Object fromData(ConfigData data, Class cl, Type... type) {
+            return data;
+        }
+
+        public ConfigData toData(Object data, Type... type) {
+            return (ConfigData) data;
         }
     }
 
@@ -307,13 +256,13 @@ public class DefaultSerializers {
                         } catch (Throwable err) {
                             System.err.println("Map element deserialization error:\n" +
                                     "Key = " + e.getKey() + "; Value = " + e.getValue());
-                            ConfigSerialization.errorLog(err);
+                            SU.error(SU.cs, err, "SpigotLib", "gyurix");
                         }
                     }
                 }
                 return map;
             } catch (Throwable e) {
-                ConfigSerialization.errorLog(e);
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
             return null;
         }
@@ -357,6 +306,48 @@ public class DefaultSerializers {
         }
     }
 
+    public static class NumberSerializer implements ConfigSerialization.Serializer {
+        public static final HashMap<Class, Method> methods = new HashMap();
+
+        static {
+            try {
+                methods.put(Short.class, Short.class.getMethod("decode", String.class));
+                methods.put(Integer.class, Integer.class.getMethod("decode", String.class));
+                methods.put(Long.class, Long.class.getMethod("decode", String.class));
+                methods.put(Float.class, Float.class.getMethod("valueOf", String.class));
+                methods.put(Double.class, Double.class.getMethod("valueOf", String.class));
+                methods.put(Byte.class, Byte.class.getMethod("valueOf", String.class));
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+        }
+
+        public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
+            Method m = methods.get(Primitives.wrap(fixClass));
+            try {
+                String s = StringUtils.stripStart(input.stringData.replace(" ", ""), "0");
+                return m.invoke(null, s.isEmpty() ? "0" : s);
+            } catch (Throwable e) {
+                System.out.println("INVALID NUMBER: " + input);
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                try {
+                    return m.invoke(null, "0");
+                } catch (Throwable e2) {
+                    System.out.println("Not a number class: " + fixClass.getSimpleName());
+                    SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                }
+            }
+            return null;
+        }
+
+        public ConfigData toData(Object input, Type... parameters) {
+            String s = input.toString();
+            int id = (s + ".").indexOf(".");
+            return new ConfigData(StringUtils.leftPad(s, Math.max(leftPad + s.length() - id, 0), '0'));
+
+        }
+    }
+
     public static class ObjectSerializer implements ConfigSerialization.Serializer {
         public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
             try {
@@ -376,7 +367,7 @@ public class DefaultSerializers {
                 }
             } catch (Throwable e) {
                 System.err.println("Error on deserializing \"" + input.stringData + "\" to a " + fixClass.getName() + " object.");
-                ConfigSerialization.errorLog(e);
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 return null;
             }
             Object obj = ConfigSerialization.newInstance(fixClass);
@@ -416,8 +407,7 @@ public class DefaultSerializers {
             }
             ConfigData out = new ConfigData();
             out.mapData = new LinkedHashMap();
-            for (Field f : c.getDeclaredFields()) {
-                f.setAccessible(true);
+            for (Field f : Reflection.getAllFields(c)) {
                 try {
                     String dfValue = "null";
                     String comment = "";
@@ -441,7 +431,7 @@ public class DefaultSerializers {
                                                 new Type[0])));
                     }
                 } catch (Throwable e) {
-                    ConfigSerialization.errorLog(e);
+                    SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 }
             }
             return out;
@@ -482,13 +472,23 @@ public class DefaultSerializers {
         }
     }
 
-    public static class ConfigDataSerializer implements ConfigSerialization.Serializer {
-        public Object fromData(ConfigData data, Class cl, Type... type) {
-            return data;
+    public static class StringSerializer implements ConfigSerialization.Serializer {
+        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+            return input.stringData;
         }
 
-        public ConfigData toData(Object data, Type... type) {
-            return (ConfigData) data;
+        public ConfigData toData(Object input, Type... parameters) {
+            return new ConfigData((String) input);
+        }
+    }
+
+    public static class UUIDSerializer implements ConfigSerialization.Serializer {
+        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+            return UUID.fromString(input.stringData);
+        }
+
+        public ConfigData toData(Object input, Type... parameters) {
+            return new ConfigData(input.toString());
         }
     }
 

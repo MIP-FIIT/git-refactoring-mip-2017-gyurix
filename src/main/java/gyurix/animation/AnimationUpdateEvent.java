@@ -23,16 +23,16 @@ public class AnimationUpdateEvent
         return hl;
     }
 
+    public AnimationRunnable getRunnable() {
+        return this.runnable;
+    }
+
     public String getText() {
         return this.text;
     }
 
     public void setText(String text) {
         this.text = text;
-    }
-
-    public AnimationRunnable getRunnable() {
-        return this.runnable;
     }
 
 }

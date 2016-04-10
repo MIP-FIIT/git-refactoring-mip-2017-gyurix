@@ -11,12 +11,12 @@ import org.bukkit.util.Vector;
 
 public class LocationData
         implements ConfigSerialization.StringSerializable {
-    public double x;
-    public double y;
-    public double z;
-    public float yaw;
     public float pitch;
     public String world;
+    public double x;
+    public double y;
+    public float yaw;
+    public double z;
 
     public LocationData(String in) {
         String[] d = in.split(" ");
@@ -98,59 +98,14 @@ public class LocationData
         this.pitch = pitch;
     }
 
-    public Block getBlock() {
-        if (!this.isAvailable()) {
-            return null;
-        }
-        return Bukkit.getWorld(this.world).getBlockAt((int) this.x, (int) this.y, (int) this.z);
-    }
-
-    public BlockLocation getBlockLocation() {
-        return new BlockLocation((int) this.x, (int) this.y, (int) this.z);
-    }
-
-    public Location getLocation() {
-        return new Location(Bukkit.getWorld(this.world), this.x, this.y, this.z, this.yaw, this.pitch);
-    }
-
-    public Vector toVector() {
-        return new Vector(this.x, this.y, this.z);
-    }
-
-    public boolean isAvailable() {
-        return this.world != null && Bukkit.getWorld(this.world) != null;
-    }
-
     public LocationData add(LocationData ld) {
         return ld == null ? this : this.add(ld.x, ld.y, ld.z);
-    }
-
-    public LocationData subtract(LocationData ld) {
-        return ld == null ? this : this.subtract(ld.x, ld.y, ld.z);
-    }
-
-    public LocationData multiple(LocationData ld) {
-        return ld == null ? this : this.multiple(ld.x, ld.y, ld.z);
     }
 
     public LocationData add(double num) {
         this.x += num;
         this.y += num;
         this.z += num;
-        return this;
-    }
-
-    public LocationData subtract(double num) {
-        this.x -= num;
-        this.y -= num;
-        this.z -= num;
-        return this;
-    }
-
-    public LocationData multiple(double num) {
-        this.x *= num;
-        this.y *= num;
-        this.z *= num;
         return this;
     }
 
@@ -161,18 +116,27 @@ public class LocationData
         return this;
     }
 
-    public LocationData subtract(double nx, double ny, double nz) {
-        this.x -= nx;
-        this.y -= ny;
-        this.z -= nz;
-        return this;
+    public LocationData clone() {
+        return new LocationData(this);
     }
 
-    public LocationData multiple(double nx, double ny, double nz) {
-        this.x *= nx;
-        this.y *= ny;
-        this.z *= nz;
-        return this;
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof LocationData)) {
+            return false;
+        }
+        LocationData ld = (LocationData) obj;
+        return (this.world == null && ld.world == null || this.world != null && ld.world != null && this.world.equals(ld.world)) && this.x == ld.x && this.y == ld.y && this.z == ld.z && this.yaw == ld.yaw && this.pitch == ld.pitch;
+    }
+
+    public Block getBlock() {
+        if (!this.isAvailable()) {
+            return null;
+        }
+        return Bukkit.getWorld(this.world).getBlockAt((int) this.x, (int) this.y, (int) this.z);
+    }
+
+    public BlockLocation getBlockLocation() {
+        return new BlockLocation((int) this.x, (int) this.y, (int) this.z);
     }
 
     public Vector getDirection() {
@@ -200,6 +164,64 @@ public class LocationData
         return this;
     }
 
+    public Location getLocation() {
+        return new Location(Bukkit.getWorld(this.world), this.x, this.y, this.z, this.yaw, this.pitch);
+    }
+
+    public World getWorld() {
+        return Bukkit.getWorld(this.world);
+    }
+
+    public int hashCode() {
+        int hash = 57 + (this.world != null ? this.world.hashCode() : 0);
+        hash = 19 * hash + (int) (Double.doubleToLongBits(this.x) ^ Double.doubleToLongBits(this.x) >>> 32);
+        hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ Double.doubleToLongBits(this.y) >>> 32);
+        hash = 19 * hash + (int) (Double.doubleToLongBits(this.z) ^ Double.doubleToLongBits(this.z) >>> 32);
+        hash = 19 * hash + Float.floatToIntBits(this.pitch);
+        hash = 19 * hash + Float.floatToIntBits(this.yaw);
+        return hash;
+    }
+
+    public boolean isAvailable() {
+        return this.world != null && Bukkit.getWorld(this.world) != null;
+    }
+
+    public LocationData multiple(LocationData ld) {
+        return ld == null ? this : this.multiple(ld.x, ld.y, ld.z);
+    }
+
+    public LocationData multiple(double num) {
+        this.x *= num;
+        this.y *= num;
+        this.z *= num;
+        return this;
+    }
+
+    public LocationData multiple(double nx, double ny, double nz) {
+        this.x *= nx;
+        this.y *= ny;
+        this.z *= nz;
+        return this;
+    }
+
+    public LocationData subtract(LocationData ld) {
+        return ld == null ? this : this.subtract(ld.x, ld.y, ld.z);
+    }
+
+    public LocationData subtract(double num) {
+        this.x -= num;
+        this.y -= num;
+        this.z -= num;
+        return this;
+    }
+
+    public LocationData subtract(double nx, double ny, double nz) {
+        this.x -= nx;
+        this.y -= ny;
+        this.z -= nz;
+        return this;
+    }
+
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
@@ -213,30 +235,8 @@ public class LocationData
         return out.substring(1);
     }
 
-    public World getWorld() {
-        return Bukkit.getWorld(this.world);
-    }
-
-    public LocationData clone() {
-        return new LocationData(this);
-    }
-
-    public int hashCode() {
-        int hash = 57 + (this.world != null ? this.world.hashCode() : 0);
-        hash = 19 * hash + (int) (Double.doubleToLongBits(this.x) ^ Double.doubleToLongBits(this.x) >>> 32);
-        hash = 19 * hash + (int) (Double.doubleToLongBits(this.y) ^ Double.doubleToLongBits(this.y) >>> 32);
-        hash = 19 * hash + (int) (Double.doubleToLongBits(this.z) ^ Double.doubleToLongBits(this.z) >>> 32);
-        hash = 19 * hash + Float.floatToIntBits(this.pitch);
-        hash = 19 * hash + Float.floatToIntBits(this.yaw);
-        return hash;
-    }
-
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof LocationData)) {
-            return false;
-        }
-        LocationData ld = (LocationData) obj;
-        return (this.world == null && ld.world == null || this.world != null && ld.world != null && this.world.equals(ld.world)) && this.x == ld.x && this.y == ld.y && this.z == ld.z && this.yaw == ld.yaw && this.pitch == ld.pitch;
+    public Vector toVector() {
+        return new Vector(this.x, this.y, this.z);
     }
 }
 
