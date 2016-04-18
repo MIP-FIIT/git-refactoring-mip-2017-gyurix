@@ -9,7 +9,7 @@ public class PacketPlayInChat
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Chat.newPacket(this.message);
+        return PacketInType.Chat.newPacket(message);
     }
 
     @Override

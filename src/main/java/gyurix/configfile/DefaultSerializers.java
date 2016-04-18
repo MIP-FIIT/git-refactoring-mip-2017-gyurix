@@ -10,6 +10,7 @@ import org.apache.commons.lang.StringUtils;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -37,6 +38,7 @@ public class DefaultSerializers {
         ConfigSerialization.serializers.put(Object.class, new ObjectSerializer());
         ConfigSerialization.serializers.put(Pattern.class, new PatternSerializer());
         ConfigSerialization.serializers.put(RangedData.class, new RangedDataSerializer());
+        ConfigSerialization.serializers.put(SimpleDateFormat.class, new SimpleDateFormatSerializer());
 
         ConfigSerialization.aliases.put(String.class, "str");
         ConfigSerialization.aliases.put(UUID.class, "uuid");
@@ -59,7 +61,7 @@ public class DefaultSerializers {
         ConfigSerialization.aliases.put(LinkedHashMap.class, "<L>");
         ConfigSerialization.aliases.put(TreeMap.class, "<T>");
         ConfigSerialization.aliases.put(Object.class, "?");
-        ConfigSerialization.interfaceBasedClasses.put(java.util.List.class, java.util.ArrayList.class);
+        ConfigSerialization.interfaceBasedClasses.put(java.util.List.class, ArrayList.class);
         ConfigSerialization.interfaceBasedClasses.put(java.util.Set.class, java.util.HashSet.class);
         ConfigSerialization.interfaceBasedClasses.put(Map.class, HashMap.class);
     }
@@ -99,8 +101,8 @@ public class DefaultSerializers {
         public ConfigData toData(Object input, Type... parameters) {
             Class cl = parameters.length >= 1 ? (Class) parameters[0] : Object.class;
             ConfigData d = new ConfigData();
-            d.listData = new java.util.ArrayList();
-            for (Object o : java.util.Arrays.asList((Object[]) input)) {
+            d.listData = new ArrayList<>();
+            for (Object o : Arrays.asList((Object[]) input)) {
                 if (o != null) {
                     d.listData.add(ConfigData.serializeObject(o, o.getClass() != cl));
                 }
@@ -110,14 +112,13 @@ public class DefaultSerializers {
     }
 
     public static class BooleanSerializer implements ConfigSerialization.Serializer {
-        public static final java.util.regex.Pattern trueRegex = java.util.regex.Pattern.compile("\\+||true||yes");
-
         public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            return trueRegex.matcher(input.stringData).matches();
+            String s = input.stringData.toLowerCase();
+            return s.equals("+") || s.equals("true") || s.equals("yes");
         }
 
         public ConfigData toData(Object in, Type... parameters) {
-            return new ConfigData((Boolean) in ? "+" : "-");
+            return new ConfigData((boolean) in ? "+" : "-");
         }
     }
 
@@ -136,9 +137,9 @@ public class DefaultSerializers {
             try {
                 return Class.forName(input.stringData);
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                return null;
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
+            return null;
         }
 
         public ConfigData toData(Object input, Type... parameters) {
@@ -373,7 +374,7 @@ public class DefaultSerializers {
             Object obj = ConfigSerialization.newInstance(fixClass);
             if (input.mapData == null)
                 return obj;
-            for (Field f : fixClass.getDeclaredFields()) {
+            for (Field f : Reflection.getAllFields(fixClass)) {
                 f.setAccessible(true);
                 try {
                     String fn = f.getName();
@@ -469,6 +470,23 @@ public class DefaultSerializers {
             if (out.toString().equals("-*-"))
                 return new ConfigData("default");
             return new ConfigData(out.toString().equals(rd.min + "*" + rd.min) ? "" + rd.min : out.toString());
+        }
+    }
+
+    public static class SimpleDateFormatSerializer implements ConfigSerialization.Serializer {
+        public static final Field patternF = Reflection.getField(SimpleDateFormat.class, "pattern");
+
+        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+            return new SimpleDateFormat(input.stringData);
+        }
+
+        public ConfigData toData(Object input, Type... parameters) {
+            try {
+                return new ConfigData((String) patternF.get(input));
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+            return new ConfigData();
         }
     }
 

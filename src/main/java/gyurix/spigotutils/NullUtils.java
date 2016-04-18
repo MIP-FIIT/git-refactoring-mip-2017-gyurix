@@ -32,6 +32,10 @@ public class NullUtils {
         return data == 0 ? null : data;
     }
 
+    public static String from0(String in) {
+        return (in == null || in.isEmpty()) ? null : in;
+    }
+
     public static boolean to0(Boolean data) {
         return data == null ? false : data;
     }
@@ -58,5 +62,9 @@ public class NullUtils {
 
     public static long to0(Long data) {
         return data == null ? 0L : data;
+    }
+
+    public static String to0(String data) {
+        return data == null ? "" : data;
     }
 }

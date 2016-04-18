@@ -29,6 +29,7 @@ public enum PacketOutType {
     Collect,
     CombatEvent,
     CustomPayload,
+    CustomSoundEffect,
     Entity,
     EntityDestroy,
     EntityEffect,

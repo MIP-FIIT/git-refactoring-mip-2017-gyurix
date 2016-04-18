@@ -28,7 +28,8 @@ public class GlobalLangFile {
                 if (msg != null) {
                     return msg;
                 }
-                SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from language " + lang + ". Using servers default language...");
+                if (Config.debug)
+                    SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from language " + lang + ". Using servers default language...");
             }
             SU.log(Main.pl, "§cThe requested language (" + lang + ") is not available.");
         }
@@ -37,7 +38,8 @@ public class GlobalLangFile {
             if (msg != null) {
                 return msg;
             }
-            SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from servers default language (" + Config.defaultLang + "). Trying to find it in any other language...");
+            if (Config.debug)
+                SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from servers default language (" + Config.defaultLang + "). Trying to find it in any other language...");
         }
         for (HashMap<String, String> l : map.values()) {
             String msg2 = l.get(adr);

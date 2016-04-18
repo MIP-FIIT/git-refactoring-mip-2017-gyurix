@@ -45,6 +45,7 @@ public enum PacketInType {
     UpdateSign,
     UseEntity,
     UseItem(ServerVersion.v1_9),
+    VehicleMove(ServerVersion.v1_9),
     WindowClick,
     StatusInPing,
     StatusInStart;
@@ -102,7 +103,7 @@ public enum PacketInType {
                     t.fs = new ArrayList();
                     for (Field f : cl.getDeclaredFields()) {
                         if ((f.getModifiers() & 8) != 0) continue;
-                        f.setAccessible(true);
+                        Reflection.setFieldAccessible(f);
                         t.fs.add(f);
                     }
                 } catch (Throwable e) {
@@ -155,16 +156,16 @@ public enum PacketInType {
      * @return The contents of all the non static fields of the packet
      */
     public Object[] getPacketData(Object packet) {
-        Object[] out = new Object[this.fs.size()];
+        Object[] out = new Object[fs.size()];
         try {
-            for (int i = 0; i < this.fs.size(); ++i) {
-                out[i] = this.fs.get(i).get(packet);
+            for (int i = 0; i < fs.size(); ++i) {
+                out[i] = fs.get(i).get(packet);
             }
             return out;
         } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
+        return null;
     }
 
     /**
@@ -188,7 +189,7 @@ public enum PacketInType {
             this.fillPacket(out, data);
             return out;
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }

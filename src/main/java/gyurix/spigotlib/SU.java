@@ -136,8 +136,12 @@ public final class SU {
         if (err.getMessage() != null)
             report.append('\n').append(err.getMessage());
         int i = 0;
+        boolean startrep = true;
         for (StackTraceElement el : err.getStackTrace()) {
-            if (el.getClassName() != null && el.getClassName().contains(author))
+            boolean force = el.getClassName() != null && el.getClassName().contains(author);
+            if (force)
+                startrep = false;
+            if (startrep || force)
                 report.append("\n§c #").append(++i)
                         .append(": §eLINE §a").append(el.getLineNumber())
                         .append("§e in FILE §6").append(el.getFileName())

@@ -100,7 +100,7 @@ public class Reflection {
             c = c.getSuperclass();
         }
         Field[] oa = new Field[out.size()];
-
+        out.toArray(oa);
         allFieldCache.put(c, oa);
         return oa;
     }

@@ -1,6 +1,24 @@
 en:
   spigotlib:
     prefix: §6§lＳＬ ► §e
+    time:
+      marks:
+        w: w, week, weeks
+        d: d, day, days
+        h: h, hour, hours
+        m: m, min, mins, minutes
+        s: s, sec, secs, second, seconds
+      never: never
+      w: week
+      wp: weeks
+      d: day
+      dp: days
+      h: hour
+      hp: hours
+      m: minute
+      mp: minutes
+      s: second
+      sp: seconds
     wrongsyntax: §cFailed to execute command, enter /sl and check it's syntax.
     noperm: §c§lYou don't have permission for using SpigotLib commands.
       command: §c§lYou don't have permission for using this SpigotLib subcommand.
@@ -182,6 +200,24 @@ hu:
       lang: §e§l<player>§b jelenlegi nyelve a(z) §e§l<lang> §bnyelv.
       set: §e§l<player>§b nyelve sikeresen át lett állítva §e§l<lang>§b nyelvre.
       changed: §a§lSikeresen megváltoztattad a nyelved §e§l<lang>§a§l nyelvre!
+    time:
+      marks:
+        w: h, het, hét
+        d: n, nap
+        h: ó, o, ora, óra
+        m: p, perc
+        s: mp, másodp, masodp, másodperc, masodperc
+      never: soha
+      w: hét
+      wp: hét
+      d: nap
+      dp: nap
+      h: óra
+      hp: óra
+      m: perc
+      mp: perc
+      s: másodperc
+      sp: másodperc
     messages:
       join: §f<player>§a feljött a szerverre.
       leave: §f<player>§c lelépett a szerverről.
