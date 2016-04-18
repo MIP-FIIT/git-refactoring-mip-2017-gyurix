@@ -117,48 +117,93 @@ en:
 de:
   spigotlib:
     prefix: §9§lSpigotLib ► §b
-    lang:
-      list: §b§lVerfuegbare Sprachen: §e§l<langs>
-      lang: §e§l<player>§b hat die Sprache §e§l<lang> §bgewaehlt.
-      set: §bDie Spracheinstellung von §e§l<player>§b wurde zu §e§l<lang> §bgesetzt.
-        own: §a§lDu hast deine Sprache zu §e§l<lang> §a§lgeaendert!
-    messages:
-      join: §c<player>§f hat sich eingeloggt.
-      leave: §c<player>§f hat sich ausgeloggt.
-      kick: §f<player>§c wurde gekickt. Grund: "§e<reason>".
-      earlylogin: §c§lDu hast dich zu frueh eingelogt. Der Server war noch nicht fertig gestartet.
+    time:
+      marks:
+        w: w, Woche, Wochen
+        d: d, Tag, Tage
+        h: h, Stunde, Stunden
+        m: m, min, Minute, Munuten, Minuten
+        s: s, sek, Sekunde, Sekunden
+      never: niemald
+      w: Woche
+      wp: Wochen
+      d: Tage
+      dp: Tage
+      h: Stunde
+      hp: Stunden
+      m: Minute
+      mp: Minuten
+      s: Sekunde
+      sp: Sekunden
+    wrongsyntax: §cBefehl konnte nicht ausgefuehrt werden. Benutzte /sl check fuer den richtigen Syntax.
     noperm: §c§lDu hast keine Berechtigung SpigotLib-Befehle zu benutzen.
       command: §c§lDu hast keine Berechtigung SpigotLib-Subbefehle zu benutzen.
-    help: §9§lChatAPI:\
-          §b /sl abm <players|*> <message>:\ §fsendet eine Actionbarnachricht an die angegebenen Spieler
-          §b /sl sym <players|*> <message>:\ §fsendet eine json-Systemnachricht an die angegebenen Spieler
-          §b /sl chm <players|*> <message>:\ §fsendet eine json-Chatnachricht an den angegebenen Spieler
-          §9§lAndereAPI:\
-          §b /sl title <players|*> <title> <subtitle>:\ §fsendet eine Titlenachricht an den angegebenen Spieler
-          §b /sl titledata <players|*> <fadein> <showtime> <fadeout>:\ §fsetzt die Daten fuer die angegebenen Spieler
-          §b /sl titlehide <players|*>:\ §fversteckt die Title fuer die angegebenen Spieler
-          §b /sl vars [text]:\ §flistet alle Variablen oder fuellt sie in einen Text
-          §b /sl hasperm <players|*> <perm>:\ §fPrueft ob der angegebne Spieler die Berechtung hat
-          §9§lPacketAPI:\
-          §b /sl detectout <players|*> <csomagtípusok>:\ §fFindet die anggegebenen ausgehenden Pakete der angegebenen/aller Spieler
-          §b /sl notdetectout <players|*> <csomagtípusok>:\ §fDeaktivert das Finden angegebenen ausgehenden Packete der angegebenen/aller Spieler
-          §b /sl detectin <players|*> <csomagtípusok>:\ §fFindet die anggegebenen eingehenden Pakete der angegebenen/aller Spieler
-          §b /sl notdetectin <players|*> <csomagtípusok>:\ §fDeaktivert das Finden angegebenen eingehenden Pakete der angegebenen/aller Spieler
-          §b /sl packets:\ §fListet alle Pakete
-          §9§lConfLangAPI:\
-          §b /sl lang [players|*] <lang>:\ §fBekommen oder Anlegen der gewahrlten Sprache
-          §b /sl lf [address] [newvalue]:\ §fBekommen oder Anlegen der gewahlten Addresse der Sprachdatei
-          §b /sl pf [address] [newvalue]:\ §fBekommen oder Anlegen der gewahlten Adresse der Spielerdatei
-          §b /sl save pf:\ §fSpeichert die Spielerdatei.
-          §b /sl reload <config|pf|lf>:\ §fNeuladen der SpigotLib-Konfiguration/Spielerdaten/Sprachdatein
-          §9§lSonstiges:\
-          §b /sl errors:\ §fLists errors.
-          §b /sl velocity [players|*] <x> <y> <z>:\ §fLegt die Geschwindigkeit von dir/des Spielers
-          §b /sl setamount [players|*] <value>:\ §flegt die Menge der Gegenstaende in der Spielerhand fest.
-          §b /sl item [players|*] <value>:\ §fInformationen oder festlegen eines Gegenstandes in der Hand
-    permission:
-      yes: §2<player> §ahat die benoetigte Berechtigung.
-      no: §4<player> §chat nicht die benoetigte Berechtigung.
+    help: §5§l－＞  N A C H R I C H T E N  S E N D E N  ＜－
+          \\|§dabm\\-T§d /sl abm [p:<players|*>] <message>:§f
+          sendet eine Actionbarnachricht\\|, \\|§dchm\\-T§d /sl chm [p:<players|*>] <message>:§f
+          sendet eine hoverbare/klickbare Chatnachricht\\|, \\|§dsym\\-T§d /sl sym [p:<players|*>] <message>:§f
+          sendet eine hoverbare/klickbare Systemnachricht\\|, \\|§dtitle\\-T§d /sl title [p:<players|*>] [<fadein> <showtime> <fadeout>] [title] [subtitle]:§f
+          sendete eine Titelnachricht\\|, \\|§dlang\\-T§d /sl lang [p:<players|*>] [new-language]:§f
+          prueft oder waehlt Sprache\\|, \\|§dvars\\-T§d /sl vars [p:<players|*>] [text]:§f
+          Listet alle Variablen order fuegt sie in einem Text ein\\|
+          §f
+          §4§l－＞  D A T E N K O N T R O L L E  ＜－
+          \\|§cperms\\-T§c /sl perms [p:<players|*>] [permission]:§f
+          prueft Berechtigungen und Zugriff auf eine Berechtigung\\|§c, \\|§cdata\\-T§c /sl data [p:<players|*>] [datakey] [datavalue]:§f
+          prueft und setzt Spielerdaten\\|§c, \\|§cinv\\-T§c /sl inv [p:<players>|*]:§f
+          prueft/modifiziert ein Spielerinventar\\|§c, \\|§citem\\-T§c /sl item [p:<players>|*] <item>:§f
+          prueft einen Gegenstand in der Hand eineen Spieler oder gibt einen Gegenstand\\|§c, \\|§cforce\\-T§c /sl force [p:<players>|*] <message>:§f
+          zwingt Spieler/Console die eingegeben Nachricht zu schreiben\\|§c, \\|§cpf\\-T§c /sl pf [p:<players>|*] [[un]load <playername>|save
+          §c|reload|migratetodb|key [value]]:§f
+          veraltet die Spielerdaten oder imigiert sie in eine MySQL_Datenbank\\|
+          §f
+          §9§l－＞  V E R B I N D U N G  ＜－
+          \\|§bcappackets\\-T§b§b /sl cappackets [p:<players|*>]:§f
+          startet/stops das auffangen von Datenpaketen\\|§b, \\|§bcapresults\\-T§b /sl capresults [p:<players|*>]:§f
+          stopt alle Datenenpaketaufzeichnungen und zeigt die Ergebnisse\\|§b, \\|§bslc\\-T§b /sl inv [p:<players>|*]:§f
+          Verwalung der SpigotLib Konfiguration\\|§b, \\|§bslm\\-T§b /sl slc <save|reload|reloadlf>:§f
+          oeffnet die SpigotLib Moduleverwaltugng\\|
+          §f
+          §6§l－＞  S P A S S  ＜－
+          \\|§eAufschlaggeschwinigkeit\\-T§e /sl velocity [p:<players>|*] [<x> <y> <z>]:§f
+          erhalte oder setze die Aufschlaggeschwinigkeit eines Spielers\\|§e, \\|§etp\\-T§e /sl tp [p:<players>|*] [<player>|[world] [<x> <y> <z>]] :§f
+          teleportiert / erhalte die Position von Spielern\\|§e, \\|§espawn\\-T§e /sl spawn [mobtype1[:amount1] [mobtype2[:amount2]]...] :§f
+          spawnt Mobs / listet Mobarten\\|§e, \\|§ekill\\-T§e /sl kill [p:<players>|*] [category|mobtypes] [radius]:§f
+          zeigt Toetungskathegorien / toetet Mobs in einer Kathegorie\\|§e, \\|§eenchant\\-T§e /sl enchant [p:<players>|*] [enchantment] [level]:§f
+          listet Verzauberungen / entzaubert/verzaubert den Gegenstand in der Hand\\|§e, \\|§epotion\\-T§e /sl potion [p:<players>|*] [effect] [time] [level]:§f
+          hueft hinzu/entfernt/listet Effekte auf Traenken in der Hand\\|§e, \\|§eeffect\\-T§e /sl effect [p:<players>|*] [effect] [time] [level]:§f
+          hueft hinzu/entfernt/listet Effekte auf Spielern\\|§e, \\|§ename\\-T§e /sl name [p:<players>|*] [newname]:§f
+          setzt/entfernt den Namen des Gegenstandes in der Hand\\|§e, \\|§elore\\-T§e /sl lore [p:<players>|*] [newlore]:§f
+          setzt/entfernt die Lore des Gegenstandes in der Hand\\|§e, \\|
+          §f
+          §f
+          §e▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+      abm: §dabm
+        hover: \\-T§d /sl abm [p:<players|*>] <message>:§f
+               sendet eine Aktionsleistennachrichten
+        click: \\-S/sl abm p:*
+      chm: §dchm
+        hover: \\-T§d /sl chm [p:<players|*>] <message>:§f
+               sendet eine hoverbare/klickbare Chatnnachricht
+        click: \\-S/sl chm p:*
+    errors: Fehler gefunden beim Serverstart:<errors>
+    lang:
+      list: §b§lVerfuegbare Sprachen: §e§l<langs>
+      other: §6§l<player>§e hat doe Sprache §6§l<lang>§e gewaehlt.
+      own: Du hast die Sprache §6§l<lang>§e geweahlt.
+      set: §bDie Spracheinstellung von §e§l<player>§b wurde zu §e§l<lang> §bgesetzt.
+        own: §a§lDu hast deine Sprache zu §e§l<lang> §a§lgeaendert!
+    vars: verfuegbare Variablen:§f <vars>
+      fillformat: §efuer <player>: §f<value>
+      filled: Fuelle die Variablen im String §f<original>§e...
+        <filled>
+    perms:
+      yes: §2<player> §ahat die benoetigte Berechtigung §6§l<perm>§e.
+      no: §4<player> §chat nicht die benoetigte Berechtigung §6§l<perm>§e.
+      fillformat: §6§l<player>§e hat folgende Berechtigungen:§f <perms>
+      denyformat: §c<perm>
+      allowformat: §a<perm>
+    executed: Das eingegebene Befehl wurde ausgefuehrt
     item:
       own: Du haelst den folgenden Gegenstand in der Hand: \|<item>\-T§bKlicken um den Namen im Chat einzufuegen\-S<item>
       player: <name>§b haelt den folgenden Gegenstand in der Hand: \|<item>\-T§bKlicken um den Namen im Chat einzufuegen\-S<item>
@@ -169,6 +214,12 @@ de:
       config: §a§lSpigotLibs Konfiguration wurde neugeladen.
       pf: §a§lSpigotLibs Spielerdaten wurden neugeladen.
       lf: §a§lSpigotLibs Sprachdatein wurden neu geladen.
+    debug:
+      on: §a§lDie Debugnachrichten wurden aktiviert.
+      off: §c§lDie Debugnachrichten wurden deaktiviert.
+    migrate:
+      start: §bStarte Datenimigration, Bitte Warte, Es koennte eine Weile dauern...
+      end: §bDie Datenimigration wurde beendet
     save:
       pf: §a§lSpielerdatei wurde gespeichert.
     packet: §9§lVerfuegbare eingehende Pakete:\ §b<in>
@@ -178,19 +229,6 @@ de:
         out: §cDas angegebene ausgehende Paket (§e§l<packet>§c) wurde nicht gefunden.
     notdone: §cTut uns leid, aber diese Funktion ist noch nicht feritg.
     noconsole: §ctut uns leid aber diese Funktion kann nicht von der Konsole ausgefueaht werden.
-    signhack: §4§lAntiSignHack ► §c§l
-      limit: Versuche nicht zu lange Zeilen auf einem Schild zu schreiben.
-      json: Versuche nicht spezelle json-Tags in Zeilen auf einem Schild zu schreiben.
-      characters: Versuche nicht diese Zeichen in Zeilen auf einem Schild zu schreiben.
-    itemhack: §4§lAntiItemHack ► §c§l
-      invalidslot: Versuche nicht ein ungueltiges Inventar zu editieren.
-      craftitem: Versuche nicht deine kleinen Herstellungsslots im Kreativemodus zu editieren.
-      helmet: Versuche nicht diesen Gegenstand als deinen Helm zu verwenden.
-      chestplate: Versuche nicht diesen Gegenstand als deine Ruestung zu verwenden.
-      leggings: Versuche nicht diesen Gegenstand als deine Hosen zu verwenden.
-      boots: Versuche nicht diesen Gegenstand als deine Schuhe zu verwenden.
-      stacksize: Versuche nicht die Stacklimitgroesse dieses Gegenstandes zu veraendern fuer diesen Gegenstand.
-      invaliditem: Versuche nicht dir selbst diesen Gegenstand zu geben.
     invalidcmd: §cDer Angeforderte Befehl existiert nicht.
 hu:
   spigotlib:
