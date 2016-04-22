@@ -9,16 +9,16 @@ en:
         m: m, min, mins, minutes
         s: s, sec, secs, second, seconds
       never: never
-      w: week
-      wp: weeks
-      d: day
-      dp: days
-      h: hour
-      hp: hours
-      m: minute
-      mp: minutes
-      s: second
-      sp: seconds
+      w: <w> week
+      wp: <w> weeks
+      d: <d> day
+      dp: <d> days
+      h: <h> hour
+      hp: <h> hours
+      m: <m> minute
+      mp: <m> minutes
+      s: <s> second
+      sp: <s> seconds
     wrongsyntax: §cFailed to execute command, enter /sl and check it's syntax.
     noperm: §c§lYou don't have permission for using SpigotLib commands.
       command: §c§lYou don't have permission for using this SpigotLib subcommand.
@@ -125,16 +125,16 @@ de:
         m: m, min, Minute, Munuten, Minuten
         s: s, sek, Sekunde, Sekunden
       never: niemald
-      w: Woche
-      wp: Wochen
-      d: Tage
-      dp: Tage
-      h: Stunde
-      hp: Stunden
-      m: Minute
-      mp: Minuten
-      s: Sekunde
-      sp: Sekunden
+      w: <w> Woche
+      wp: <w> Wochen
+      d: <d> Tage
+      dp: <d> Tage
+      h: <h> Stunde
+      hp: <h> Stunden
+      m: <m> Minute
+      mp: <m> Minuten
+      s: <s> Sekunde
+      sp: <s> Sekunden
     wrongsyntax: §cBefehl konnte nicht ausgefuehrt werden. Benutzte /sl check fuer den richtigen Syntax.
     noperm: §c§lDu hast keine Berechtigung SpigotLib-Befehle zu benutzen.
       command: §c§lDu hast keine Berechtigung SpigotLib-Subbefehle zu benutzen.
@@ -246,16 +246,16 @@ hu:
         m: p, perc
         s: mp, másodp, masodp, másodperc, masodperc
       never: soha
-      w: hét
-      wp: hét
-      d: nap
-      dp: nap
-      h: óra
-      hp: óra
-      m: perc
-      mp: perc
-      s: másodperc
-      sp: másodperc
+      w: <w> hét
+      wp: <w> hét
+      d: <d> nap
+      dp: <d> nap
+      h: <h> óra
+      hp: <h> óra
+      m: <m> perc
+      mp: <m> perc
+      s: <s> másodperc
+      sp: <s> másodperc
     messages:
       join: §f<player>§a feljött a szerverre.
       leave: §f<player>§c lelépett a szerverről.
