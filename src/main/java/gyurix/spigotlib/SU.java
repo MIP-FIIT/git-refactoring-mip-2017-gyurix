@@ -170,6 +170,58 @@ public final class SU {
     }
 
     /**
+     * Fill variables in a ItemStack
+     * Available special variables:
+     * #amount: the amount value of the item
+     * #id: the id of the item
+     * #sub: the subid of the item
+     * @param is - The ItemStack in which the variables should be filled
+     * @param vars - The fillable variables
+     * @return A clone of the original ItemStack with filled variables
+     */
+    public static ItemStack fillVariables(ItemStack is, final Object... vars) {
+        if (is == null || is.getType() == Material.AIR)
+            return is;
+        is = is.clone();
+        String last = null;
+        for (Object v : vars) {
+            if (last == null)
+                last = (String) v;
+            else {
+                if (last.equals("#amount"))
+                    is.setAmount(Integer.valueOf(String.valueOf(v)));
+                else if (last.equals("#id")) {
+                    String vs = String.valueOf(v);
+                    try {
+                        is.setTypeId(Integer.valueOf(vs));
+                    } catch (Throwable e) {
+                        try {
+                            is.setType(Material.valueOf(vs.toUpperCase()));
+                        } catch (Throwable e2) {
+                            SU.error(SU.cs, e2, "SpigotLib", "gyurix");
+                        }
+                    }
+                } else if (last.equals("#sub"))
+                    is.setDurability(Short.valueOf(String.valueOf(v)));
+                last = null;
+            }
+        }
+        if (is.hasItemMeta() && is.getItemMeta() != null) {
+            ItemMeta meta = is.getItemMeta();
+            if (meta.hasDisplayName() && meta.getDisplayName() != null)
+                meta.setDisplayName(fillVariables(meta.getDisplayName(), vars));
+            if (meta.hasLore() && meta.getLore() != null) {
+                List<String> lore = meta.getLore();
+                for (int i = 0; i < lore.size(); i++)
+                    lore.set(i, SU.fillVariables(lore.get(i), vars));
+                meta.setLore(lore);
+            }
+            is.setItemMeta(meta);
+        }
+        return is;
+    }
+
+    /**
      * Fills variables in a String
      *
      * @param s    - The String
@@ -398,6 +450,23 @@ public final class SU {
         }
     }
 
+    public static ItemStack makeItem(Material type, String name, String... lore) {
+        ItemStack is = new ItemStack(type, 1, (short) 0);
+        ItemMeta im = is.getItemMeta();
+        im.setDisplayName(name);
+        im.setLore(Arrays.asList(lore));
+        is.setItemMeta(im);
+        return is;
+    }
+
+    public static ItemStack makeItem(Material type, int amount, short sub, String name, String... lore) {
+        ItemStack is = new ItemStack(type, amount, sub);
+        ItemMeta im = is.getItemMeta();
+        im.setDisplayName(name);
+        im.setLore(Arrays.asList(lore));
+        is.setItemMeta(im);
+        return is;
+    }
     /**
      * A truth check for two items, if they are actually totally same or not
      *
@@ -429,7 +498,6 @@ public final class SU {
         item2.setAmount(1);
         return itemToString(item1).equals(itemToString(item2));
     }
-
     /**
      * Converts an ItemStack to it's representing string
      *
@@ -478,7 +546,7 @@ public final class SU {
             LeatherArmorMeta bmeta = (LeatherArmorMeta) meta;
             Color c = bmeta.getColor();
             if (!c.equals(Bukkit.getItemFactory().getDefaultLeatherColor()))
-                out.append(" color:").append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue());
+                out.append(" color:").append(Integer.toHexString(c.asRGB()));
         } else if (meta instanceof FireworkMeta) {
             FireworkMeta bmeta = (FireworkMeta) meta;
             out.append(" power:").append(bmeta.getPower());
@@ -834,7 +902,10 @@ public final class SU {
                 try {
                     if (s[0].equals("COLOR")) {
                         String[] color = s[1].split(",", 3);
-                        bmeta.setColor(org.bukkit.Color.fromRGB(Integer.valueOf(color[0]), Integer.valueOf(color[1]), Integer.valueOf(color[2])));
+                        if (color.length == 3)
+                            bmeta.setColor(org.bukkit.Color.fromRGB(Integer.valueOf(color[0]), Integer.valueOf(color[1]), Integer.valueOf(color[2])));
+                        else
+                            bmeta.setColor(Color.fromRGB(Integer.parseInt(color[0], 16)));
                     }
                 } catch (Throwable e) {
                     e.printStackTrace();

@@ -4,10 +4,14 @@ import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.NullUtils;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
 
+/**
+ * An API used for title management
+ */
 public class TitleAPI {
     public static Object[] enums;
 
@@ -18,7 +22,7 @@ public class TitleAPI {
         }
     }
 
-    public static /* varargs */ void clear(Player... plrs) {
+    public static void clear(Player... plrs) {
         Object packet = PacketOutType.Title.newPacket(enums[3], null);
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
@@ -40,7 +44,7 @@ public class TitleAPI {
         }
     }
 
-    public static /* varargs */ void reset(Player... plrs) {
+    public static void reset(Player... plrs) {
         Object packet = PacketOutType.Title.newPacket(enums[4], null);
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
@@ -54,7 +58,7 @@ public class TitleAPI {
         }
     }
 
-    public static /* varargs */ void setShowTime(int fadein, int show, int fadeout, Player... plrs) {
+    public static void setShowTime(int fadein, int show, int fadeout, Player... plrs) {
         Object packet = PacketOutType.Title.newPacket(enums[2], null, fadein, show, fadeout);
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
@@ -68,7 +72,7 @@ public class TitleAPI {
         }
     }
 
-    public static /* varargs */ void setSubTitle(String subtitle, Player... plrs) {
+    public static void setSubTitle(String subtitle, Player... plrs) {
         Object packet = PacketOutType.Title.newPacket(enums[1], ChatAPI.toICBC(ChatAPI.TextToJson(subtitle)));
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
@@ -82,11 +86,23 @@ public class TitleAPI {
         }
     }
 
-    public static /* varargs */ void setTitle(String title, Player... plrs) {
+    public static void setTitle(String title, Player... plrs) {
         Object packet = PacketOutType.Title.newPacket(enums[0], ChatAPI.toICBC(ChatAPI.TextToJson(title)));
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
         }
+    }
+
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Collection<? extends Player> plrs) {
+        setShowTime(fadeIn, showtime, fadeOut, plrs);
+        setSubTitle(NullUtils.to0(subtitle), plrs);
+        setTitle(title, plrs);
+    }
+
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... plrs) {
+        setShowTime(fadeIn, showtime, fadeOut, plrs);
+        setSubTitle(NullUtils.to0(subtitle), plrs);
+        setTitle(title, plrs);
     }
 }
 

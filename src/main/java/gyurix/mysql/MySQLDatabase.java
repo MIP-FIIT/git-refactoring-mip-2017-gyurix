@@ -8,6 +8,10 @@ import java.sql.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Class representing a MySQL database connection and containing the required methods and utils
+ * for executing MySQL querries
+ */
 public class MySQLDatabase {
     @ConfigSerialization.ConfigOptions(serialize = false)
     private static ExecutorService executeThread = Executors.newSingleThreadExecutor(), prepareThread = Executors.newSingleThreadExecutor(), runnableThread = Executors.newSingleThreadExecutor();

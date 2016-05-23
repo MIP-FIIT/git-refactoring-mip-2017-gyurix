@@ -68,11 +68,11 @@ public class ConfigFile {
     }
 
     public boolean getBoolean(String address) {
-        return (boolean) (Boolean) getData(address).deserialize(Boolean.class);
+        return getData(address).deserialize(Boolean.class);
     }
 
     public byte getByte(String address) {
-        return (byte) (Byte) getData(address).deserialize(Byte.class);
+        return getData(address).deserialize(Byte.class);
     }
 
     public ConfigData getData(ConfigData key) {
@@ -137,28 +137,28 @@ public class ConfigFile {
     }
 
     public double getDouble(String address) {
-        return (double) (Double) getData(address).deserialize(Double.class);
+        return getData(address).deserialize(Double.class);
     }
 
     public float getFloat(String address) {
-        return (float) (Float) getData(address).deserialize(Float.class);
+        return getData(address).deserialize(Float.class);
     }
 
     public int getInt(String address) {
-        return (int) (Integer) getData(address).deserialize(Integer.class);
+        return getData(address).deserialize(Integer.class);
     }
 
     public long getLong(String address) {
-        return (long) (Long) getData(address).deserialize(Long.class);
+        return getData(address).deserialize(Long.class);
     }
 
     public short getShort(String address) {
-        return (short) (Short) getData(address).deserialize(Short.class);
+        return getData(address).deserialize(Short.class);
     }
 
     public String getString(String address) {
-        String out = getData(address).stringData;
-        return out == null ? "" : out;
+        ConfigData cd = getData(address);
+        return String.valueOf(cd.objectData == null ? cd.stringData : cd.objectData);
     }
 
     public ArrayList<String> getStringKeyList() {

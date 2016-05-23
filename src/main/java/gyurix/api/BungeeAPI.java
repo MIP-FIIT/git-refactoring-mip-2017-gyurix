@@ -429,50 +429,64 @@ public class BungeeAPI implements PluginMessageListener {
     public static boolean start() {
         if (running)
             return false;
-        serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestServerNames();
-            }
-        }, 0, Config.BungeeAPI.servers);
-        currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestCurrentServerName();
-            }
-        }, 0, Config.BungeeAPI.currentServerName);
-        playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestPlayerCount(servers);
-                requestPlayerCount("ALL");
-            }
-        }, 2, Config.BungeeAPI.playerCount);
-        playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestPlayerList(servers);
-                requestPlayerList("ALL");
-            }
-        }, 2, Config.BungeeAPI.playerList);
-        uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestUUID(totalPlayerList());
-            }
-        }, 4, Config.BungeeAPI.uuidAll);
-        serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestServerIP(servers);
-            }
-        }, 4, Config.BungeeAPI.serverIP);
-        SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                requestIP((Collection<Player>) Bukkit.getOnlinePlayers());
-            }
-        }, 4);
+        if (Config.BungeeAPI.servers > 0) {
+            serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestServerNames();
+                }
+            }, 0, Config.BungeeAPI.servers);
+        }
+        if (Config.BungeeAPI.currentServerName > 0) {
+            currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestCurrentServerName();
+                }
+            }, 0, Config.BungeeAPI.currentServerName);
+        }
+        if (Config.BungeeAPI.playerCount > 0) {
+            playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestPlayerCount(servers);
+                    requestPlayerCount("ALL");
+                }
+            }, 2, Config.BungeeAPI.playerCount);
+        }
+        if (Config.BungeeAPI.playerList > 0) {
+            playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestPlayerList(servers);
+                    requestPlayerList("ALL");
+                }
+            }, 2, Config.BungeeAPI.playerList);
+        }
+        if (Config.BungeeAPI.uuidAll > 0) {
+            uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestUUID(totalPlayerList());
+                }
+            }, 4, Config.BungeeAPI.uuidAll);
+        }
+        if (Config.BungeeAPI.serverIP > 0) {
+            serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestServerIP(servers);
+                }
+            }, 4, Config.BungeeAPI.serverIP);
+        }
+        if (Config.BungeeAPI.ipOnJoin) {
+            SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    requestIP((Collection<Player>) Bukkit.getOnlinePlayers());
+                }
+            }, 4);
+        }
         return true;
     }
 

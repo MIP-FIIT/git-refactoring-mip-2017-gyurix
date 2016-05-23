@@ -1,7 +1,7 @@
 name: SpigotLib
 main: gyurix.spigotlib.Main
 author: gyuriX
-version: 3.6
+version: 4.0DEV
 loadbefore: [ProtocolLib]
 softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI]
 commands:

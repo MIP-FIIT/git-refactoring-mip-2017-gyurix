@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class DualMap<K, V> implements Map<K, V> {
-    final HashMap<K, V> keys = new HashMap();
-    final HashMap<V, K> values = new HashMap();
+    final HashMap<K, V> keys = new HashMap<>();
+    final HashMap<V, K> values = new HashMap<>();
 
     public void clear() {
         this.keys.clear();
@@ -27,19 +27,19 @@ public class DualMap<K, V> implements Map<K, V> {
     }
 
     public V get(Object key) {
-        return this.keys.get(key);
+        return keys.get(key);
     }
 
-    public K getKey(Object value) {
-        return this.values.get(value);
+    public K getKey(V value) {
+        return values.get(value);
     }
 
     public boolean isEmpty() {
-        return this.keys.isEmpty();
+        return keys.isEmpty();
     }
 
     public Set<K> keySet() {
-        return this.keys.keySet();
+        return keys.keySet();
     }
 
     public V put(K key, V value) {

@@ -1,28 +1,42 @@
 package gyurix.spigotutils;
 
 import gyurix.configfile.ConfigSerialization;
+import gyurix.spigotlib.Config;
+import gyurix.spigotlib.SU;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.inventory.ItemStack;
 
-public class BlockData
-        implements ConfigSerialization.StringSerializable {
+/**
+ * Class used for storing the data of a block
+ */
+public class BlockData implements ConfigSerialization.StringSerializable {
     public boolean anydata = true;
     public byte data;
     public int id;
 
     public BlockData(Block b) {
-        this.id = b.getTypeId();
-        this.data = b.getData();
-        this.anydata = false;
+        id = b.getTypeId();
+        data = b.getData();
+        anydata = false;
     }
 
     public BlockData(BlockState b) {
-        this.id = b.getTypeId();
-        this.data = b.getRawData();
-        this.anydata = false;
+        id = b.getTypeId();
+        data = b.getRawData();
+        anydata = false;
     }
 
+    public BlockData(int id) {
+        this.id = id;
+    }
+
+    public BlockData(int id, byte data) {
+        this.id = id;
+        this.data = data;
+        anydata = false;
+    }
     public BlockData(String in) {
         String[] s = in.split(":", 2);
         try {
@@ -35,9 +49,10 @@ public class BlockData
             e.printStackTrace();
         }
         try {
-            this.data = Byte.valueOf(s[1]).byteValue();
+            this.data = Byte.valueOf(s[1]);
             this.anydata = false;
         } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
     }
 
@@ -65,6 +80,15 @@ public class BlockData
 
     public void setBlockNoPhysics(Block b) {
         b.setTypeIdAndData(this.id, this.data, false);
+    }
+
+    public ItemStack toItem() {
+        ItemStack is = Config.blocks.get(this);
+        if (is == null)
+            is = Config.blocks.get(new BlockData(id));
+        if (is == null)
+            is = new ItemStack(id, 1, data);
+        return is;
     }
 
     @Override

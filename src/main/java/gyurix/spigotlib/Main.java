@@ -60,7 +60,7 @@ import java.util.*;
 public class Main extends JavaPlugin implements Listener {
     public static final String[] commands = new String[]{"chm", "abm", "sym", "title", "titledata", "titlehide", "vars",
             "hasperm", "packets", "lang", "lf", "pf", "save", "reload", "errors", "velocity", "setamount", "item"};
-    public static final String version = "3.6";
+    public static final String version = "4.0DEV";
     public static File dir;
     public static boolean fullyEnabled = false;
     public static ConfigFile kf;

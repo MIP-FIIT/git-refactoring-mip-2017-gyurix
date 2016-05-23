@@ -88,6 +88,10 @@ public class TimeUtils {
             } else
                 curP.append(c);
         }
+        if (curP.length() > 0) {
+            out = out + cur * NullUtils.to0(multipliers.get(curP.toString()));
+            cur = 0;
+        }
         return (out + cur) * 1000L;
     }
 }

@@ -178,6 +178,9 @@ public class Reflection {
                         pars[i] = convert(input[i], parCls[i]);
                     }
                     obj = m.invoke(obj, pars);
+                    if (obj == null) {
+                        throw new RuntimeException("Null return value of method call (method " + m.getName() + ", entered parameters: " + StringUtils.join(pars, ", ") + ".");
+                    }
                     ocl = obj.getClass();
                     input = ArrayUtils.EMPTY_OBJECT_ARRAY;
                     classes = ArrayUtils.EMPTY_CLASS_ARRAY;

@@ -8,7 +8,7 @@ public class NBTCompound
         extends NBTTag {
     static Field mapField;
     static Class nmsClass;
-    public HashMap<String, NBTTag> map = new HashMap();
+    public HashMap<String, NBTTag> map = new HashMap<>();
 
     public NBTCompound() {
     }

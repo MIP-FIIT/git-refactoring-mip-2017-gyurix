@@ -136,8 +136,16 @@ public class ConfigHook {
                 return inside.toArray();
             }
         });
+        VariableAPI.handlers.put("substr", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                String[] s = StringUtils.join(inside, "").split(" ", 3);
+                int from = Integer.valueOf(s[0]);
+                int to = Integer.valueOf(s[1]);
+                return s[2].substring(from < 0 ? s[2].length() + from : from, to < 0 ? s[2].length() + to : to);
+            }
+        });
         VariableAPI.handlers.put("splits", new VariableAPI.VariableHandler() {
-
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
                 return StringUtils.join(inside, "").split(" ");
@@ -217,6 +225,13 @@ public class ConfigHook {
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
                 return Reflection.getData(oArgs[0], inside);
+            }
+        });
+        VariableAPI.handlers.put("iobj", new VariableAPI.VariableHandler() {
+            @Override
+            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
+                Object obj = inside.remove(0);
+                return Reflection.getData(obj, inside);
             }
         });
         VariableAPI.handlers.put("dstore", new VariableAPI.VariableHandler() {
