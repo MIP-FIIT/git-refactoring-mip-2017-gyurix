@@ -11,12 +11,12 @@ public class PacketPlayInSpectate
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Spectate.newPacket(this.entityUUID);
+        return PacketInType.Spectate.newPacket(entityUUID);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        this.entityUUID = (UUID) PacketInType.Spectate.getPacketData(packet)[0];
+        entityUUID = (UUID) PacketInType.Spectate.getPacketData(packet)[0];
     }
 }
 

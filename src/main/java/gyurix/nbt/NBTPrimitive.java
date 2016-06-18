@@ -1,6 +1,7 @@
 package gyurix.nbt;
 
 import gyurix.protocol.Reflection;
+import gyurix.spigotlib.SU;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -16,7 +17,7 @@ public class NBTPrimitive
     }
 
     public NBTPrimitive(Object tag) {
-        this.loadFromNMS(tag);
+        loadFromNMS(tag);
     }
 
     static void init() {
@@ -54,7 +55,7 @@ public class NBTPrimitive
     @Override
     public void loadFromNMS(Object nmsTag) {
         try {
-            this.data = f.get(nmsTag.getClass()).get(nmsTag);
+            data = f.get(nmsTag.getClass()).get(nmsTag);
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -63,9 +64,10 @@ public class NBTPrimitive
     @Override
     public Object saveToNMS() {
         try {
-            return c.get(this.data.getClass()).newInstance(this.data);
+            return c.get(data.getClass()).newInstance(data);
         } catch (Throwable e) {
             e.printStackTrace();
+            SU.cs.sendMessage("§eError on converting " + data + " " + data.getClass() + " to NMS.");
             return null;
         }
     }
@@ -76,7 +78,7 @@ public class NBTPrimitive
     }
 
     public String toString() {
-        return this.data.toString();
+        return data.toString();
     }
 }
 

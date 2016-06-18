@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 public enum Direction implements WrappedData {
     DOWN, UP, NORTH, SOUTH, WEST, EAST;
     private static final Method valueOf = Reflection.getMethod(Reflection.getNMSClass("EnumDirection"), "valueOf", String.class);
+
     Direction() {
     }
 
@@ -21,7 +22,7 @@ public enum Direction implements WrappedData {
     @Override
     public Object toNMS() {
         try {
-            return valueOf.invoke(null, this.name());
+            return valueOf.invoke(null, name());
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;

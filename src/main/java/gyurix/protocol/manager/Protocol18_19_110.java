@@ -20,6 +20,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.lang.reflect.Field;
@@ -27,7 +28,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-public class Protocol18_19 extends Protocol implements Listener {
+public class Protocol18_19_110 extends Protocol implements Listener {
     private static final Field getChannel = Reflection.getFirstFieldOfType(Reflection.getNMSClass("NetworkManager"), Channel.class);
     private static final Field getConnection = Reflection.getField(Reflection.getNMSClass("EntityPlayer"), "playerConnection");
     private static final Field getGameProfile = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PacketLoginInStart"), GameProfile.class);
@@ -47,14 +48,14 @@ public class Protocol18_19 extends Protocol implements Listener {
     private ChannelInitializer<Channel> endInit;
     private ChannelInboundHandlerAdapter serverChannel;
 
-    public Protocol18_19() {
+    public Protocol18_19_110() {
         try {
-            this.minecraftServer = Reflection.getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
-            this.serverConnection = Reflection.getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(this.minecraftServer);
-            this.channelFutures = (List) Reflection.getFirstFieldOfType(serverConnectionClass, List.class).get(this.serverConnection);
-            this.networkManagers = (List) Reflection.getLastFieldOfType(serverConnectionClass, List.class).get(this.serverConnection);
-            this.registerChannelHandler();
-            this.registerPlayers();
+            minecraftServer = Reflection.getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
+            serverConnection = Reflection.getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(minecraftServer);
+            channelFutures = (List) Reflection.getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection);
+            networkManagers = (List) Reflection.getLastFieldOfType(serverConnectionClass, List.class).get(serverConnection);
+            registerChannelHandler();
+            registerPlayers();
         } catch (Throwable e) {
             System.err.println("Error on initializing Protocol.");
             e.printStackTrace();
@@ -62,8 +63,8 @@ public class Protocol18_19 extends Protocol implements Listener {
     }
 
     public final void close() {
-        if (!this.closed) {
-            this.closed = true;
+        if (!closed) {
+            closed = true;
             for (Player player : SU.srv.getOnlinePlayers()) {
                 uninjectPlayer(player);
             }
@@ -73,7 +74,7 @@ public class Protocol18_19 extends Protocol implements Listener {
     }
 
     private void createServerChannelHandler() {
-        this.endInit = new ChannelInitializer<Channel>() {
+        endInit = new ChannelInitializer<Channel>() {
 
             protected void initChannel(Channel channel) throws Exception {
                 try {
@@ -84,13 +85,13 @@ public class Protocol18_19 extends Protocol implements Listener {
                 }
             }
         };
-        this.beginInit = new ChannelInitializer<Channel>() {
+        beginInit = new ChannelInitializer<Channel>() {
 
             protected void initChannel(Channel channel) throws Exception {
                 channel.pipeline().addLast(endInit);
             }
         };
-        this.serverChannel = new ChannelInboundHandlerAdapter() {
+        serverChannel = new ChannelInboundHandlerAdapter() {
             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
                 Channel channel = (Channel) msg;
                 channel.pipeline().addFirst(beginInit);
@@ -108,13 +109,13 @@ public class Protocol18_19 extends Protocol implements Listener {
         if (player == null) {
             System.err.println("Getting channel of ");
         }
-        Channel channel = this.channelLookup.get(player.getName());
+        Channel channel = channelLookup.get(player.getName());
         if (channel == null) {
             try {
                 Object connection = getConnection.get(getPlayerHandle.invoke(player));
                 Object manager = getManager.get(connection);
                 channel = (Channel) getChannel.get(manager);
-                this.channelLookup.put(player.getName(), channel);
+                channelLookup.put(player.getName(), channel);
             } catch (Throwable e) {
                 e.printStackTrace();
             }
@@ -131,7 +132,7 @@ public class Protocol18_19 extends Protocol implements Listener {
     }
 
     public boolean hasInjected(Player player) {
-        return this.hasInjected(this.getChannel(player));
+        return hasInjected(getChannel(player));
     }
 
     public boolean hasInjected(Channel channel) {
@@ -163,20 +164,20 @@ public class Protocol18_19 extends Protocol implements Listener {
     }
 
     public void injectPlayer(Player player) {
-        this.injectChannelInternal(this.getChannel(player)).player = player;
+        injectChannelInternal(getChannel(player)).player = player;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerLogin(PlayerLoginEvent e) {
         if (!Main.fullyEnabled) {
-            e.disallow(PlayerLoginEvent.Result.KICK_OTHER, Config.start);
+            e.disallow(Result.KICK_OTHER, Config.start);
             return;
         }
-        if (this.closed) {
+        if (closed) {
             return;
         }
-        Channel channel = this.getChannel(e.getPlayer());
-        this.injectPlayer(e.getPlayer());
+        Channel channel = getChannel(e.getPlayer());
+        injectPlayer(e.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -195,17 +196,17 @@ public class Protocol18_19 extends Protocol implements Listener {
     }
 
     private void registerChannelHandler() {
-        this.createServerChannelHandler();
-        for (ChannelFuture ch : this.channelFutures) {
+        createServerChannelHandler();
+        for (ChannelFuture ch : channelFutures) {
             Channel serverChannel = ch.channel();
-            this.serverChannels.add(serverChannel);
+            serverChannels.add(serverChannel);
             serverChannel.pipeline().addFirst(this.serverChannel);
         }
     }
 
     private void registerPlayers() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            this.injectPlayer(player);
+            injectPlayer(player);
         }
     }
 
@@ -238,14 +239,14 @@ public class Protocol18_19 extends Protocol implements Listener {
     }
 
     public void uninjectPlayer(Player player) {
-        this.uninjectChannel(this.getChannel(player));
+        uninjectChannel(getChannel(player));
     }
 
     private void unregisterChannelHandler() {
-        if (this.serverChannel == null) {
+        if (serverChannel == null) {
             return;
         }
-        for (Channel ch : this.serverChannels) {
+        for (Channel ch : serverChannels) {
             final ChannelPipeline pipeline = ch.pipeline();
             ch.eventLoop().execute(new Runnable() {
                 @Override

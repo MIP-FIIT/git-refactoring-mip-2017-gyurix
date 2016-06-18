@@ -508,7 +508,7 @@ public class BungeeAPI implements PluginMessageListener {
         if (Config.debug)
             System.out.println("Received plugin message from player " + player.getName() + ": " + sub + " " + new String(bytes));
         switch (sub) {
-            case "CommandExecution": {
+            case "CommandExecution":
                 final Command[] commands = JsonAPI.deserialize(in.readUTF(), Command[].class);
                 SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
                     @Override
@@ -519,42 +519,33 @@ public class BungeeAPI implements PluginMessageListener {
                     }
                 });
                 return;
-            }
-            case "IP": {
+            case "IP":
                 ips.put(uid, in.readUTF());
                 ports.put(uid, in.readInt());
                 return;
-            }
-            case "PlayerCount": {
+            case "PlayerCount":
                 playerCounts.put(in.readUTF(), in.readInt());
                 return;
-            }
-            case "PlayerList": {
+            case "PlayerList":
                 players.put(in.readUTF(), in.readUTF().split(", "));
                 return;
-            }
-            case "GetServers": {
+            case "GetServers":
                 servers = in.readUTF().split(", ");
                 return;
-            }
-            case "GetServer": {
+            case "GetServer":
                 serverName = in.readUTF();
                 return;
-            }
-            case "UUID": {
+            case "UUID":
                 uuids.put(player.getName(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
                 return;
-            }
-            case "UUIDOther": {
+            case "UUIDOther":
                 uuids.put(in.readUTF(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
                 return;
-            }
-            case "ServerIP": {
+            case "ServerIP":
                 String server = in.readUTF();
                 serverIps.put(server, in.readUTF());
                 serverPorts.put(server, in.readShort());
                 return;
-            }
         }
     }
 }

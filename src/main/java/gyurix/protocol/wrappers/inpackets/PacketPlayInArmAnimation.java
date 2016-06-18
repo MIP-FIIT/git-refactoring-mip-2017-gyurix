@@ -9,12 +9,12 @@ public class PacketPlayInArmAnimation
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.ArmAnimation.newPacket(this.timestamp);
+        return PacketInType.ArmAnimation.newPacket(timestamp);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        this.timestamp = (Long) PacketInType.ArmAnimation.getPacketData(packet)[0];
+        timestamp = (Long) PacketInType.ArmAnimation.getPacketData(packet)[0];
     }
 }
 

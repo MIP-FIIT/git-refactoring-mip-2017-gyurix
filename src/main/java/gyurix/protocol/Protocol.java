@@ -30,8 +30,10 @@ public abstract class Protocol implements Listener {
      * Closes the PacketAPI
      */
     public abstract void close();
+
     /**
      * Dispatches an incoming packet event
+     *
      * @param event - The packet event
      */
     public void dispatchPacketInEvent(PacketInEvent event) {
@@ -55,6 +57,7 @@ public abstract class Protocol implements Listener {
 
     /**
      * Dispatches an outgoing packet event
+     *
      * @param event - The packet event
      */
     public void dispatchPacketOutEvent(PacketOutEvent event) {
@@ -79,6 +82,7 @@ public abstract class Protocol implements Listener {
     /**
      * Returns the PacketCapturer, which captures the packets
      * going through the given players connection
+     *
      * @param plr - The player having PacketCapturer
      * @return The PacketCapturer or null if there is no PacketCapturer setup
      */
@@ -141,8 +145,9 @@ public abstract class Protocol implements Listener {
 
     /**
      * Registers an outgoing packet listener
-     * @param plugin - The plugin for which the listener belongs to
-     * @param listener - The packet listener
+     *
+     * @param plugin     - The plugin for which the listener belongs to
+     * @param listener   - The packet listener
      * @param packetType - The listenable packet type
      */
     public void registerOutgoingListener(Plugin plugin, PacketOutListener listener, PacketOutType packetType) {
@@ -187,6 +192,7 @@ public abstract class Protocol implements Listener {
 
     /**
      * Unregisters ALL the incoming packet listeners of a plugin
+     *
      * @param pl - Target plugin
      */
     public void unregisterIncomingListener(Plugin pl) {
@@ -207,6 +213,7 @@ public abstract class Protocol implements Listener {
 
     /**
      * Unregisters ALL the outgoing packet listeners of a plugin
+     *
      * @param pl - Target plugin
      */
     public void unregisterOutgoingListener(Plugin pl) {

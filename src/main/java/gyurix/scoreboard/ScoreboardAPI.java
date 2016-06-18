@@ -150,7 +150,7 @@ public class ScoreboardAPI {
             }
             prev = c;
         }
-        in = SU.setLength(formats.toString() + in.substring(16), 54);
+        in = SU.setLength(formats + in.substring(16), 54);
         if (in.length() < 17) {
             out[1] = "\u00a7" + uniqueChar;
             out[2] = in;

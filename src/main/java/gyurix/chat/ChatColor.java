@@ -23,7 +23,7 @@ public enum ChatColor {
 
     ChatColor(char id) {
         this.id = id;
-        this.format = false;
+        format = false;
     }
 
     ChatColor(char id, boolean format) {
@@ -34,7 +34,7 @@ public enum ChatColor {
     public static ChatColor forId(char id) {
         ChatColor cc = byId.get(id);
         if (cc == null)
-            cc = ChatColor.white;
+            cc = white;
         return cc;
     }
 

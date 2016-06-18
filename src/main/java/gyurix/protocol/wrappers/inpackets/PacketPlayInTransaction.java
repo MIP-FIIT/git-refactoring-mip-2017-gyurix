@@ -11,15 +11,15 @@ public class PacketPlayInTransaction
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Transaction.newPacket(this.windowId, this.actionId, this.accepted);
+        return PacketInType.Transaction.newPacket(windowId, actionId, accepted);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.Transaction.getPacketData(packet);
-        this.windowId = (Integer) data[0];
-        this.actionId = (Short) data[1];
-        this.accepted = (Boolean) data[2];
+        windowId = (Integer) data[0];
+        actionId = (Short) data[1];
+        accepted = (Boolean) data[2];
     }
 }
 

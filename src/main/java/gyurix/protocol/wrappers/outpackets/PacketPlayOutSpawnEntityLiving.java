@@ -79,9 +79,9 @@ public class PacketPlayOutSpawnEntityLiving extends WrappedPacket {
         velX = (int) d[6];
         velY = (int) d[7];
         velZ = (int) d[8];
-        yaw = (float) (((byte) d[9]) / 256.0 * 360);
-        pitch = (float) (((byte) d[10]) / 256.0 * 360);
-        headPitch = (float) (((byte) d[11]) / 256.0 * 360);
+        yaw = (float) ((byte) d[9] / 256.0 * 360);
+        pitch = (float) ((byte) d[10] / 256.0 * 360);
+        headPitch = (float) ((byte) d[11] / 256.0 * 360);
         meta = new DataWatcher(d[12]);
     }
 }

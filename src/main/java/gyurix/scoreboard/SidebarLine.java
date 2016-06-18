@@ -19,8 +19,8 @@ public class SidebarLine {
 
     public SidebarLine(Sidebar bar, char ch) {
         this.bar = bar;
-        this.uniqueChar = ch;
-        this.oldUser = this.user = "§" + this.uniqueChar;
+        uniqueChar = ch;
+        oldUser = user = "§" + uniqueChar;
     }
 
     /**
@@ -37,6 +37,7 @@ public class SidebarLine {
     /**
      * Get the team packet of this Scoreboard line
      *
+     * @param user - The user in the team
      * @param action - The action option of the packet: 0 - create team 1 - remove team 2 - update team info 3 - add
      *               players 4 - remove players
      * @return The Team packet.
@@ -56,11 +57,11 @@ public class SidebarLine {
     }
 
     public void setText(String text) {
-        this.oldUser = this.user;
-        String[] set = ScoreboardAPI.specialSplit(text, this.uniqueChar);
-        this.prefix = set[0];
-        this.user = set[1];
-        this.suffix = set[2];
+        oldUser = user;
+        String[] set = ScoreboardAPI.specialSplit(text, uniqueChar);
+        prefix = set[0];
+        user = set[1];
+        suffix = set[2];
     }
 
     public void show(Player plr) {
@@ -72,7 +73,7 @@ public class SidebarLine {
 
     public void update(Player plr) {
         SU.tp.sendPacket(plr, getTeamPacket(user, 2));
-        if (!this.user.equals(this.oldUser)) {
+        if (!user.equals(oldUser)) {
             SU.tp.sendPacket(plr, getTeamPacket(user, 3));
             SU.tp.sendPacket(plr, getScorePacket(user, ScoreboardAPI.setScore));
             SU.tp.sendPacket(plr, getScorePacket(oldUser, ScoreboardAPI.removeScore));

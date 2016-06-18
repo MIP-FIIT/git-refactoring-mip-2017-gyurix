@@ -24,11 +24,11 @@ public class AnimationUpdateEvent
     }
 
     public AnimationRunnable getRunnable() {
-        return this.runnable;
+        return runnable;
     }
 
     public String getText() {
-        return this.text;
+        return text;
     }
 
     public void setText(String text) {

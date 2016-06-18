@@ -3,13 +3,15 @@ package gyurix.commands;
 import gyurix.api.BungeeAPI;
 import gyurix.api.TitleAPI;
 import gyurix.api.VariableAPI;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.economy.EconomyAPI;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.spigotlib.ChatAPI;
+import gyurix.spigotlib.ChatAPI.ChatMessageType;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.bukkit.*;
+import org.bukkit.Note.Tone;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
@@ -19,7 +21,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Command implements ConfigSerialization.StringSerializable {
+public class Command implements StringSerializable {
     public static HashMap<String, CustomCommandHandler> customCommands = new HashMap();
     String cmd;
     String customCMD;
@@ -35,14 +37,14 @@ public class Command implements ConfigSerialization.StringSerializable {
         String[] s = in.split(":", 2);
         try {
             if (s.length == 1) {
-                this.cmd = in;
+                cmd = in;
             } else {
-                this.cmd = s[1];
-                this.type = CommandType.valueOf(s[0]);
+                cmd = s[1];
+                type = CommandType.valueOf(s[0]);
             }
         } catch (Throwable e) {
-            this.type = CommandType.CUSTOM;
-            this.customCMD = s[0];
+            type = CommandType.CUSTOM;
+            customCMD = s[0];
         }
     }
 
@@ -56,23 +58,20 @@ public class Command implements ConfigSerialization.StringSerializable {
     public boolean executeNow(CommandSender sender, Object... args) {
         try {
             Player plr = sender instanceof Player ? (Player) sender : null;
-            String text = VariableAPI.fillVariables(this.cmd, plr, args);
-            switch (this.type) {
-                case NOCMD: {
+            String text = VariableAPI.fillVariables(cmd, plr, args);
+            switch (type) {
+                case NOCMD:
                     return true;
-                }
-                case NORMAL: {
+                case NORMAL:
                     plr.chat(text);
                     return true;
-                }
-                case OP: {
+                case OP:
                     boolean wasOp = plr.isOp();
                     plr.setOp(true);
                     plr.chat(text);
                     plr.setOp(wasOp);
                     return true;
-                }
-                case POTION: {
+                case POTION:
                     ArrayList<PotionEffect> effects = new ArrayList<>();
                     for (String s : text.split(" ")) {
                         try {
@@ -99,7 +98,6 @@ public class Command implements ConfigSerialization.StringSerializable {
                     }
                     plr.addPotionEffects(effects);
                     return true;
-                }
                 case COMPLETE: {
                     String arg = (String) args[0];
                     int id = arg.indexOf(' ');
@@ -107,7 +105,7 @@ public class Command implements ConfigSerialization.StringSerializable {
                     SU.tp.sendPacket(plr, PacketOutType.TabComplete.newPacket(SU.filterStart(text.split("\\|"), arg).toArray()));
                     return true;
                 }
-                case COMPLETENAMES: {
+                case COMPLETENAMES:
                     ArrayList<String> names = new ArrayList<>();
                     for (Player p : Bukkit.getOnlinePlayers()) {
                         if (plr.canSee(p))
@@ -118,84 +116,68 @@ public class Command implements ConfigSerialization.StringSerializable {
                     arg = arg.substring(id + 1);
                     SU.tp.sendPacket(plr, PacketOutType.TabComplete.newPacket(SU.filterStart(names, arg).toArray()));
                     return true;
-                }
-                case CONSOLE: {
+                case CONSOLE:
                     SU.srv.dispatchCommand(SU.cs, text);
                     return true;
-                }
-                case LOG: {
+                case LOG:
                     System.out.println(text);
                     return true;
-                }
-                case ABM: {
-                    ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.ACTION_BAR, text, plr);
+                case ABM:
+                    ChatAPI.sendJsonMsg(ChatMessageType.ACTION_BAR, text, plr);
                     return true;
-                }
-                case MSG: {
-                    ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, text, plr);
+                case MSG:
+                    ChatAPI.sendJsonMsg(ChatMessageType.SYSTEM, text, plr);
                     return true;
-                }
-                case TS: {
+                case TS:
                     String[] times = text.split(" ", 3);
                     TitleAPI.setShowTime(Integer.valueOf(times[0]), Integer.valueOf(times[1]), Integer.valueOf(times[2]), plr);
                     return true;
-                }
-                case TITLE: {
+                case TITLE:
                     TitleAPI.setTitle(text, plr);
                     return true;
-                }
-                case SUBTITLE: {
+                case SUBTITLE:
                     TitleAPI.setSubTitle(text, plr);
                     return true;
-                }
                 case ECON: {
                     String[] data = text.split(" ", 2);
                     switch (data.length) {
-                        case 0: {
+                        case 0:
                             return false;
-                        }
-                        case 1: {
+                        case 1:
                             return EconomyAPI.addBalance(plr.getUniqueId(), new BigDecimal(data[0]));
-                        }
                     }
                     return EconomyAPI.addBalance(plr.getUniqueId(), data[0], new BigDecimal(data[1]));
                 }
                 case ECONSET: {
                     String[] data = text.split(" ", 2);
                     switch (data.length) {
-                        case 0: {
+                        case 0:
                             return false;
-                        }
-                        case 1: {
+                        case 1:
                             EconomyAPI.setBalance(plr.getUniqueId(), new BigDecimal(data[0]));
-                        }
                     }
                     EconomyAPI.setBalance(plr.getUniqueId(), data[0], new BigDecimal(data[1]));
                 }
-                case XP: {
+                case XP:
                     if (plr != null) {
                         plr.setExp(Math.max(Math.min(Float.valueOf(text), 1), 0));
                     }
                     return true;
-                }
-                case XPLEVEL: {
+                case XPLEVEL:
                     if (plr != null) {
                         plr.setLevel(Integer.valueOf(text));
                     }
                     return true;
-                }
-                case HP: {
+                case HP:
                     if (plr != null) {
                         plr.setHealth(Double.valueOf(text));
                     }
                     return true;
-                }
-                case MAXHP: {
+                case MAXHP:
                     if (plr != null) {
                         plr.setMaxHealth(Double.valueOf(text));
                     }
                     return true;
-                }
                 case PARTICLE: {
                     String[] data = text.split(" ", 5);
                     Location loc = new Location(plr.getWorld(), Double.valueOf(data[0]), Double.valueOf(data[1]), Double.valueOf(data[2]));
@@ -213,20 +195,17 @@ public class Command implements ConfigSerialization.StringSerializable {
                     Location loc = new Location(plr.getWorld(), Double.valueOf(data[0]), Double.valueOf(data[1]), Double.valueOf(data[2]));
                     Instrument i = Instrument.valueOf(data[0]);
                     int octave = Integer.valueOf(data[2]);
-                    Note.Tone t = Note.Tone.valueOf(data[3]);
+                    Tone t = Tone.valueOf(data[3]);
                     switch (data[1]) {
-                        case "flat": {
+                        case "flat":
                             plr.playNote(loc, i, Note.flat(octave, t));
                             return true;
-                        }
-                        case "sharp": {
+                        case "sharp":
                             plr.playNote(loc, i, Note.sharp(octave, t));
                             return true;
-                        }
-                        case "natural": {
+                        case "natural":
                             plr.playNote(loc, i, Note.natural(octave, t));
                             return true;
-                        }
                     }
                     System.err.println("Invalid node type: " + data[1]);
                     return true;
@@ -249,52 +228,43 @@ public class Command implements ConfigSerialization.StringSerializable {
                     }
                     return true;
                 }
-                case GNOTE: {
+                case GNOTE:
                     Note n;
                     String[] data = text.split(" ", 4);
                     World w = plr.getWorld();
                     Location loc = new Location(w, Double.valueOf(data[0]), Double.valueOf(data[1]), Double.valueOf(data[2]));
                     Instrument i = Instrument.valueOf(data[0]);
                     int octave = Integer.valueOf(data[2]);
-                    Note.Tone t = Note.Tone.valueOf(data[3]);
+                    Tone t = Tone.valueOf(data[3]);
                     switch (data[1]) {
-                        case "flat": {
+                        case "flat":
                             n = Note.flat(octave, t);
                             break;
-                        }
-                        case "sharp": {
+                        case "sharp":
                             n = Note.sharp(octave, t);
                             break;
-                        }
-                        case "natural": {
+                        case "natural":
                             n = Note.natural(octave, t);
                             break;
-                        }
-                        default: {
+                        default:
                             System.err.println("Invalid node type: " + data[1]);
                             return true;
-                        }
                     }
                     for (Player p : w.getPlayers()) {
                         p.playNote(loc, i, n);
                     }
                     return true;
-                }
-                case CUSTOM: {
-                    return customCommands.get(this.customCMD).handle(sender, this.customCMD, text.split(" "), args);
-                }
-                case KICK: {
+                case CUSTOM:
+                    return customCommands.get(customCMD).handle(sender, customCMD, text.split(" "), args);
+                case KICK:
                     plr.kickPlayer(text);
                     return true;
-                }
-                case SEND: {
+                case SEND:
                     BungeeAPI.send(text, plr);
                     return true;
-                }
-                case ARGS: {
+                case ARGS:
                     if (args.length > Integer.valueOf(text)) break;
                     throw new RuntimeException();
-                }
             }
             return false;
         } catch (RuntimeException e) {
@@ -307,12 +277,12 @@ public class Command implements ConfigSerialization.StringSerializable {
 
     @Override
     public String toString() {
-        return this.type == CommandType.CUSTOM ? this.customCMD + ":" + this.cmd : this.type.name() + ":" + this.cmd;
+        return type == CommandType.CUSTOM ? customCMD + ":" + cmd : type.name() + ":" + cmd;
     }
 
     public enum CommandType {
         NOCMD, NORMAL, OP, POTION, COMPLETE, COMPLETENAMES, CONSOLE, LOG, ABM, MSG, TS, TITLE, SUBTITLE, ARGS, ECON, ECONSET,
-        XP, XPLEVEL, HP, MAXHP, SOUND, PARTICLE, NOTE, GSOUND, GPARTICLE, GNOTE, OPENINV, CUSTOM, SEND, KICK;
+        XP, XPLEVEL, HP, MAXHP, SOUND, PARTICLE, NOTE, GSOUND, GPARTICLE, GNOTE, OPENINV, CUSTOM, SEND, KICK
     }
 }
 

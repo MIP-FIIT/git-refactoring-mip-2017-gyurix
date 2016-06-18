@@ -1,6 +1,7 @@
 package gyurix.scoreboard;
 
 import gyurix.protocol.event.PacketOutType;
+import gyurix.scoreboard.ScoreboardAPI.ScoreboardDisplayMode;
 import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -16,7 +17,7 @@ public abstract class ScoreboardBar {
     public final String teamNamePrefix;
     public final LinkedList<UUID> viewers = new LinkedList<>();
     protected boolean visible = true;
-    private ScoreboardAPI.ScoreboardDisplayMode displayMode = ScoreboardAPI.ScoreboardDisplayMode.INTEGER;
+    private ScoreboardDisplayMode displayMode = ScoreboardDisplayMode.INTEGER;
     private String title;
 
     /**
@@ -28,18 +29,18 @@ public abstract class ScoreboardBar {
      */
     public ScoreboardBar(String barname, String teamNamePrefix, int displaySlot) {
         this.barname = barname;
-        this.title = barname;
+        title = barname;
         this.teamNamePrefix = teamNamePrefix;
-        this.showPacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, barname);
-        this.hidePacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, "");
+        showPacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, barname);
+        hidePacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, "");
     }
 
     public abstract void addViewer(Player var1);
 
     public abstract void addViewerFirstBar(Player var1);
 
-    public ScoreboardAPI.ScoreboardDisplayMode getDisplayMode() {
-        return this.displayMode;
+    public ScoreboardDisplayMode getDisplayMode() {
+        return displayMode;
     }
 
     /**
@@ -47,8 +48,8 @@ public abstract class ScoreboardBar {
      *
      * @param mode - The new displaymode
      */
-    public void setDisplayMode(ScoreboardAPI.ScoreboardDisplayMode mode) {
-        if (this.displayMode == mode) {
+    public void setDisplayMode(ScoreboardDisplayMode mode) {
+        if (displayMode == mode) {
             return;
         }
         displayMode = mode;
@@ -71,7 +72,7 @@ public abstract class ScoreboardBar {
      * @return The scoreboard bars visibility
      */
     public boolean isVisible() {
-        return this.visible;
+        return visible;
     }
 
     /**
@@ -81,7 +82,7 @@ public abstract class ScoreboardBar {
      */
     public void setVisible(boolean visible) {
         if (visible != this.visible) {
-            sendPackets(visible ? this.showPacket : this.hidePacket);
+            sendPackets(visible ? showPacket : hidePacket);
             this.visible = visible;
         }
     }
@@ -92,7 +93,7 @@ public abstract class ScoreboardBar {
 
     public void sendPackets(Object... packets) {
         for (Object p : packets) {
-            Iterator<UUID> it = this.viewers.iterator();
+            Iterator<UUID> it = viewers.iterator();
             while (it.hasNext()) {
                 Player plr = Bukkit.getPlayer(it.next());
                 if (plr == null || !plr.isOnline()) {

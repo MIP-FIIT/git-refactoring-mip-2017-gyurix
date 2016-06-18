@@ -20,40 +20,40 @@ public class Tabbar
     }
 
     public void addPlayer(UUID uuid, TabPlayer tabPlayer) {
-        this.pls.put(uuid, tabPlayer);
-        this.sendPackets(tabPlayer.getTabnameSetPacket(), tabPlayer.getSetScorePacket());
+        pls.put(uuid, tabPlayer);
+        sendPackets(tabPlayer.getTabnameSetPacket(), tabPlayer.getSetScorePacket());
     }
 
     @Override
     public void addViewer(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer - §f" + plr.getName());
-        this.viewers.add(plr.getUniqueId());
+        viewers.add(plr.getUniqueId());
         SU.tp.sendPacket(plr, getObjectivePacket(2));
-        for (TabPlayer p : this.pls.values()) {
+        for (TabPlayer p : pls.values()) {
             SU.tp.sendPacket(plr, p.getSetScorePacket());
             SU.tp.sendPacket(plr, p.getTabnameSetPacket());
         }
-        if (this.visible) {
-            SU.tp.sendPacket(plr, this.showPacket);
+        if (visible) {
+            SU.tp.sendPacket(plr, showPacket);
         }
-        SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson(this.header)), ChatAPI.toICBC(ChatAPI.TextToJson(this.footer))));
+        SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson(header)), ChatAPI.toICBC(ChatAPI.TextToJson(footer))));
     }
 
     @Override
     public void addViewerFirstBar(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer first bar - §f" + plr.getName());
-        this.viewers.add(plr.getUniqueId());
+        viewers.add(plr.getUniqueId());
         SU.tp.sendPacket(plr, getObjectivePacket(0));
-        for (TabPlayer p : this.pls.values()) {
+        for (TabPlayer p : pls.values()) {
             SU.tp.sendPacket(plr, p.getSetScorePacket());
             SU.tp.sendPacket(plr, p.getTabnameSetPacket());
         }
-        if (this.visible) {
-            SU.tp.sendPacket(plr, this.showPacket);
+        if (visible) {
+            SU.tp.sendPacket(plr, showPacket);
         }
-        SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson(this.header)), ChatAPI.toICBC(ChatAPI.TextToJson(this.footer))));
+        SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson(header)), ChatAPI.toICBC(ChatAPI.TextToJson(footer))));
     }
 
     @Override
@@ -61,9 +61,9 @@ public class Tabbar
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §emove viewer - §f" + plr.getName());
         Tabbar old = (Tabbar) oldBar;
-        this.viewers.add(plr.getUniqueId());
+        viewers.add(plr.getUniqueId());
         SU.tp.sendPacket(plr, getObjectivePacket(2));
-        for (TabPlayer p2 : this.pls.values()) {
+        for (TabPlayer p2 : pls.values()) {
             TabPlayer op = old.pls.get(p2.profile.getId());
             if (op == null || op.number != p2.number) {
                 SU.tp.sendPacket(plr, p2.getSetScorePacket());
@@ -72,27 +72,27 @@ public class Tabbar
             SU.tp.sendPacket(plr, p2.getTabnameSetPacket());
         }
         for (TabPlayer p2 : old.pls.values()) {
-            if (this.pls.containsKey(p2.profile.getId())) continue;
+            if (pls.containsKey(p2.profile.getId())) continue;
             SU.tp.sendPacket(plr, p2.getRemoveScorePacket());
             SU.tp.sendPacket(plr, p2.getTabnameRestorePacket());
         }
-        if (!old.visible && this.visible) {
-            SU.tp.sendPacket(plr, this.showPacket);
+        if (!old.visible && visible) {
+            SU.tp.sendPacket(plr, showPacket);
         }
-        if (!this.visible && old.visible) {
-            SU.tp.sendPacket(plr, this.hidePacket);
+        if (!visible && old.visible) {
+            SU.tp.sendPacket(plr, hidePacket);
         }
-        if (!old.header.equals(this.header) || !old.footer.equals(this.footer)) {
-            SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson(this.header)), ChatAPI.toICBC(ChatAPI.TextToJson(this.footer))));
+        if (!old.header.equals(header) || !old.footer.equals(footer)) {
+            SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson(header)), ChatAPI.toICBC(ChatAPI.TextToJson(footer))));
         }
     }
 
     public void removePlayer(UUID uuid) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cremove player - §f" + SU.getName(uuid));
-        TabPlayer tp = this.pls.remove(uuid);
+        TabPlayer tp = pls.remove(uuid);
         if (tp != null) {
-            this.sendPackets(tp.getRemoveScorePacket(), tp.getTabnameRestorePacket());
+            sendPackets(tp.getRemoveScorePacket(), tp.getTabnameRestorePacket());
         }
     }
 
@@ -100,17 +100,17 @@ public class Tabbar
     public void removeViewer(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eremove viewer - §f" + plr.getName());
-        if (!this.viewers.remove(plr.getUniqueId()))
+        if (!viewers.remove(plr.getUniqueId()))
             return;
         if (!plr.isOnline())
             return;
-        for (TabPlayer p : this.pls.values()) {
+        for (TabPlayer p : pls.values()) {
             SU.tp.sendPacket(plr, p.getRemoveScorePacket());
             SU.tp.sendPacket(plr, p.getTabnameRestorePacket());
         }
         SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson("")), ChatAPI.toICBC(ChatAPI.TextToJson(""))));
-        if (this.visible) {
-            SU.tp.sendPacket(plr, this.hidePacket);
+        if (visible) {
+            SU.tp.sendPacket(plr, hidePacket);
         }
     }
 
@@ -131,15 +131,15 @@ public class Tabbar
     /**
      * Set the number of a Player in the tabbar
      *
-     * @param plr
-     * @param number
+     * @param plr - The player
+     * @param number - The new number of the given player.
      */
     public void setNumber(Player plr, int number) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset number - " + plr.getName() + " - §f" + number);
-        TabPlayer sp = this.pls.get(plr.getUniqueId());
+        TabPlayer sp = pls.get(plr.getUniqueId());
         sp.number = number;
-        this.sendPackets(sp.getSetScorePacket(), this.showPacket);
+        sendPackets(sp.getSetScorePacket(), showPacket);
     }
 
     /**
@@ -151,9 +151,9 @@ public class Tabbar
     public void setTabName(UUID plID, String name) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset tabname - " + SU.getName(plID) + " - §f" + name);
-        TabPlayer tp = this.pls.get(plID);
+        TabPlayer tp = pls.get(plID);
         tp.tabname = name;
-        this.sendPackets(tp.getTabnameSetPacket());
+        sendPackets(tp.getTabnameSetPacket());
     }
 }
 

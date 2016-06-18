@@ -11,14 +11,14 @@ public class PacketPlayInSetCreativeSlot
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.SetCreativeSlot.newPacket(this.slot, this.itemStack.toNMS());
+        return PacketInType.SetCreativeSlot.newPacket(slot, itemStack.toNMS());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.SetCreativeSlot.getPacketData(packet);
-        this.slot = (Integer) data[0];
-        this.itemStack = new ItemStackWrapper(data[1]);
+        slot = (Integer) data[0];
+        itemStack = new ItemStackWrapper(data[1]);
     }
 }
 

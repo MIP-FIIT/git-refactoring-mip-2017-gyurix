@@ -19,7 +19,7 @@ public abstract class PacketEvent
     public PacketEvent(Channel channel, Player plr, Object packet) {
         this.channel = channel;
         this.packet = packet;
-        this.player = plr;
+        player = plr;
     }
 
     public static HandlerList getHandlerList() {
@@ -27,7 +27,7 @@ public abstract class PacketEvent
     }
 
     public Channel getChannel() {
-        return this.channel;
+        return channel;
     }
 
     public HandlerList getHandlers() {
@@ -38,8 +38,8 @@ public abstract class PacketEvent
         return packet;
     }
 
-    public void setPacket(Object packet) {
-        this.packet = packet;
+    public void setPacket(WrappedPacket packet) {
+        this.packet = packet.getVanillaPacket();
     }
 
     public abstract Object[] getPacketData();
@@ -47,19 +47,19 @@ public abstract class PacketEvent
     public abstract void setPacketData(Object... var1);
 
     public Player getPlayer() {
-        return this.player;
+        return player;
     }
 
     public boolean isCancelled() {
-        return this.cancelled;
+        return cancelled;
     }
 
     public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
+        cancelled = cancel;
     }
 
-    public void setPacket(WrappedPacket packet) {
-        this.packet = packet.getVanillaPacket();
+    public void setPacket(Object packet) {
+        this.packet = packet;
     }
 
     public abstract boolean setPacketData(int var1, Object var2);

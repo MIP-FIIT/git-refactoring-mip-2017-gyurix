@@ -2,29 +2,29 @@ package gyurix.animation;
 
 import gyurix.animation.effects.FramesEffect;
 import gyurix.configfile.ConfigData;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.Serializer;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 
 public class Animation {
     public HashMap<String, HashMap<String, CustomEffect>> effects = new HashMap();
 
     public static class AnimationSerializer
-            implements ConfigSerialization.Serializer {
+            implements Serializer {
         @Override
         public Object fromData(ConfigData data, Class cl, Type... args) {
             Animation anim = new Animation();
             long ft = 0;
             if (data.mapData != null) {
-                for (Map.Entry<ConfigData, ConfigData> e : data.mapData.entrySet()) {
+                for (Entry<ConfigData, ConfigData> e : data.mapData.entrySet()) {
                     String key = e.getKey().stringData;
                     ConfigData value = e.getValue();
                     if (key.endsWith("s")) {
                         if (AnimationAPI.effects.containsKey(key = key.substring(0, key.length() - 1))) {
-                            anim.effects.put(key, (HashMap) e.getValue().deserialize(HashMap.class, String.class, AnimationAPI.effects.get(key)));
+                            anim.effects.put(key, e.getValue().deserialize(HashMap.class, String.class, AnimationAPI.effects.get(key)));
                             continue;
                         }
                         System.err.println("Unregistered effect type " + key + " can't be loaded.");
@@ -65,22 +65,22 @@ public class Animation {
             }
             if (!anim.effects.containsKey("frame")) {
                 System.err.println("Error, the animation doesn't contain ANY frames parts.");
-                return this.fromData(new ConfigData("ERROR-NO-FRAMES"), cl, args);
+                return fromData(new ConfigData("ERROR-NO-FRAMES"), cl, args);
             }
             if (!anim.effects.get("frame").containsKey("main")) {
                 System.err.println("Error, the animation doesn't contain the main frames part.");
-                return this.fromData(new ConfigData("ERROR-NO-MAINFRAMEPART"), cl, args);
+                return fromData(new ConfigData("ERROR-NO-MAINFRAMEPART"), cl, args);
             }
             if (((FramesEffect) anim.effects.get("frame").get("main")).frames.isEmpty()) {
                 System.err.println("Error, the animation doesn't contain any main frames.");
-                return this.fromData(new ConfigData("ERROR-NO-MAINFRAMES"), cl, args);
+                return fromData(new ConfigData("ERROR-NO-MAINFRAMES"), cl, args);
             }
             if (ft != 0) {
                 ((FramesEffect) anim.effects.get("frame").get("main")).frameTime = ft;
             }
             for (CustomEffect fe : anim.effects.get("frame").values()) {
                 for (Frame f : ((FramesEffect) fe).frames) {
-                    for (Map.Entry<String, Class> ef : AnimationAPI.effects.entrySet()) {
+                    for (Entry<String, Class> ef : AnimationAPI.effects.entrySet()) {
                         int id;
                         String text = f.text;
                         String efn = ef.getKey();
@@ -119,7 +119,7 @@ public class Animation {
             Animation anim = (Animation) obj;
             ConfigData out = new ConfigData();
             out.mapData = new LinkedHashMap();
-            for (Map.Entry<String, HashMap<String, CustomEffect>> e : anim.effects.entrySet()) {
+            for (Entry<String, HashMap<String, CustomEffect>> e : anim.effects.entrySet()) {
                 Class cl = AnimationAPI.effects.get(e.getKey());
                 if (cl == null) {
                     System.err.println("Unregistered effect type " + e.getKey() + " can't be saved.");

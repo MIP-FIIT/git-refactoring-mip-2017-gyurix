@@ -14,7 +14,7 @@ public class PacketPlayInChat
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        this.message = (String) PacketInType.Chat.getPacketData(packet)[0];
+        message = (String) PacketInType.Chat.getPacketData(packet)[0];
     }
 }
 

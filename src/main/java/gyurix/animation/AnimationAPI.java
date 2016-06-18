@@ -1,7 +1,9 @@
 package gyurix.animation;
 
+import gyurix.animation.Animation.AnimationSerializer;
 import gyurix.animation.effects.*;
 import gyurix.api.VariableAPI;
+import gyurix.api.VariableAPI.VariableHandler;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
@@ -32,7 +34,7 @@ public class AnimationAPI {
         for (String key : effects.keySet()) {
             VariableAPI.handlers.put(key, new CustomEffectHandler(key));
         }
-        ConfigSerialization.serializers.put(Animation.class, new Animation.AnimationSerializer());
+        ConfigSerialization.serializers.put(Animation.class, new AnimationSerializer());
     }
 
     public static boolean removeAnimation(Animation a) {
@@ -67,7 +69,7 @@ public class AnimationAPI {
     }
 
     public static class CustomEffectHandler
-            implements VariableAPI.VariableHandler {
+            implements VariableHandler {
         public final String name;
 
         public CustomEffectHandler(String name) {
@@ -78,12 +80,12 @@ public class AnimationAPI {
         public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
             AnimationRunnable ar = (AnimationRunnable) oArgs[0];
             String[] d = StringUtils.join(inside, "").split(":", 2);
-            CustomEffect effect = ar.effects.get(this.name).get(d[0]);
+            CustomEffect effect = ar.effects.get(name).get(d[0]);
             if (effect != null) {
                 String text = d.length <= 1 ? effect.getText() : d[1];
                 return effect.next(VariableAPI.fillVariables(text, plr, oArgs));
             }
-            SU.log(Main.pl, "The given " + this.name + " name (" + d[0] + ") is invalid " + this.name + " name in animation ");
+            SU.log(Main.pl, "The given " + name + " name (" + d[0] + ") is invalid " + name + " name in animation ");
             return "?";
         }
     }

@@ -2,7 +2,7 @@ package gyurix.animation.effects;
 
 import gyurix.animation.CustomEffect;
 import gyurix.animation.Frame;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.spigotlib.SU;
 
 import java.util.ArrayList;
@@ -10,41 +10,41 @@ import java.util.Iterator;
 
 public class FramesEffect
         implements CustomEffect {
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public long delay;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public Iterator<Long> delays;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public Frame f;
-    @ConfigSerialization.ConfigOptions(defaultValue = "9223372036854775807")
+    @ConfigOptions(defaultValue = "9223372036854775807")
     public long frameTime = Long.MAX_VALUE;
     public ArrayList<Frame> frames = new ArrayList();
     public boolean random;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public long repeat;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public Iterator<Long> repeats;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public int state = -1;
 
     @Override
     public CustomEffect clone() {
         FramesEffect fe = new FramesEffect();
-        fe.frameTime = this.frameTime;
-        fe.state = this.state;
-        fe.frames = this.frames;
-        fe.random = this.random;
-        fe.f = this.f;
-        fe.delay = this.delay;
-        fe.delays = this.delays;
-        fe.repeats = this.repeats;
-        fe.repeat = this.repeat;
+        fe.frameTime = frameTime;
+        fe.state = state;
+        fe.frames = frames;
+        fe.random = random;
+        fe.f = f;
+        fe.delay = delay;
+        fe.delays = delays;
+        fe.repeats = repeats;
+        fe.repeat = repeat;
         return fe;
     }
 
     @Override
     public String getText() {
-        return this.f != null ? this.f.text : "";
+        return f != null ? f.text : "";
     }
 
     @Override
@@ -53,27 +53,27 @@ public class FramesEffect
 
     @Override
     public String next(String in) {
-        if (this.repeat == 0) {
-            if (this.delays == null || !this.delays.hasNext()) {
-                this.state = this.random ? SU.rand.nextInt(this.frames.size()) : (this.state + 1) % this.frames.size();
-                this.f = this.frames.get(this.state);
-                if (this.f.delays == null) {
-                    this.delay = this.frameTime;
-                    this.repeat = 1;
-                    this.delays = null;
+        if (repeat == 0) {
+            if (delays == null || !delays.hasNext()) {
+                state = random ? SU.rand.nextInt(frames.size()) : (state + 1) % frames.size();
+                f = frames.get(state);
+                if (f.delays == null) {
+                    delay = frameTime;
+                    repeat = 1;
+                    delays = null;
                 } else {
-                    this.delays = this.f.delays.iterator();
-                    this.repeats = this.f.repeats.iterator();
-                    this.delay = this.delays.next();
-                    this.repeat = this.repeats.next();
+                    delays = f.delays.iterator();
+                    repeats = f.repeats.iterator();
+                    delay = delays.next();
+                    repeat = repeats.next();
                 }
             } else {
-                this.delay = this.delays.next();
-                this.repeat = this.repeats.next();
+                delay = delays.next();
+                repeat = repeats.next();
             }
         }
-        --this.repeat;
-        return this.f.text;
+        --repeat;
+        return f.text;
     }
 }
 

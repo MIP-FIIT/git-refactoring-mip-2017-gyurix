@@ -11,13 +11,13 @@ public class ConfigReader {
     private boolean keyRead = false;
 
     ConfigReader(int lvl, ConfigData data) {
-        this.blockLvl = lvl;
-        this.value = data;
-        this.key = null;
+        blockLvl = lvl;
+        value = data;
+        key = null;
     }
 
     ConfigReader(int lvl, ConfigData key, ConfigData value) {
-        this.blockLvl = lvl;
+        blockLvl = lvl;
         this.key = key;
         this.value = value;
     }
@@ -32,12 +32,12 @@ public class ConfigReader {
     }
 
     public ConfigData getData() {
-        return this.keyRead ? this.key : this.value;
+        return keyRead ? key : value;
     }
 
     public void handleInput(ArrayList<ConfigReader> readers, String line, int lvl) {
         ConfigData data = getData();
-        if ((line.equals("-")) || (line.equals(">")) || (line.indexOf(":") == line.length() - 1))
+        if (line.equals("-") || line.equals(">") || line.indexOf(":") == line.length() - 1)
             line = line + ' ';
         if (line.startsWith("- ")) {
             if (data.listData == null)
@@ -52,7 +52,7 @@ public class ConfigReader {
             ConfigData value = new ConfigData();
             ConfigReader reader = new ConfigReader(lvl, key, value);
             reader.keyRead = true;
-            if (lvl == this.blockLvl) {
+            if (lvl == blockLvl) {
                 int size = readers.size() - 2;
                 readers.remove(size + 1);
                 readers.get(size).getData().mapData.put(key, value);
@@ -62,14 +62,14 @@ public class ConfigReader {
                 data.mapData.put(key, value);
             }
             readers.add(reader);
-        } else if ((this.keyRead) && (line.startsWith(": "))) {
-            this.keyRead = false;
-            this.value.stringData = ConfigData.unescape(line.substring(2));
+        } else if (keyRead && line.startsWith(": ")) {
+            keyRead = false;
+            value.stringData = ConfigData.unescape(line.substring(2));
         } else {
             String[] s = line.startsWith(": ") ? new String[]{line} : line.split(" *: +", 2);
             if (s.length == 2) {
                 ConfigData key;
-                if (this.keyRead) {
+                if (keyRead) {
                     this.key.stringData += ConfigData.unescape("\n" + s[0]);
                     key = this.key;
                 } else {
@@ -77,7 +77,7 @@ public class ConfigReader {
                 }
                 ConfigData value = new ConfigData(ConfigData.unescape(s[1]));
                 ConfigReader reader = new ConfigReader(lvl, key, value);
-                if (lvl == this.blockLvl) {
+                if (lvl == blockLvl) {
                     int size = readers.size() - 2;
                     readers.remove(size + 1);
                     data = readers.get(size).getData();

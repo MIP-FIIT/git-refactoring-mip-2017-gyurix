@@ -1,7 +1,7 @@
 package gyurix.protocol.utils;
 
 import com.google.common.collect.Multimap;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.json.JsonAPI;
 import gyurix.json.JsonSettings;
 import gyurix.protocol.Reflection;
@@ -17,13 +17,13 @@ import java.util.UUID;
  */
 public class GameProfile implements WrappedData {
     @JsonSettings(serialize = false)
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private static final Class cl = Reflection.getUtilClass("com.mojang.authlib.GameProfile");
     @JsonSettings(serialize = false)
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private static final Constructor con = Reflection.getConstructor(cl, UUID.class, String.class);
     @JsonSettings(serialize = false)
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private static final Field fid = Reflection.getField(cl, "id"),
             fname = Reflection.getField(cl, "name"),
             fproperties = Reflection.getField(cl, "properties"),
@@ -38,6 +38,10 @@ public class GameProfile implements WrappedData {
 
     }
 
+    public GameProfile(String n) {
+        name = n;
+        id = UUID.nameUUIDFromBytes(("OfflinePlayer:" + n).getBytes());
+    }
     public GameProfile(String n, UUID uid) {
         name = n;
         id = uid;
@@ -86,13 +90,13 @@ public class GameProfile implements WrappedData {
 
     public static class Property implements WrappedData {
         @JsonSettings(serialize = false)
-        @ConfigSerialization.ConfigOptions(serialize = false)
+        @ConfigOptions(serialize = false)
         private static final Class cl = Reflection.getClass("com.mojang.authlib.properties.Property");
         @JsonSettings(serialize = false)
-        @ConfigSerialization.ConfigOptions(serialize = false)
+        @ConfigOptions(serialize = false)
         private static final Constructor con = Reflection.getConstructor(cl, String.class, String.class, String.class);
         @JsonSettings(serialize = false)
-        @ConfigSerialization.ConfigOptions(serialize = false)
+        @ConfigOptions(serialize = false)
         private static final Field fname = Reflection.getField(cl, "name"),
                 fvalue = Reflection.getField(cl, "value"),
                 fsignature = Reflection.getField(cl, "signature");

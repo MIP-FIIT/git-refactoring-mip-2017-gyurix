@@ -26,7 +26,7 @@ public enum WorldType implements WrappedData {
 
     public static WorldType fromVanillaWorldType(Object vanilla) {
         try {
-            return WorldType.valueOf(((String) name.get(vanilla)).toUpperCase());
+            return valueOf(((String) name.get(vanilla)).toUpperCase());
         } catch (Throwable e) {
             e.printStackTrace();
         }

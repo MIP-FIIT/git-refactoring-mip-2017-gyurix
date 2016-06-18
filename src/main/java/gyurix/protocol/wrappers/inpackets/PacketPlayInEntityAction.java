@@ -14,15 +14,15 @@ public class PacketPlayInEntityAction
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.EntityAction.newPacket(this.entityId, this.action.toVanillaPlayerAction(), this.jumpBoost);
+        return PacketInType.EntityAction.newPacket(entityId, action.toVanillaPlayerAction(), jumpBoost);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.EntityAction.getPacketData(packet);
-        this.entityId = (Integer) data[0];
-        this.action = (PlayerAction) data[1];
-        this.jumpBoost = (Integer) data[2];
+        entityId = (Integer) data[0];
+        action = (PlayerAction) data[1];
+        jumpBoost = (Integer) data[2];
     }
 
     public enum PlayerAction {
@@ -45,7 +45,7 @@ public class PacketPlayInEntityAction
 
         public Object toVanillaPlayerAction() {
             try {
-                return valueOf.invoke(null, this.name());
+                return valueOf.invoke(null, name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;

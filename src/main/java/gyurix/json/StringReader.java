@@ -5,19 +5,19 @@ public class StringReader {
     public char[] str;
 
     public StringReader(String in) {
-        this.str = in.toCharArray();
+        str = in.toCharArray();
     }
 
     public boolean hasNext() {
-        return this.id < this.str.length;
+        return id < str.length;
     }
 
     public char last() {
-        return this.str[this.id - 1];
+        return str[id - 1];
     }
 
     public char next() {
-        return this.str[this.id++];
+        return str[id++];
     }
 }
 

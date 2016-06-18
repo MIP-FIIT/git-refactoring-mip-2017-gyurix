@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static gyurix.spigotutils.ServerVersion.v1_8;
+
 public class Reflection {
     public static final HashMap<Class, Field[]> allFieldCache = new HashMap<>();
     public static final ConcurrentHashMap<String, String> nmsRenames = new ConcurrentHashMap();
@@ -144,7 +146,7 @@ public class Reflection {
             sb.append(", ").append(c.getName());
         }
         if (Config.debug)
-            SU.cs.sendMessage(ra + "§eConstructor §f" + cl.getName() + "§e( §f" + sb.toString() + "§e ) was not found.");
+            SU.cs.sendMessage(ra + "§eConstructor §f" + cl.getName() + "§e( §f" + sb + "§e ) was not found.");
         return null;
     }
 
@@ -164,14 +166,14 @@ public class Reflection {
                 }
                 for (String name : String.valueOf(o).split("\\.")) {
                     if (input == ArrayUtils.EMPTY_OBJECT_ARRAY) {
-                        Field f = Reflection.getField(ocl, name);
+                        Field f = getField(ocl, name);
                         if (f != null) {
                             obj = f.get(obj);
                             ocl = obj.getClass();
                             continue;
                         }
                     }
-                    Method m = Reflection.getSimiliarMethod(ocl, name, classes);
+                    Method m = getSimiliarMethod(ocl, name, classes);
                     Class[] parCls = m.getParameterTypes();
                     Object[] pars = new Object[parCls.length];
                     for (int i = 0; i < parCls.length; i++) {
@@ -225,7 +227,7 @@ public class Reflection {
         for (Field f : cl.getDeclaredFields()) {
             ParameterizedType type;
             Type[] types;
-            if ((f.getType() == returnType) && ((f.getGenericType() instanceof ParameterizedType)) && (matches.length == (types = (type = (ParameterizedType) f.getGenericType()).getActualTypeArguments()).length)) {
+            if (f.getType() == returnType && f.getGenericType() instanceof ParameterizedType && matches.length == (types = (type = (ParameterizedType) f.getGenericType()).getActualTypeArguments()).length) {
                 boolean match = true;
                 for (int i = 0; i < matches.length; i++)
                     if (!((Class) types[i]).getName().matches(matches[i])) {
@@ -328,16 +330,16 @@ public class Reflection {
     }
 
     public static Class getUtilClass(String className) {
-        if (ver == ServerVersion.v1_8 || ver == ServerVersion.v1_9)
+        if (ver.isAbove(v1_8))
             return getClass(className);
         return getClass("net.minecraft.util." + className);
     }
 
     public static void init() {
         String name = Bukkit.getServer().getClass().getPackage().getName();
-        version = name.substring(name.lastIndexOf(46) + 1);
+        version = name.substring(name.lastIndexOf('.') + 1);
         try {
-            ver = ServerVersion.valueOf(version.substring(0, 4));
+            ver = ServerVersion.valueOf(version.substring(0, version.length() - 3));
         } catch (Throwable e) {
 
         }

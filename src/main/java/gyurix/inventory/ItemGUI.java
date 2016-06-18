@@ -1,6 +1,7 @@
 package gyurix.inventory;
 
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.configfile.PostLoadable;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
@@ -30,16 +31,16 @@ import java.util.List;
  */
 public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
 
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public HashMap<String, InventoryClickHandler> handlers = new HashMap<>();
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private Inventory inv, fallBack;
     private HashMap<String, ItemStack> items;
     private ArrayList<Layer> layout;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private Player plr;
     private String title;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private HashMap<String, HashMap<String, Object>> vars = new HashMap<>();
 
     public ItemGUI clone() {
@@ -221,7 +222,7 @@ public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
             im.setLore(lore);
         }
         if (im instanceof SkullMeta) {
-            SkullMeta sm = ((SkullMeta) im);
+            SkullMeta sm = (SkullMeta) im;
             if (sm.hasOwner())
                 sm.setOwner(SU.fillVariables(sm.getOwner(), vs));
         }
@@ -229,7 +230,7 @@ public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
         return is;
     }
 
-    public static class Layer implements ConfigSerialization.StringSerializable {
+    public static class Layer implements StringSerializable {
         String[] data = new String[9];
 
         public Layer(String in) {

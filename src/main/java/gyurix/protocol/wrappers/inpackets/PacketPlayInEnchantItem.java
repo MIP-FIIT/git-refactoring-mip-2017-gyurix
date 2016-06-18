@@ -10,14 +10,14 @@ public class PacketPlayInEnchantItem
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.EnchantItem.newPacket(this.window, this.enchantment);
+        return PacketInType.EnchantItem.newPacket(window, enchantment);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.EnchantItem.getPacketData(packet);
-        this.window = (Integer) data[0];
-        this.enchantment = (Integer) data[1];
+        window = (Integer) data[0];
+        enchantment = (Integer) data[1];
     }
 }
 

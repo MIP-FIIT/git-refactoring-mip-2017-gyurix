@@ -1,12 +1,13 @@
 package gyurix.configfile;
 
 import com.google.common.primitives.Primitives;
+import gyurix.configfile.ConfigSerialization.Serializer;
 import gyurix.mysql.MySQLDatabase;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 
 public class ConfigData {
     public String comment;
@@ -45,7 +46,7 @@ public class ConfigData {
                 case '‼':
                     if (prev == '\\')
                         out.deleteCharAt(out.length() - 1);
-                    out.append("‼");
+                    out.append('‼');
                     break;
                 case '\t':
                     out.append("\\t");
@@ -67,7 +68,7 @@ public class ConfigData {
             }
             prev = c;
         }
-        if ((prev == '\n') && (out.length() != 0)) {
+        if (prev == '\n' && out.length() != 0) {
             out.setCharAt(out.length() - 1, '\\');
             out.append('n');
         }
@@ -83,17 +84,17 @@ public class ConfigData {
             className = true;
             parameters = new Type[]{c.getComponentType()};
         }
-        ConfigSerialization.Serializer s = ConfigSerialization.getSerializer(c);
+        Serializer s = ConfigSerialization.getSerializer(c);
         ConfigData cd = s.toData(obj, parameters);
-        if ((cd.stringData != null) && (cd.stringData.startsWith("‼")))
-            cd.stringData = ("\\" + cd.stringData);
+        if (cd.stringData != null && cd.stringData.startsWith("‼"))
+            cd.stringData = '\\' + cd.stringData;
         if (className) {
-            String prefix = "‼" + ConfigSerialization.getAlias(obj.getClass());
+            String prefix = '‼' + ConfigSerialization.getAlias(obj.getClass());
             for (Type t : parameters) {
-                prefix = prefix + "-" + ConfigSerialization.getAlias((Class) t);
+                prefix = prefix + '-' + ConfigSerialization.getAlias((Class) t);
             }
-            prefix = prefix + "‼";
-            cd.stringData = (prefix + cd.stringData);
+            prefix = prefix + '‼';
+            cd.stringData = prefix + cd.stringData;
         }
         return cd;
     }
@@ -124,16 +125,16 @@ public class ConfigData {
                         ucode = 0;
                         break;
                     case 'n':
-                        out.append("\n");
+                        out.append('\n');
                         break;
                     case 'r':
-                        out.append("\r");
+                        out.append('\r');
                         break;
                     case 't':
-                        out.append("\t");
+                        out.append('\t');
                         break;
                     case 'b':
-                        out.append("\b");
+                        out.append('\b');
                         break;
                     case ' ':
                     case '-':
@@ -153,9 +154,9 @@ public class ConfigData {
 
     public <T> T deserialize(Class<T> c, Type... types) {
         this.types = types;
-        if (this.objectData != null)
-            return (T) this.objectData;
-        String str = this.stringData == null ? "" : this.stringData;
+        if (objectData != null)
+            return (T) objectData;
+        String str = stringData == null ? "" : stringData;
 
         if (str.startsWith("‼")) {
             str = str.substring(1);
@@ -166,29 +167,29 @@ public class ConfigData {
                 c = ConfigSerialization.realClass(classNames[0]);
                 types = new Type[classNames.length - 1];
                 for (int i = 1; i < classNames.length; i++) {
-                    types[(i - 1)] = ConfigSerialization.realClass(classNames[i]);
+                    types[i - 1] = ConfigSerialization.realClass(classNames[i]);
                 }
-                this.stringData = this.stringData.substring(id + 2);
-                ConfigSerialization.Serializer ser = ConfigSerialization.getSerializer(c);
-                this.objectData = ser.fromData(this, c, types);
+                stringData = stringData.substring(id + 2);
+                Serializer ser = ConfigSerialization.getSerializer(c);
+                objectData = ser.fromData(this, c, types);
             }
         } else {
-            ConfigSerialization.Serializer ser = ConfigSerialization.getSerializer(c);
-            this.objectData = ser.fromData(this, c, types);
+            Serializer ser = ConfigSerialization.getSerializer(c);
+            objectData = ser.fromData(this, c, types);
         }
-        this.stringData = null;
-        this.mapData = null;
-        this.listData = null;
-        return (T) this.objectData;
+        stringData = null;
+        mapData = null;
+        listData = null;
+        return (T) objectData;
     }
 
     public boolean equals(Object obj) {
-        return obj != null && obj instanceof ConfigData ? (((ConfigData) obj).stringData + "").equals("" + stringData) : false;
+        return obj != null && obj instanceof ConfigData && (((ConfigData) obj).stringData + "").equals("" + stringData);
     }
 
     public int hashCode() {
-        return this.stringData == null ? this.objectData == null ? this.listData == null ? this.mapData == null ? 0 :
-                this.mapData.hashCode() : this.listData.hashCode() : this.objectData.hashCode() : this.stringData.hashCode();
+        return stringData == null ? objectData == null ? listData == null ? mapData == null ? 0 :
+                mapData.hashCode() : listData.hashCode() : objectData.hashCode() : stringData.hashCode();
     }
 
     public void saveToMySQL(ArrayList<String> l, String dbTable, String args, String key) {
@@ -197,34 +198,34 @@ public class ConfigData {
         if (cd.mapData != null) {
             if (!key.isEmpty())
                 key += ".";
-            for (Map.Entry<ConfigData, ConfigData> e : cd.mapData.entrySet()) {
+            for (Entry<ConfigData, ConfigData> e : cd.mapData.entrySet()) {
                 e.getValue().saveToMySQL(l, dbTable, args.replace("<key>", MySQLDatabase.escape(key) + "<key>"), e.getKey().toString());
             }
         } else {
             String value = cd.toString();
             if (value != null)
-                l.add("INSERT INTO  `" + dbTable + "` (`uuid`,`key`,`value`) VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", "" + MySQLDatabase.escape(value)) + ")");
+                l.add("INSERT INTO  `" + dbTable + "` (`uuid`,`key`,`value`) VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", "" + MySQLDatabase.escape(value)) + ')');
         }
         DefaultSerializers.leftPad = 0;
     }
 
     public String toString() {
         StringBuilder out = new StringBuilder();
-        if (this.objectData != null) {
-            return serializeObject(this.objectData, types).toString();
+        if (objectData != null) {
+            return serializeObject(objectData, types).toString();
         }
-        if (this.stringData != null && !this.stringData.isEmpty()) {
-            out.append(escape(this.stringData));
+        if (stringData != null && !stringData.isEmpty()) {
+            out.append(escape(stringData));
         }
-        if (this.mapData != null && !this.mapData.isEmpty()) {
-            for (Map.Entry<ConfigData, ConfigData> d : this.mapData.entrySet()) {
+        if (mapData != null && !mapData.isEmpty()) {
+            for (Entry<ConfigData, ConfigData> d : mapData.entrySet()) {
                 String value = d.getValue().toString();
                 if (value == null)
                     continue;
-                if ((d.getKey()).comment != null)
-                    out.append("\n#").append((d.getKey()).comment.replace("\n", "\n#"));
+                if (d.getKey().comment != null)
+                    out.append("\n#").append(d.getKey().comment.replace("\n", "\n#"));
                 value = value.replace("\n", "\n  ");
-                String key = (d.getKey()).toString().replace("\n", "\n  ");
+                String key = d.getKey().toString().replace("\n", "\n  ");
                 if (key.contains("\n")) {
                     out.append("\n  > ").append(key).append("\n  : ").append(value);
                 } else {
@@ -232,8 +233,8 @@ public class ConfigData {
                 }
             }
         }
-        if (this.listData != null && !this.listData.isEmpty()) {
-            for (ConfigData d : this.listData) {
+        if (listData != null && !listData.isEmpty()) {
+            for (ConfigData d : listData) {
                 String data = d.toString();
                 if (data == null)
                     data = "";

@@ -1,6 +1,6 @@
 package gyurix.spigotutils;
 
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 import org.bukkit.Material;
@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Class used for storing the data of a block
  */
-public class BlockData implements ConfigSerialization.StringSerializable {
+public class BlockData implements StringSerializable {
     public boolean anydata = true;
     public byte data;
     public int id;
@@ -37,49 +37,51 @@ public class BlockData implements ConfigSerialization.StringSerializable {
         this.data = data;
         anydata = false;
     }
+
     public BlockData(String in) {
         String[] s = in.split(":", 2);
         try {
             try {
-                this.id = Material.getMaterial(s[0].toUpperCase()).getId();
+                id = Material.getMaterial(s[0].toUpperCase()).getId();
             } catch (Throwable e) {
-                this.id = Integer.valueOf(s[0]);
+                id = Integer.valueOf(s[0]);
             }
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        try {
-            this.data = Byte.valueOf(s[1]);
-            this.anydata = false;
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
+        if (s.length == 2)
+            try {
+                data = Byte.valueOf(s[1]);
+                anydata = false;
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
     }
 
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != this.getClass()) {
+        if (obj == null || obj.getClass() != getClass()) {
             return false;
         }
         BlockData bd = (BlockData) obj;
-        return bd.id == this.id && (bd.data == this.data || bd.anydata || this.anydata);
+        return bd.id == id && (bd.data == data || bd.anydata || anydata);
     }
 
     public int hashCode() {
-        return this.id * 16 + this.data;
+        return id * 16 + data;
     }
 
     public boolean isBlock(Block b) {
         int bid = b.getTypeId();
         byte bdata = b.getData();
-        return this.id == bid && (this.anydata || bdata == this.data);
+        return id == bid && (anydata || bdata == data);
     }
 
     public void setBlock(Block b) {
-        b.setTypeIdAndData(this.id, this.data, true);
+        b.setTypeIdAndData(id, data, true);
     }
 
     public void setBlockNoPhysics(Block b) {
-        b.setTypeIdAndData(this.id, this.data, false);
+        b.setTypeIdAndData(id, data, false);
     }
 
     public ItemStack toItem() {
@@ -93,9 +95,9 @@ public class BlockData implements ConfigSerialization.StringSerializable {
 
     @Override
     public String toString() {
-        Material m = Material.getMaterial(this.id);
-        String sid = m == null ? "" + this.id : m.name();
-        return this.anydata ? sid : sid + ":" + this.data;
+        Material m = Material.getMaterial(id);
+        String sid = m == null ? "" + id : m.name();
+        return anydata ? sid : sid + ":" + data;
     }
 }
 

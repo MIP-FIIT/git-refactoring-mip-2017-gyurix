@@ -1,7 +1,7 @@
 package gyurix.spigotutils;
 
 import gyurix.animation.AnimationAPI;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
@@ -21,17 +21,17 @@ public class TPSMeter implements Runnable {
     /**
      * The instance of the TPS meter future, it is stopped on SpigotLib shutdown
      */
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public static ScheduledFuture meter;
     /**
      * Ticks elapsed from the last tps metrics result update
      */
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public static int ticks = 0;
     /**
      * The current tps value of the server
      */
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     public static double tps = 20.0;
 
     @Override
@@ -47,7 +47,7 @@ public class TPSMeter implements Runnable {
         Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.pl, new Runnable() {
             @Override
             public void run() {
-                ++TPSMeter.ticks;
+                ++ticks;
             }
         }, 0, 1);
     }

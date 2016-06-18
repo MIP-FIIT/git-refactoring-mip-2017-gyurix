@@ -6,7 +6,6 @@ import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import gyurix.spigotutils.ServerVersion;
 import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Constructor;
@@ -19,7 +18,7 @@ public enum PacketOutType {
     Animation,
     AttachEntity,
     Bed,
-    Boss(ServerVersion.v1_9),
+    Boss,
     BlockAction,
     BlockBreakAnimation,
     BlockChange,
@@ -53,8 +52,8 @@ public enum PacketOutType {
     LoginOutSuccess,
     Map,
     MapChunk,
-    MapChunkBulk(ServerVersion.v1_8),
-    Mount(ServerVersion.v1_9),
+    MapChunkBulk,
+    Mount,
     MultiBlockChange,
     NamedEntitySpawn,
     NamedSoundEffect,
@@ -73,8 +72,8 @@ public enum PacketOutType {
     ScoreboardScore,
     ScoreboardTeam,
     ServerDifficulty,
-    SetCompression(ServerVersion.v1_8),
-    SetCooldown(ServerVersion.v1_9),
+    SetCompression,
+    SetCooldown,
     SetSlot,
     SpawnEntity,
     SpawnEntityExperienceOrb,
@@ -87,13 +86,13 @@ public enum PacketOutType {
     TileEntityData,
     Title,
     Transaction,
-    UnloadChunk(ServerVersion.v1_9),
+    UnloadChunk,
     UpdateAttributes,
-    UpdateEntityNBT(ServerVersion.v1_8),
+    UpdateEntityNBT,
     UpdateHealth,
     UpdateSign,
     UpdateTime,
-    VehicleMove(ServerVersion.v1_9),
+    VehicleMove,
     WindowData,
     WindowItems,
     WorldBorder,
@@ -106,16 +105,8 @@ public enum PacketOutType {
     public Class<? extends WrappedPacket> wrapper;
     ArrayList<Field> fs;
     private Constructor emptyConst;
-    private ArrayList<ServerVersion> versions;
-
-    PacketOutType() {
-
-    }
-
-    PacketOutType(ServerVersion... ver) {
-        versions = Lists.newArrayList(ver);
-    }
-
+    private boolean supported;
+    
     /**
      * Get the type of an outgoing packet
      *
@@ -147,33 +138,34 @@ public enum PacketOutType {
         for (PacketOutType t : PacketOutType.values()) {
             String name = t.name();
             String cln = "Packet" + (name.startsWith("LoginOut") || name.startsWith("Status") ? name : "PlayOut" + name);
-            if (t.versions == null || t.versions.contains(Reflection.ver)) {
-                try {
-                    Class cl = Reflection.getNMSClass(cln);
-                    packets.put(cl, t);
-                    t.emptyConst = cl.getConstructor();
-                    t.fs = new ArrayList();
-                    for (Field f : cl.getDeclaredFields()) {
-                        if ((f.getModifiers() & 8) != 0) continue;
-                        f.setAccessible(true);
-                        t.fs.add(f);
-                    }
-                } catch (Throwable e) {
-                    notfound.add(t);
+            try {
+                Class cl = Reflection.getNMSClass(cln);
+                if (cl == null)
+                    continue;
+                packets.put(cl, t);
+                t.emptyConst = cl.getConstructor();
+                t.fs = new ArrayList();
+                for (Field f : cl.getDeclaredFields()) {
+                    if ((f.getModifiers() & 8) != 0) continue;
+                    f.setAccessible(true);
+                    t.fs.add(f);
                 }
-                try {
-                    t.wrapper = (Class<? extends WrappedPacket>) Class.forName("gyurix.protocol.wrappers.outpackets." + cln);
-                } catch (Throwable e) {
-                    nowrapper.add(t);
-                }
+                t.supported = true;
+            } catch (Throwable e) {
+                notfound.add(t);
+            }
+            try {
+                t.wrapper = (Class<? extends WrappedPacket>) Class.forName("gyurix.protocol.wrappers.outpackets." + cln);
+            } catch (Throwable e) {
+                nowrapper.add(t);
             }
         }
         if (notfound.size() > 0)
-            sb.append("\n§cNot found OUT packets (please report to the dev):§f " + StringUtils.join(notfound, ", "));
+            sb.append("\n§cNot found OUT packets (please report to the dev):§f ").append(StringUtils.join(notfound, ", "));
         else
             sb.append("\n§aFound every supported packets (no errors)");
         if (nowrapper.size() > 0)
-            sb.append("\n§eMissing OUT packet wrappers (will be coded later):§f " + StringUtils.join(nowrapper, ", "));
+            sb.append("\n§eMissing OUT packet wrappers (will be coded later):§f ").append(StringUtils.join(nowrapper, ", "));
         else
             sb.append("\n§aFound wrappers for all the IN packet types (that's awesome)");
         sb.append("\n§e-------------------------------------------------------------------------------");
@@ -210,10 +202,10 @@ public enum PacketOutType {
      * @return The contents of all the non static fields of the packet
      */
     public Object[] getPacketData(Object packet) {
-        Object[] out = new Object[this.fs.size()];
+        Object[] out = new Object[fs.size()];
         try {
-            for (int i = 0; i < this.fs.size(); ++i) {
-                out[i] = this.fs.get(i).get(packet);
+            for (int i = 0; i < fs.size(); ++i) {
+                out[i] = fs.get(i).get(packet);
             }
             return out;
         } catch (Throwable e) {
@@ -228,7 +220,7 @@ public enum PacketOutType {
      * @return True if it is supported, false otherwise
      */
     public boolean isSupported() {
-        return versions == null || versions.contains(Reflection.ver);
+        return supported;
     }
 
     /**
@@ -239,8 +231,8 @@ public enum PacketOutType {
      */
     public Object newPacket(Object... data) {
         try {
-            Object out = this.emptyConst.newInstance();
-            this.fillPacket(out, data);
+            Object out = emptyConst.newInstance();
+            fillPacket(out, data);
             return out;
         } catch (Throwable e) {
             e.printStackTrace();

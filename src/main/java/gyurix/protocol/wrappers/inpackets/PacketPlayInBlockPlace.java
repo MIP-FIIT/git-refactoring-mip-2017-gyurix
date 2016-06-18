@@ -19,26 +19,26 @@ public class PacketPlayInBlockPlace
     @Override
     public Object getVanillaPacket() {
         Object[] arrobject = new Object[7];
-        arrobject[0] = this.location.toNMS();
-        arrobject[1] = this.face == null ? 255 : this.face.ordinal();
-        arrobject[2] = this.itemStack == null ? null : this.itemStack.toNMS();
-        arrobject[3] = Float.valueOf(this.cursorX);
-        arrobject[4] = Float.valueOf(this.cursorY);
-        arrobject[5] = Float.valueOf(this.cursorZ);
-        arrobject[6] = this.timestamp;
+        arrobject[0] = location.toNMS();
+        arrobject[1] = face == null ? 255 : face.ordinal();
+        arrobject[2] = itemStack == null ? null : itemStack.toNMS();
+        arrobject[3] = Float.valueOf(cursorX);
+        arrobject[4] = Float.valueOf(cursorY);
+        arrobject[5] = Float.valueOf(cursorZ);
+        arrobject[6] = timestamp;
         return PacketInType.BlockPlace.newPacket(arrobject);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.BlockPlace.getPacketData(packet);
-        this.location = new BlockLocation(data[0]);
-        this.face = Direction.get((Integer) data[1]);
-        this.itemStack = data[2] == null ? null : new ItemStackWrapper(data[2]);
-        this.cursorX = ((Float) data[3]).floatValue();
-        this.cursorY = ((Float) data[4]).floatValue();
-        this.cursorZ = ((Float) data[5]).floatValue();
-        this.timestamp = (Long) data[6];
+        location = new BlockLocation(data[0]);
+        face = Direction.get((Integer) data[1]);
+        itemStack = data[2] == null ? null : new ItemStackWrapper(data[2]);
+        cursorX = ((Float) data[3]).floatValue();
+        cursorY = ((Float) data[4]).floatValue();
+        cursorZ = ((Float) data[5]).floatValue();
+        timestamp = (Long) data[6];
     }
 }
 

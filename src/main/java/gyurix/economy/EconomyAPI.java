@@ -1,6 +1,6 @@
 package gyurix.economy;
 
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
@@ -12,9 +12,9 @@ import java.util.UUID;
 
 public class EconomyAPI {
     public static HashMap<String, BalanceData> balanceTypes = new HashMap<>();
-    @ConfigSerialization.ConfigOptions(comment = "Migrate all the Economy data through Vault from an other Economy plugin, i.e. Essentials.")
+    @ConfigOptions(comment = "Migrate all the Economy data through Vault from an other Economy plugin, i.e. Essentials.")
     public static boolean migrate;
-    @ConfigSerialization.ConfigOptions(comment = "The type of SpigotLibs vault hook, available options:\n" +
+    @ConfigOptions(comment = "The type of SpigotLibs vault hook, available options:\n" +
             "NONE - do NOT hook to Vault at all (not suggested)\n" +
             "USER - hook to Vault as an Economy user (suggested if you don't want to use SpigotLibs Economy management)\n" +
             "PROVIDER - hook to Vault as an Economy provider (override other Economy plugins, like Essentials)")
@@ -27,11 +27,11 @@ public class EconomyAPI {
                     return SU.econ.withdrawPlayer(Bukkit.getOfflinePlayer(plr), -balance.doubleValue()).transactionSuccess();
                 return SU.econ.depositPlayer(Bukkit.getOfflinePlayer(plr), balance.doubleValue()).transactionSuccess();
             }
-            BigDecimal bd = EconomyAPI.getBalance(plr).add(balance);
+            BigDecimal bd = getBalance(plr).add(balance);
             if (bd.compareTo(new BigDecimal(0)) < 0) {
                 return false;
             }
-            return EconomyAPI.setBalance(plr, bd);
+            return setBalance(plr, bd);
         } catch (Throwable e) {
             System.err.println("Error on adding " + balance + " default balance to player " + plr + ".");
             if (Config.debug)
@@ -47,11 +47,11 @@ public class EconomyAPI {
                     return SU.econ.withdrawPlayer(Bukkit.getOfflinePlayer(plr), -balance.doubleValue()).transactionSuccess();
                 return SU.econ.depositPlayer(Bukkit.getOfflinePlayer(plr), balance.doubleValue()).transactionSuccess();
             }
-            BigDecimal bd = EconomyAPI.getBalance(plr, balanceType).add(balance);
+            BigDecimal bd = getBalance(plr, balanceType).add(balance);
             if (bd.compareTo(new BigDecimal(0)) < 0) {
                 return false;
             }
-            return EconomyAPI.setBalance(plr, balanceType, bd);
+            return setBalance(plr, balanceType, bd);
         } catch (Throwable e) {
             System.err.println("Error on adding " + balance + " " + balanceType + " balance to player " + plr + ".");
             if (Config.debug)
@@ -61,18 +61,18 @@ public class EconomyAPI {
     }
 
     public static boolean addBankBalance(String bank, BigDecimal balance) {
-        return EconomyAPI.setBankBalance(bank, EconomyAPI.getBankBalance(bank).add(balance));
+        return setBankBalance(bank, getBankBalance(bank).add(balance));
     }
 
     public static boolean addBankBalance(String bank, String balanceType, BigDecimal balance) {
-        return EconomyAPI.setBankBalance(bank, balanceType, EconomyAPI.getBankBalance(bank, balanceType).add(balance));
+        return setBankBalance(bank, balanceType, getBankBalance(bank, balanceType).add(balance));
     }
 
     public static BigDecimal getBalance(UUID plr) {
         try {
             if (vaultHookType == VaultHookType.USER && SU.vault && SU.econ != null)
                 return new BigDecimal(SU.econ.getBalance(Bukkit.getOfflinePlayer(plr)));
-            return (BigDecimal) SU.getPlayerConfig(plr).get("balance.default", BigDecimal.class);
+            return SU.getPlayerConfig(plr).get("balance.default", BigDecimal.class);
         } catch (Throwable e) {
             return new BigDecimal(0);
         }
@@ -82,9 +82,9 @@ public class EconomyAPI {
         try {
             if (vaultHookType == VaultHookType.USER && SU.vault && SU.econ != null)
                 return new BigDecimal(SU.econ.getBalance(Bukkit.getOfflinePlayer(plr)));
-            BigDecimal bal = (BigDecimal) SU.getPlayerConfig(plr).get("balance." + balanceType, BigDecimal.class);
+            BigDecimal bal = SU.getPlayerConfig(plr).get("balance." + balanceType, BigDecimal.class);
             if (bal == null) {
-                bal = EconomyAPI.balanceTypes.get(balanceType).defaultValue;
+                bal = balanceTypes.get(balanceType).defaultValue;
                 SU.getPlayerConfig(plr).setObject("balance." + balanceType, bal);
             }
             return bal;
@@ -100,7 +100,7 @@ public class EconomyAPI {
         try {
             if (vaultHookType == VaultHookType.USER && SU.vault && SU.econ != null)
                 return new BigDecimal(SU.econ.bankBalance(bank).balance);
-            return (BigDecimal) SU.pf.get("bankbalance." + bank + ".default", BigDecimal.class);
+            return SU.pf.get("bankbalance." + bank + ".default", BigDecimal.class);
         } catch (Throwable e) {
             System.err.println("Error on getting default balance of bank " + bank);
             if (Config.debug)
@@ -113,7 +113,7 @@ public class EconomyAPI {
         try {
             if (vaultHookType == VaultHookType.USER && SU.vault && SU.econ != null)
                 return new BigDecimal(SU.econ.bankBalance(bank).balance);
-            return (BigDecimal) SU.pf.get("bankbalance." + bank + "." + balanceType, BigDecimal.class);
+            return SU.pf.get("bankbalance." + bank + "." + balanceType, BigDecimal.class);
         } catch (Throwable e) {
             System.err.println("Error on getting " + balanceType + " balance of bank " + bank);
             if (Config.debug)
@@ -126,10 +126,10 @@ public class EconomyAPI {
         if (balance.compareTo(new BigDecimal(0)) < 0) {
             return false;
         }
-        if (!EconomyAPI.addBalance(sender, new BigDecimal(0).subtract(balance))) {
+        if (!addBalance(sender, new BigDecimal(0).subtract(balance))) {
             return false;
         }
-        EconomyAPI.addBalance(receiver, balance);
+        addBalance(receiver, balance);
         return true;
     }
 
@@ -137,32 +137,32 @@ public class EconomyAPI {
         if (balance.compareTo(new BigDecimal(0)) < 0) {
             return false;
         }
-        if (!EconomyAPI.addBalance(sender, new BigDecimal(0).subtract(balance))) {
+        if (!addBalance(sender, new BigDecimal(0).subtract(balance))) {
             return false;
         }
-        EconomyAPI.addBalance(receiver, balanceType, balance);
+        addBalance(receiver, balanceType, balance);
         return true;
     }
 
     public static boolean sendBalanceToBank(UUID sender, String bank, BigDecimal balance) {
-        if (!EconomyAPI.addBalance(sender, new BigDecimal(0).subtract(balance))) {
+        if (!addBalance(sender, new BigDecimal(0).subtract(balance))) {
             return false;
         }
-        EconomyAPI.addBankBalance(bank, balance);
+        addBankBalance(bank, balance);
         return true;
     }
 
     public static boolean sendBalanceToBank(UUID sender, String bank, String balanceType, BigDecimal balance) {
-        if (!EconomyAPI.addBalance(sender, balanceType, new BigDecimal(0).subtract(balance))) {
+        if (!addBalance(sender, balanceType, new BigDecimal(0).subtract(balance))) {
             return false;
         }
-        EconomyAPI.addBankBalance(bank, balanceType, balance);
+        addBankBalance(bank, balanceType, balance);
         return true;
     }
 
     public static boolean setBalance(UUID plr, BigDecimal balance) {
         try {
-            BalanceUpdateEvent e = new BalanceUpdateEvent(plr, EconomyAPI.getBalance(plr), balance, balanceTypes.get("default"));
+            BalanceUpdateEvent e = new BalanceUpdateEvent(plr, getBalance(plr), balance, balanceTypes.get("default"));
             SU.pm.callEvent(e);
             if (!e.isCancelled()) {
                 if (vaultHookType == VaultHookType.USER)
@@ -180,7 +180,7 @@ public class EconomyAPI {
 
     public static boolean setBalance(UUID plr, String balanceType, BigDecimal balance) {
         try {
-            BalanceUpdateEvent e = new BalanceUpdateEvent(plr, EconomyAPI.getBalance(plr), balance, balanceTypes.get("default"));
+            BalanceUpdateEvent e = new BalanceUpdateEvent(plr, getBalance(plr), balance, balanceTypes.get("default"));
             SU.pm.callEvent(e);
             if (!e.isCancelled()) {
                 if (vaultHookType == VaultHookType.USER)
@@ -198,7 +198,7 @@ public class EconomyAPI {
 
     public static boolean setBankBalance(String bank, BigDecimal balance) {
         try {
-            BankBalanceUpdateEvent e = new BankBalanceUpdateEvent(bank, EconomyAPI.getBankBalance(bank), balance, balanceTypes.get("default"));
+            BankBalanceUpdateEvent e = new BankBalanceUpdateEvent(bank, getBankBalance(bank), balance, balanceTypes.get("default"));
             SU.pm.callEvent(e);
             if (!e.isCancelled()) {
                 if (vaultHookType == VaultHookType.USER)
@@ -217,7 +217,7 @@ public class EconomyAPI {
 
     public static boolean setBankBalance(String bank, String balanceType, BigDecimal balance) {
         try {
-            BankBalanceUpdateEvent e = new BankBalanceUpdateEvent(bank, EconomyAPI.getBankBalance(bank), balance, balanceTypes.get("default"));
+            BankBalanceUpdateEvent e = new BankBalanceUpdateEvent(bank, getBankBalance(bank), balance, balanceTypes.get("default"));
             SU.pm.callEvent(e);
             if (!e.isCancelled()) {
                 if (vaultHookType == VaultHookType.USER)
@@ -296,7 +296,7 @@ public class EconomyAPI {
         }
 
         public String format(BigDecimal amount) {
-            return this.prefix + amount + this.suffix;
+            return prefix + amount + suffix;
         }
     }
 

@@ -7,8 +7,8 @@ import org.bukkit.command.CommandSender;
  */
 public class DelayedCommandExecutor implements Runnable {
     private final Object[] args;
-    private final CommandSender sender;
     private final Command c;
+    private final CommandSender sender;
 
     public DelayedCommandExecutor(Command c, CommandSender sender, Object[] args) {
         this.args = args;

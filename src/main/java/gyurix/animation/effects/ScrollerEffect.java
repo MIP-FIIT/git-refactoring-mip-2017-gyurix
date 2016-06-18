@@ -36,12 +36,12 @@ public class ScrollerEffect
 
     @Override
     public CustomEffect clone() {
-        return new ScrollerEffect(this.max, this.size, this.speed, this.start, this.reversed, this.skipColors, this.fill, this.text);
+        return new ScrollerEffect(max, size, speed, start, reversed, skipColors, fill, text);
     }
 
     @Override
     public String getText() {
-        return this.text;
+        return text;
     }
 
     @Override
@@ -55,14 +55,14 @@ public class ScrollerEffect
         int i;
         int i2;
         int id;
-        StringBuilder sb = new StringBuilder(this.size);
+        StringBuilder sb = new StringBuilder(size);
         HashSet<Character> formats = new HashSet<Character>();
-        int inc = this.speed;
+        int inc = speed;
         char colorPrefix = ' ';
         char[] chars = text.toCharArray();
-        for (int i3 = 1; i3 < this.max; ++i3) {
-            int id2 = (this.start + this.max - i3) % this.max;
-            if (chars.length <= id2 || chars[id2] != '\u00a7' || chars.length <= (id2 = (id2 + 1) % this.max)) continue;
+        for (int i3 = 1; i3 < max; ++i3) {
+            int id2 = (start + max - i3) % max;
+            if (chars.length <= id2 || chars[id2] != '\u00a7' || chars.length <= (id2 = (id2 + 1) % max)) continue;
             c = chars[id2];
             if (c < 'k' || c > 'o') {
                 colorPrefix = c;
@@ -70,12 +70,12 @@ public class ScrollerEffect
             }
             formats.add(Character.valueOf(c));
         }
-        int n = i2 = chars.length > (id = (this.start + this.max - 1) % this.max) && chars[id] == '\u00a7' ? 1 : 0;
-        while (i2 < this.size && chars.length > (id = (this.start + i2) % this.max) && chars[id] == '\u00a7') {
-            id = (this.start + i2 + 1) % this.max;
+        int n = i2 = chars.length > (id = (start + max - 1) % max) && chars[id] == '\u00a7' ? 1 : 0;
+        while (i2 < size && chars.length > (id = (start + i2) % max) && chars[id] == '\u00a7') {
+            id = (start + i2 + 1) % max;
             if (chars.length > id) {
                 c = chars[id];
-                if (this.skipColors) {
+                if (skipColors) {
                     inc += 2;
                 }
                 if (c < 'k' || c > 'o') {
@@ -95,25 +95,25 @@ public class ScrollerEffect
             c = ((Character) i$.next()).charValue();
             sb.append('\u00a7').append(c);
         }
-        id = (this.start + this.max - 1) % this.max;
+        id = (start + max - 1) % max;
         int n2 = i = chars.length > id && chars[id] == '\u00a7' ? 1 : 0;
-        while (sb.length() < this.size) {
-            id = (this.start + i) % this.max;
-            sb.append(chars.length > id ? chars[id] : this.fill);
+        while (sb.length() < size) {
+            id = (start + i) % max;
+            sb.append(chars.length > id ? chars[id] : fill);
             ++i;
         }
-        if (sb.charAt(this.size - 1) == '\u00a7') {
-            sb.setCharAt(this.size - 1, this.fill);
+        if (sb.charAt(size - 1) == '\u00a7') {
+            sb.setCharAt(size - 1, fill);
         }
-        if (this.reversed) {
-            this.start -= inc;
-            if (this.start < 0) {
-                this.start = this.max - inc;
+        if (reversed) {
+            start -= inc;
+            if (start < 0) {
+                start = max - inc;
             }
         } else {
-            this.start += inc;
-            if (this.start >= this.max) {
-                this.start = inc - 1;
+            start += inc;
+            if (start >= max) {
+                start = inc - 1;
             }
         }
         return sb.toString();

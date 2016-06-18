@@ -18,7 +18,7 @@ public class PacketPlayInUpdateSign extends WrappedPacket {
         for (int i = 0; i < 4; ++i) {
             lines[i] = this.lines[i].toICBC();
         }
-        return PacketInType.UpdateSign.newPacket(this.block.toNMS(), lines);
+        return PacketInType.UpdateSign.newPacket(block.toNMS(), lines);
     }
 
     @Override

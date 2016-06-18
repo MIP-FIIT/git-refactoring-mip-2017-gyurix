@@ -5,7 +5,6 @@ import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import gyurix.spigotutils.ServerVersion;
 import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Constructor;
@@ -21,7 +20,7 @@ public enum PacketInType {
     ArmAnimation,
     BlockDig,
     BlockPlace,
-    BoatMove(ServerVersion.v1_9),
+    BoatMove,
     Chat,
     ClientCommand,
     CloseWindow,
@@ -40,12 +39,12 @@ public enum PacketInType {
     Spectate,
     SteerVehicle,
     TabComplete,
-    TeleportAccept(ServerVersion.v1_9),
+    TeleportAccept,
     Transaction,
     UpdateSign,
     UseEntity,
-    UseItem(ServerVersion.v1_9),
-    VehicleMove(ServerVersion.v1_9),
+    UseItem,
+    VehicleMove,
     WindowClick,
     StatusInPing,
     StatusInStart;
@@ -54,15 +53,12 @@ public enum PacketInType {
     public Class<? extends WrappedPacket> wrapper;
     ArrayList<Field> fs = new ArrayList<>();
     private Constructor emptyConst;
-    private ArrayList<ServerVersion> versions;
+    private boolean supported;
 
     PacketInType() {
 
     }
 
-    PacketInType(ServerVersion... ver) {
-        versions = Lists.newArrayList(ver);
-    }
 
     /**
      * Get the type of an incoming packet
@@ -95,20 +91,21 @@ public enum PacketInType {
         for (PacketInType t : PacketInType.values()) {
             String name = t.name();
             String cln = "Packet" + (name.startsWith("Login") || name.startsWith("Status") || name.startsWith("Handshaking") ? name : "PlayIn" + name);
-            if (t.versions == null || t.versions.contains(Reflection.ver)) {
-                try {
-                    Class cl = Reflection.getNMSClass(cln);
-                    packets.put(cl, t);
-                    t.emptyConst = cl.getConstructor();
-                    t.fs = new ArrayList();
-                    for (Field f : cl.getDeclaredFields()) {
-                        if ((f.getModifiers() & 8) != 0) continue;
-                        Reflection.setFieldAccessible(f);
-                        t.fs.add(f);
-                    }
-                } catch (Throwable e) {
-                    notfound.add(t);
+            try {
+                Class cl = Reflection.getNMSClass(cln);
+                if (cl == null)
+                    continue;
+                packets.put(cl, t);
+                t.emptyConst = cl.getConstructor();
+                t.fs = new ArrayList();
+                for (Field f : cl.getDeclaredFields()) {
+                    if ((f.getModifiers() & 8) != 0) continue;
+                    Reflection.setFieldAccessible(f);
+                    t.fs.add(f);
                 }
+                t.supported = true;
+            } catch (Throwable e) {
+                notfound.add(t);
             }
             try {
                 t.wrapper = (Class<? extends WrappedPacket>) Class.forName("gyurix.protocol.wrappers.inpackets." + cln);
@@ -174,7 +171,7 @@ public enum PacketInType {
      * @return True if it is supported, false otherwise
      */
     public boolean isSupported() {
-        return versions == null || versions.contains(Reflection.version.substring(1, Reflection.version.length() - 4));
+        return supported;
     }
 
     /**
@@ -185,8 +182,8 @@ public enum PacketInType {
      */
     public Object newPacket(Object... data) {
         try {
-            Object out = this.emptyConst.newInstance();
-            this.fillPacket(out, data);
+            Object out = emptyConst.newInstance();
+            fillPacket(out, data);
             return out;
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");

@@ -1,13 +1,13 @@
 package gyurix.animation.effects;
 
 import gyurix.animation.CustomEffect;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class BlinkEffect
-        implements ConfigSerialization.StringSerializable,
+        implements StringSerializable,
         CustomEffect {
     private boolean active = true;
     private Iterator<Long> data;
@@ -19,17 +19,17 @@ public class BlinkEffect
         if (in.startsWith("{")) {
             for (String s : in.substring(1, in.indexOf("}")).split(" ")) {
                 if (s.equals("A")) {
-                    this.active = false;
+                    active = false;
                     continue;
                 }
-                this.repeat.add(Long.valueOf(s));
+                repeat.add(Long.valueOf(s));
             }
         } else {
-            this.repeat.add(1L);
-            this.text = in;
+            repeat.add(1L);
+            text = in;
         }
-        this.data = this.repeat.iterator();
-        this.remaining = this.data.next();
+        data = repeat.iterator();
+        remaining = data.next();
     }
 
     public BlinkEffect() {
@@ -38,49 +38,49 @@ public class BlinkEffect
     @Override
     public CustomEffect clone() {
         BlinkEffect be = new BlinkEffect();
-        be.active = this.active;
-        be.data = this.data;
-        be.remaining = this.remaining;
-        be.repeat = this.repeat;
-        be.text = this.text;
+        be.active = active;
+        be.data = data;
+        be.remaining = remaining;
+        be.repeat = repeat;
+        be.text = text;
         return be;
     }
 
     @Override
     public String getText() {
-        return this.text;
+        return text;
     }
 
     @Override
     public void setText(String newText) {
-        this.text = newText;
+        text = newText;
     }
 
     @Override
     public String next(String in) {
-        --this.remaining;
-        if (this.remaining == 0) {
-            if (!this.data.hasNext()) {
-                this.data = this.repeat.iterator();
+        --remaining;
+        if (remaining == 0) {
+            if (!data.hasNext()) {
+                data = repeat.iterator();
             }
-            this.remaining = this.data.next();
-            this.active = !this.active;
+            remaining = data.next();
+            active = !active;
         }
-        return this.active ? in : in.replaceAll(".", " ");
+        return active ? in : in.replaceAll(".", " ");
     }
 
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append("{");
-        if (!this.active) {
+        if (!active) {
             out.append("A ");
         }
-        for (Long r : this.repeat) {
+        for (Long r : repeat) {
             out.append(r).append(' ');
         }
         out.setCharAt(out.length() - 1, '}');
-        return out.append(this.text).toString();
+        return out.append(text).toString();
     }
 }
 

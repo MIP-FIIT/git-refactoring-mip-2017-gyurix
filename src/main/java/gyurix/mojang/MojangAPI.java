@@ -1,26 +1,31 @@
-package gyurix.api;
+package gyurix.mojang;
 
 import gyurix.json.JsonAPI;
 import gyurix.protocol.utils.GameProfile;
 import gyurix.spigotlib.SU;
-import org.apache.commons.io.IOUtils;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+
+import static gyurix.mojang.WebApi.get;
+import static gyurix.mojang.WebApi.post;
 
 /**
  * Created by GyuriX on 2015.12.27..
  */
 public class MojangAPI {
-    public static String get(String urlString) {
+    public static ClientSession clientLogin(String userName, String password) {
         try {
-            URL url = new URL(urlString);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
+            String s = post("https://authserver.mojang.com/authenticate",
+                    "{\"agent\":{\"name\":\"Minecraft\",\"version\":1}," +
+                            "\"username\":\"" + userName + "\"," +
+                            "\"password\":\"" + password + "\"}");
+            System.out.println(s);
+            ClientSession client = JsonAPI.deserialize(s, ClientSession.class);
+            client.username = userName;
+            client.password = password;
+            return client;
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
@@ -36,20 +41,20 @@ public class MojangAPI {
         return null;
     }
 
-    public static GameProfile getProfile(String name, long time) {
-        try {
-            return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time), GameProfile.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static GameProfile getProfile(String name) {
         try {
             return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name), GameProfile.class);
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
+    }
+
+    public static GameProfile getProfile(String name, long time) {
+        try {
+            return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time), GameProfile.class);
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
         return null;
     }
@@ -83,22 +88,6 @@ public class MojangAPI {
         return null;
     }
 
-    public static String post(String urlString, String req) {
-        try {
-            URL url = new URL(urlString);
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.setDoOutput(true);
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("Content-Length", "" + req.length());
-            con.getOutputStream().write(req.getBytes(Charset.forName("UTF-8")));
-            System.out.println("POST " + req);
-            return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
     public enum MojangServerState {
         RED, GREEN, YELLOW

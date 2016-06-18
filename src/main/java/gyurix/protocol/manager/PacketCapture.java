@@ -56,11 +56,9 @@ public class PacketCapture {
             WrappedPacket wp = (WrappedPacket) Class.forName("gyurix.protocol.v1_8.inpackets." + type).newInstance();
             wp.loadVanillaPacket(packetIn);
             fw.append(time).append(" INW ").append(toString(wp)).append("\n");
-            ;
         } catch (Throwable e) {
             try {
                 fw.append(time).append(" IN ").append(toString(packetIn)).append("\n");
-                ;
             } catch (Throwable err) {
                 err.printStackTrace();
             }

@@ -18,7 +18,7 @@ public class RainbowEffect
 
     @Override
     public CustomEffect clone() {
-        return new RainbowEffect(this.state, this.random);
+        return new RainbowEffect(state, random);
     }
 
     @Override
@@ -32,8 +32,8 @@ public class RainbowEffect
 
     @Override
     public String next(String in) {
-        this.state = this.random ? SU.rand.nextInt(in.length()) : (this.state + 1) % in.length();
-        return "\u00a7" + in.charAt(this.state % in.length());
+        state = random ? SU.rand.nextInt(in.length()) : (state + 1) % in.length();
+        return "\u00a7" + in.charAt(state % in.length());
     }
 }
 

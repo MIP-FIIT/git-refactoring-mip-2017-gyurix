@@ -3,6 +3,7 @@ package gyurix.spigotlib;
 import gyurix.chat.ChatTag;
 import gyurix.configfile.ConfigData;
 import gyurix.protocol.Reflection;
+import gyurix.spigotlib.ChatAPI.ChatMessageType;
 import gyurix.spigotutils.ServerVersion;
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.command.CommandSender;
@@ -13,7 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 
 public class GlobalLangFile {
     public static final HashMap<String, HashMap<String, String>> map = new HashMap<>();
@@ -70,7 +71,7 @@ public class GlobalLangFile {
                 cs.append(s);
                 continue;
             }
-            GlobalLangFile.put(adr.substring(1), cs.toString());
+            put(adr.substring(1), cs.toString());
             cs.setLength(0);
             if (blockLvl == lvl + 2) {
                 adr = adr + "." + d[0];
@@ -89,15 +90,15 @@ public class GlobalLangFile {
             if (d[1].isEmpty()) continue;
             cs.append(d[1].substring(0, d[1].length() - 1));
         }
-        GlobalLangFile.put(adr.substring(1), cs.toString());
+        put(adr.substring(1), cs.toString());
     }
 
     public static PluginLang loadLF(String pn, InputStream stream, String fn) {
         try {
             byte[] bytes = new byte[stream.available()];
             stream.read(bytes);
-            GlobalLangFile.load(new String(bytes, "UTF-8").split("\r?\n"));
-            GlobalLangFile.load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
+            load(new String(bytes, "UTF-8").split("\r?\n"));
+            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
             return new PluginLang(pn);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -107,7 +108,7 @@ public class GlobalLangFile {
 
     public static PluginLang loadLF(String pn, String fn) {
         try {
-            GlobalLangFile.load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
+            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
             return new PluginLang(pn);
         } catch (Throwable e) {
             e.printStackTrace();
@@ -128,9 +129,9 @@ public class GlobalLangFile {
 
     public static void unloadLF(PluginLang lng) {
         for (HashMap<String, String> m : map.values()) {
-            Iterator<Map.Entry<String, String>> i = m.entrySet().iterator();
+            Iterator<Entry<String, String>> i = m.entrySet().iterator();
             while (i.hasNext()) {
-                Map.Entry<String, String> e = i.next();
+                Entry<String, String> e = i.next();
                 if (!e.getKey().matches(".*\\." + lng.pln + ".*")) continue;
                 i.remove();
             }
@@ -142,23 +143,23 @@ public class GlobalLangFile {
         public final String prefixLink = "prefix";
 
         private PluginLang(String plugin) {
-            this.pln = plugin;
+            pln = plugin;
         }
 
         public String get(Player plr, String adr, String... repl) {
-            String msg = GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), this.pln + "." + adr);
+            String msg = GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), pln + "." + adr);
             for (String s : (">" + msg + "<").split(">[^<]*<")) {
                 String r;
                 int spaceID = s.indexOf(" ");
                 String name = spaceID == -1 ? s : s.substring(0, spaceID);
                 String[] pm = spaceID == -1 ? new String[]{} : s.substring(spaceID + 1).split(" ");
                 if (name.startsWith("*")) {
-                    msg = msg.replace("<" + s + ">", this.get(plr, name.substring(1), pm));
+                    msg = msg.replace("<" + s + ">", get(plr, name.substring(1), pm));
                     continue;
                 }
                 int replNameId = ArrayUtils.indexOf(repl, name) + 1;
                 if (replNameId == repl.length || replNameId == 0) continue;
-                msg = msg.replace("<" + s + ">", (r = repl[replNameId]).startsWith(".") ? this.get(plr, r.substring(1), repl) : r);
+                msg = msg.replace("<" + s + ">", (r = repl[replNameId]).startsWith(".") ? get(plr, r.substring(1), repl) : r);
             }
             return msg;
         }
@@ -169,11 +170,11 @@ public class GlobalLangFile {
 
         public void msg(String prefix, CommandSender sender, String msg, String... repl) {
             Player plr = sender instanceof Player ? (Player) sender : null;
-            msg = prefix + this.get(plr, msg, repl);
-            if (plr == null || (Reflection.ver != ServerVersion.v1_8 && Reflection.ver != ServerVersion.v1_9)) {
+            msg = prefix + get(plr, msg, repl);
+            if (plr == null || Reflection.ver != ServerVersion.v1_8 && Reflection.ver != ServerVersion.v1_9) {
                 sender.sendMessage(ChatTag.stripExtras(msg));
             } else {
-                ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.CHAT, msg, plr);
+                ChatAPI.sendJsonMsg(ChatMessageType.CHAT, msg, plr);
             }
         }
 

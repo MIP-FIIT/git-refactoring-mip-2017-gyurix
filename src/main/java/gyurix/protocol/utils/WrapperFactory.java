@@ -2,6 +2,7 @@ package gyurix.protocol.utils;
 
 import com.google.common.primitives.Primitives;
 import gyurix.protocol.Reflection;
+import gyurix.protocol.utils.GameProfile.Property;
 import gyurix.spigotlib.SU;
 
 import java.lang.reflect.Constructor;
@@ -21,7 +22,7 @@ public class WrapperFactory {
             wrap.put(Reflection.getNMSClass("DataWatcher"), DataWatcher.class.getConstructor(Object.class));
             enumWrap.put(Reflection.getNMSClass("EnumDirection"), Direction.class.getMethod("valueOf", String.class));
             wrap.put(Reflection.getClass("com.mojang.authlib.GameProfile"), GameProfile.class.getConstructor(Object.class));
-            wrap.put(Reflection.getClass("com.mojang.authlib.properties.Property"), GameProfile.Property.class.getConstructor(Object.class));
+            wrap.put(Reflection.getClass("com.mojang.authlib.properties.Property"), Property.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("ItemStack"), ItemStackWrapper.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("Vec3D"), Vector.class.getConstructor(Object.class));
             enumWrap.put(Reflection.getNMSClass("WorldType"), WorldType.class.getMethod("valueOf", String.class));

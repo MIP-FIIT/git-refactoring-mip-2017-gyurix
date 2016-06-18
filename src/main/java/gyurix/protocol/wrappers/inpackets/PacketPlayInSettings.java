@@ -16,17 +16,17 @@ public class PacketPlayInSettings
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Settings.newPacket(this.locale, this.viewDistance, this.chatVisibility.toVanillaChatVisibility(), this.chatColors, this.skinParts);
+        return PacketInType.Settings.newPacket(locale, viewDistance, chatVisibility.toVanillaChatVisibility(), chatColors, skinParts);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.Settings.getPacketData(packet);
-        this.locale = (String) data[0];
-        this.viewDistance = (Integer) data[1];
-        this.chatVisibility = ChatVisibility.valueOf(data[2].toString());
-        this.chatColors = (Boolean) data[3];
-        this.skinParts = (Integer) data[4];
+        locale = (String) data[0];
+        viewDistance = (Integer) data[1];
+        chatVisibility = ChatVisibility.valueOf(data[2].toString());
+        chatColors = (Boolean) data[3];
+        skinParts = (Integer) data[4];
     }
 
     public enum ChatVisibility {
@@ -45,7 +45,7 @@ public class PacketPlayInSettings
 
         public Object toVanillaChatVisibility() {
             try {
-                return valueOf.invoke(null, this.name());
+                return valueOf.invoke(null, name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;

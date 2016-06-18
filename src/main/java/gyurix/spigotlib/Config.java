@@ -1,6 +1,6 @@
 package gyurix.spigotlib;
 
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.economy.EconomyAPI;
 import gyurix.mysql.MySQLDatabase;
 import gyurix.spigotutils.BackendType;
@@ -13,29 +13,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Config {
-    public static BungeeAPI bungee;
-    @ConfigSerialization.ConfigOptions(comment = "Debug mode, if disabled, then some of the stack traces won't be visible in console.")
-    public static boolean debug;
-    @ConfigSerialization.ConfigOptions(comment = "Servers default language.")
-    public static String defaultLang = "en";
-    @ConfigSerialization.ConfigOptions(comment = "EconomyAPI settings")
-    public static EconomyAPI economy = new EconomyAPI();
-
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    public static HashMap<String, Enchantment> enchantAliases = new HashMap<>();
-    @ConfigSerialization.ConfigOptions(serialize = false)
-    public static HashMap<String, ArrayList<String>> enchants = new HashMap<>();
     public static HashMap<BlockData, ItemStack> blocks = new HashMap<>();
-
-    @ConfigSerialization.ConfigOptions(comment = "Enable / disable packet events which costs some performance, but gives\n" +
+    public static BungeeAPI bungee;
+    @ConfigOptions(comment = "Debug mode, if disabled, then some of the stack traces won't be visible in console.")
+    public static boolean debug;
+    @ConfigOptions(comment = "Servers default language.")
+    public static String defaultLang = "en";
+    @ConfigOptions(comment = "EconomyAPI settings")
+    public static EconomyAPI economy = new EconomyAPI();
+    @ConfigOptions(serialize = false)
+    public static HashMap<String, Enchantment> enchantAliases = new HashMap<>();
+    @ConfigOptions(serialize = false)
+    public static HashMap<String, ArrayList<String>> enchants = new HashMap<>();
+    @ConfigOptions(comment = "Enable / disable packet events which costs some performance, but gives\n" +
             "ability for developers to catch packets and code awesome plugin features :)")
     public static boolean packetAPI;
-    @ConfigSerialization.ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
+    @ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
     public static boolean phaHook = false;
-    @ConfigSerialization.ConfigOptions(comment = "PlayerFile settings")
+    @ConfigOptions(comment = "PlayerFile settings")
     public static PlayerFile playerFile;
     public static String start = "§eSzerver indítása...";
-    @ConfigSerialization.ConfigOptions(comment = "Allows sync and async metrics of the truth server tps, for the <tps>\n" +
+    @ConfigOptions(comment = "Allows sync and async metrics of the truth server tps, for the <tps>\n" +
             "variable, it also helps to detect informations about possible server crashes.")
     public static TPSMeter tpsMeter;
 

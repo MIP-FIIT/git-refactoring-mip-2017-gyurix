@@ -14,18 +14,18 @@ public class PacketPlayInAbilities
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Abilities.newPacket(this.isInvulnerable, this.isFlying, this.canFly, this.canInstantlyBuild, Float.valueOf(this.flySpeed), Float.valueOf(this.walkSpeed));
+        return PacketInType.Abilities.newPacket(isInvulnerable, isFlying, canFly, canInstantlyBuild, Float.valueOf(flySpeed), Float.valueOf(walkSpeed));
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.Abilities.getPacketData(packet);
-        this.isInvulnerable = (Boolean) data[0];
-        this.isFlying = (Boolean) data[1];
-        this.canFly = (Boolean) data[2];
-        this.canInstantlyBuild = (Boolean) data[3];
-        this.flySpeed = ((Float) data[4]).floatValue();
-        this.walkSpeed = ((Float) data[5]).floatValue();
+        isInvulnerable = (Boolean) data[0];
+        isFlying = (Boolean) data[1];
+        canFly = (Boolean) data[2];
+        canInstantlyBuild = (Boolean) data[3];
+        flySpeed = ((Float) data[4]).floatValue();
+        walkSpeed = ((Float) data[5]).floatValue();
     }
 }
 

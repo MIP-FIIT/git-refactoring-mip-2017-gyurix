@@ -16,20 +16,20 @@ public class PacketPlayInFlying
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Flying.newPacket(this.x, this.y, this.z, Float.valueOf(this.yaw), Float.valueOf(this.pitch), this.onGround, this.hasPos, this.hasLook);
+        return PacketInType.Flying.newPacket(x, y, z, Float.valueOf(yaw), Float.valueOf(pitch), onGround, hasPos, hasLook);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.Flying.getPacketData(packet);
-        this.x = (Double) data[0];
-        this.y = (Double) data[1];
-        this.z = (Double) data[2];
-        this.yaw = ((Float) data[3]).floatValue();
-        this.pitch = ((Float) data[4]).floatValue();
-        this.onGround = (Boolean) data[5];
-        this.hasPos = (Boolean) data[6];
-        this.hasLook = (Boolean) data[7];
+        x = (Double) data[0];
+        y = (Double) data[1];
+        z = (Double) data[2];
+        yaw = ((Float) data[3]).floatValue();
+        pitch = ((Float) data[4]).floatValue();
+        onGround = (Boolean) data[5];
+        hasPos = (Boolean) data[6];
+        hasLook = (Boolean) data[7];
     }
 }
 

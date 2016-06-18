@@ -1,7 +1,7 @@
 package gyurix.animation.effects;
 
 import gyurix.animation.CustomEffect;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.spigotlib.SU;
 
 public class FlameEffect
@@ -14,10 +14,10 @@ public class FlameEffect
     @Override
     public CustomEffect clone() {
         FlameEffect fe = new FlameEffect();
-        fe.info = this.info;
-        fe.speed = this.speed;
-        fe.start = this.start;
-        fe.rotate = this.rotate;
+        fe.info = info;
+        fe.speed = speed;
+        fe.start = start;
+        fe.rotate = rotate;
         return fe;
     }
 
@@ -33,10 +33,10 @@ public class FlameEffect
     @Override
     public String next(String in) {
         StringBuilder out = new StringBuilder();
-        int strstate = this.start;
+        int strstate = start;
         int state = 0;
         if (strstate >= in.length()) {
-            this.step(in);
+            step(in);
             return in;
         }
         if (strstate > 0) {
@@ -81,7 +81,7 @@ public class FlameEffect
     }
 
     public static class FlameInfo
-            implements ConfigSerialization.StringSerializable {
+            implements StringSerializable {
         public int[] counts;
         public String[] pref;
 
@@ -90,14 +90,14 @@ public class FlameEffect
 
         public FlameInfo(String in) {
             String[] d = in.split(" ");
-            this.counts = new int[d.length];
-            this.pref = new String[d.length];
+            counts = new int[d.length];
+            pref = new String[d.length];
             for (int i = 0; i < d.length; ++i) {
                 String[] d2 = d[i].split(":", 2);
-                this.counts[i] = 1;
+                counts[i] = 1;
                 try {
-                    this.pref[i] = d2[0];
-                    this.counts[i] = Integer.valueOf(d2[1]);
+                    pref[i] = d2[0];
+                    counts[i] = Integer.valueOf(d2[1]);
                 } catch (Throwable t) {
                 }
             }
@@ -106,8 +106,8 @@ public class FlameEffect
         @Override
         public String toString() {
             StringBuilder out = new StringBuilder();
-            for (int i = 0; i < this.counts.length; ++i) {
-                out.append(' ').append(this.pref[i]).append(':').append(this.counts[i]);
+            for (int i = 0; i < counts.length; ++i) {
+                out.append(' ').append(pref[i]).append(':').append(counts[i]);
             }
             return out.substring(1);
         }

@@ -10,16 +10,19 @@ import gyurix.configfile.ConfigFile;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
+import gyurix.economy.EconomyAPI.VaultHookType;
 import gyurix.economy.EconomyVaultHook;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.event.PacketOutType;
-import gyurix.protocol.manager.Protocol18_19;
+import gyurix.protocol.manager.Protocol18_19_110;
 import gyurix.protocol.utils.WrapperFactory;
 import gyurix.scoreboard.ScoreboardAPI;
+import gyurix.spigotlib.ChatAPI.ChatMessageType;
+import gyurix.spigotlib.Config.PlayerFile;
+import gyurix.spigotlib.GlobalLangFile.PluginLang;
 import gyurix.spigotutils.BackendType;
-import gyurix.spigotutils.ServerVersion;
 import gyurix.spigotutils.TPSMeter;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
@@ -56,15 +59,18 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.Map.Entry;
+
+import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class Main extends JavaPlugin implements Listener {
     public static final String[] commands = new String[]{"chm", "abm", "sym", "title", "titledata", "titlehide", "vars",
             "hasperm", "packets", "lang", "lf", "pf", "save", "reload", "errors", "velocity", "setamount", "item"};
-    public static final String version = "4.0DEV";
+    public static final String version = "4.0";
     public static File dir;
     public static boolean fullyEnabled = false;
     public static ConfigFile kf;
-    public static GlobalLangFile.PluginLang lang;
+    public static PluginLang lang;
     public static Main pl;
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -83,26 +89,26 @@ public class Main extends JavaPlugin implements Listener {
     public void load() throws Throwable {
         SU.cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
         SU.saveResources(this, "lang.yml", "config.yml", "enchants.yml");
-        kf = new ConfigFile(this.getResource("config.yml"));
+        kf = new ConfigFile(getResource("config.yml"));
         kf.load(new File(dir + File.separator + "config.yml"));
-        Main.kf.data.deserialize(Config.class);
+        kf.data.deserialize(Config.class);
         kf.save();
         lang = GlobalLangFile.loadLF("spigotlib", dir + File.separator + "lang.yml");
         SU.cs.sendMessage("§2[§aStartup§2]§e Loading enchants file...");
         Type[] types = ((ParameterizedType) Config.class.getField("enchants").getGenericType()).getActualTypeArguments();
         Config.enchants = new ConfigFile(new File(dir + File.separator + "enchants.yml")).data.deserialize(HashMap.class, types);
-        for (Map.Entry<String, ArrayList<String>> e : Config.enchants.entrySet()) {
+        for (Entry<String, ArrayList<String>> e : Config.enchants.entrySet()) {
             Enchantment ec = Enchantment.getByName(e.getKey());
             for (String s : e.getValue()) {
                 Config.enchantAliases.put(s, ec);
             }
         }
-        if (Config.PlayerFile.backend == BackendType.FILE) {
+        if (PlayerFile.backend == BackendType.FILE) {
             SU.cs.sendMessage("§2[§aStartup§2]§e Loading §cFILE§e backend for §cplayer file§e...");
-            SU.pf = new ConfigFile(new File(dir + File.separator + Config.PlayerFile.file));
-        } else if (Config.PlayerFile.backend == BackendType.MYSQL) {
+            SU.pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
+        } else if (PlayerFile.backend == BackendType.MYSQL) {
             SU.cs.sendMessage("§2[§aStartup§2]§e Loading §cMySQL§e backend for §cplayer file§e...");
-            SU.pf = new ConfigFile(Config.PlayerFile.mysql, Config.PlayerFile.mysql.table, "key", "value");
+            SU.pf = new ConfigFile(PlayerFile.mysql, PlayerFile.mysql.table, "key", "value");
             SU.loadPlayerConfig(null);
         }
         SU.cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
@@ -110,7 +116,7 @@ public class Main extends JavaPlugin implements Listener {
         SU.cs.sendMessage("§2[§aStartup§2]§e Loading ReflectionAPI...");
         Reflection.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+        if (Reflection.ver.isAbove(v1_8)) {
             SU.cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + Reflection.ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI...");
             WrapperFactory.init();
             PacketInType.init();
@@ -125,11 +131,11 @@ public class Main extends JavaPlugin implements Listener {
         }
         SU.cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
         SU.vault = SU.pm.getPlugin("Vault") != null;
-        if (SU.vault && EconomyAPI.vaultHookType == EconomyAPI.VaultHookType.PROVIDER) {
+        if (SU.vault && EconomyAPI.vaultHookType == VaultHookType.PROVIDER) {
             SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, hooking to it as §cEconomy PROVIDER§e...");
             EconomyVaultHook.init();
         }
-        VariableAPI.phaHook = SU.pm.getPlugin("PlaceholderAPI") != null ? Config.phaHook : false;
+        VariableAPI.phaHook = SU.pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
     }
 
     public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
@@ -146,7 +152,7 @@ public class Main extends JavaPlugin implements Listener {
                     sender.sendMessage(msg2);
                     return true;
                 }
-                ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, msg2, plr);
+                ChatAPI.sendJsonMsg(ChatMessageType.SYSTEM, msg2, plr);
                 return true;
             }
             if (!sender.hasPermission("spigotlib.command." + args[0])) {
@@ -180,23 +186,23 @@ public class Main extends JavaPlugin implements Listener {
             switch (args[0]) {
                 case "chm":
                     for (Player p : pls) {
-                        ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.CHAT, VariableAPI.fillVariables(fullMsg, plr, p), p);
+                        ChatAPI.sendJsonMsg(ChatMessageType.CHAT, VariableAPI.fillVariables(fullMsg, plr, p), p);
                     }
                     lang.msg(sender, "executed");
                     return true;
                 case "sym":
                     for (Player p : pls) {
-                        ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.SYSTEM, VariableAPI.fillVariables(fullMsg, plr, p), p);
+                        ChatAPI.sendJsonMsg(ChatMessageType.SYSTEM, VariableAPI.fillVariables(fullMsg, plr, p), p);
                     }
                     lang.msg(sender, "executed");
                     return true;
                 case "abm":
                     for (Player p : pls) {
-                        ChatAPI.sendJsonMsg(ChatAPI.ChatMessageType.ACTION_BAR, VariableAPI.fillVariables(fullMsg, plr, p), p);
+                        ChatAPI.sendJsonMsg(ChatMessageType.ACTION_BAR, VariableAPI.fillVariables(fullMsg, plr, p), p);
                     }
                     lang.msg(sender, "executed");
                     return true;
-                case "title": {
+                case "title":
                     String title = "";
                     String sub = "";
                     if (d.length > 2) {
@@ -215,8 +221,7 @@ public class Main extends JavaPlugin implements Listener {
                     TitleAPI.setTitle(title, pls);
                     lang.msg(sender, "executed");
                     return true;
-                }
-                case "vars": {
+                case "vars":
                     if (d == null) {
                         lang.msg(sender, "vars", "vars", StringUtils.join(new TreeSet<>(VariableAPI.handlers.keySet()), ", "));
                     } else {
@@ -228,8 +233,7 @@ public class Main extends JavaPlugin implements Listener {
                         lang.msg(sender, "vars.filled", "original", fullMsg, "filled", filled.length() == 0 ? "" : filled.substring(1));
                     }
                     return true;
-                }
-                case "perm": {
+                case "perm":
                     if (d == null) {
                         String f = lang.get(plr, "perms.fillformat");
                         String denyperm = lang.get(plr, "perms.denyformat");
@@ -239,7 +243,7 @@ public class Main extends JavaPlugin implements Listener {
                             Set<PermissionAttachmentInfo> perms = p.getEffectivePermissions();
                             for (PermissionAttachmentInfo perm : perms) {
                                 sb.append('\n');
-                                for (Map.Entry<String, Boolean> e : perm.getAttachment().getPermissions().entrySet()) {
+                                for (Entry<String, Boolean> e : perm.getAttachment().getPermissions().entrySet()) {
                                     if (e.getValue())
                                         sb.append('\n').append(allowperm.replace("<perm>", e.getKey()));
                                     else
@@ -252,26 +256,24 @@ public class Main extends JavaPlugin implements Listener {
                         for (Player p : pls)
                             lang.msg(sender, p.hasPermission(d[0]) ? "perms.yes" : "perms.no", "perm", d[0]);
                     }
-                }
-                case "debug": {
+                case "debug":
                     Config.debug = !Config.debug;
                     lang.msg(sender, "debug." + (Config.debug ? "on" : "off"));
                     return true;
-                }
-                case "reload": {
+                case "reload":
                     if (args[1].equals("config")) {
                         kf.reload();
-                        Main.kf.data.deserialize(Config.class);
+                        kf.data.deserialize(Config.class);
                         lang.msg(sender, "reload.config");
                         return true;
                     } else if (args[1].equals("lf")) {
                         GlobalLangFile.unloadLF(lang);
                         SU.saveResources(this, "lang.yml");
-                        lang = GlobalLangFile.loadLF("spigotlib", this.getDataFolder() + File.separator + "lang.yml");
+                        lang = GlobalLangFile.loadLF("spigotlib", getDataFolder() + File.separator + "lang.yml");
                         lang.msg(sender, "reload.lf");
                         return true;
                     } else if (args[1].equals("pf")) {
-                        if (Config.PlayerFile.backend == BackendType.FILE) {
+                        if (PlayerFile.backend == BackendType.FILE) {
                             SU.pf.reload();
                         } else {
                             SU.pf.data.mapData = new LinkedHashMap<>();
@@ -285,10 +287,9 @@ public class Main extends JavaPlugin implements Listener {
                     }
                     lang.msg(sender, "invalidcmd");
                     return true;
-                }
-                case "save": {
+                case "save":
                     if (args[1].equals("pf")) {
-                        if (Config.PlayerFile.backend == BackendType.FILE)
+                        if (PlayerFile.backend == BackendType.FILE)
                             SU.pf.save();
                         else {
                             for (ConfigData cd : new ArrayList<>(SU.pf.data.mapData.keySet())) {
@@ -300,14 +301,13 @@ public class Main extends JavaPlugin implements Listener {
                     }
                     lang.msg(sender, "invalidcmd");
                     return true;
-                }
-                case "velocity": {
+                case "velocity":
                     if (args.length == 4) {
                         if (plr == null) {
                             lang.msg(sender, "noconsole");
                             return true;
                         }
-                        plr.setVelocity(new org.bukkit.util.Vector(Double.valueOf(args[1]).doubleValue(), Double.valueOf(args[2]).doubleValue(), Double.valueOf(args[3]).doubleValue()));
+                        plr.setVelocity(new Vector(Double.valueOf(args[1]).doubleValue(), Double.valueOf(args[2]).doubleValue(), Double.valueOf(args[3]).doubleValue()));
                     } else {
                         if (args.length < 5) {
                             lang.msg(sender, "invalidcmd");
@@ -320,34 +320,32 @@ public class Main extends JavaPlugin implements Listener {
                         }
                     }
                     return true;
-                }
-                case "migratetodb": {
-                    SU.pf.db = Config.PlayerFile.mysql;
+                case "migratetodb":
+                    SU.pf.db = PlayerFile.mysql;
                     SU.pf.dbKey = "key";
                     SU.pf.dbValue = "value";
-                    SU.pf.dbTable = Config.PlayerFile.mysql.table;
+                    SU.pf.dbTable = PlayerFile.mysql.table;
                     lang.msg(sender, "migrate.start");
                     ArrayList<String> l = new ArrayList<>();
-                    l.add("DROP TABLE IF EXISTS " + Config.PlayerFile.mysql.table);
-                    l.add("CREATE TABLE " + Config.PlayerFile.mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
+                    l.add("DROP TABLE IF EXISTS " + PlayerFile.mysql.table);
+                    l.add("CREATE TABLE " + PlayerFile.mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
 
-                    for (Map.Entry<ConfigData, ConfigData> e : SU.pf.data.mapData.entrySet()) {
+                    for (Entry<ConfigData, ConfigData> e : SU.pf.data.mapData.entrySet()) {
                         ConfigFile kf = SU.pf.subConfig("" + e.getKey(), "uuid='" + e.getKey() + "'");
                         kf.mysqlUpdate(l, null);
                     }
                     ConfigFile kff = SU.pf.subConfig("CONSOLE", "uuid='CONSOLE'");
                     kff.mysqlUpdate(l, null);
-                    Config.PlayerFile.mysql.batch(l, new Runnable() {
+                    PlayerFile.mysql.batch(l, new Runnable() {
                         @Override
                         public void run() {
                             lang.msg(sender, "migrate.end");
                         }
                     });
-                    Config.PlayerFile.backend = BackendType.MYSQL;
+                    PlayerFile.backend = BackendType.MYSQL;
                     kf.save();
                     return true;
-                }
-                case "lang": {
+                case "lang":
                     if (args.length == 1) {
                         lang.msg(sender, "lang.list", "langs", StringUtils.join(GlobalLangFile.map.keySet(), ", "));
                         return true;
@@ -376,11 +374,9 @@ public class Main extends JavaPlugin implements Listener {
                         lang.msg(sender, "lang.set" + (cs.getName().equals(p.getName()) ? "" : ".other"), "player", cs.getName(), "lang", d[0]);
                     }
                     return true;
-                }
-                default: {
+                default:
                     lang.msg(sender, "notdone");
                     return true;
-                }
             }
         } catch (Throwable e) {
             SU.error(sender, e, "SpigotLib", "gyurix");
@@ -391,14 +387,14 @@ public class Main extends JavaPlugin implements Listener {
 
     public void onDisable() {
         SU.log(this, "§4[§cShutdown§4]§e Saving players...");
-        if (Config.PlayerFile.backend == BackendType.FILE)
+        if (PlayerFile.backend == BackendType.FILE)
             SU.pf.save();
-        else if (Config.PlayerFile.backend == BackendType.MYSQL) {
+        else if (PlayerFile.backend == BackendType.MYSQL) {
             ArrayList<String> list = new ArrayList<>();
             for (String s : SU.pf.getStringKeyList()) {
                 SU.pf.subConfig(s, "uuid='" + s + "'").mysqlUpdate(list, null);
             }
-            SU.pf.db.batch(list, null);
+            SU.pf.db.batchNoAsync(list);
         }
         SU.log(this, "§4[§cShutdown§4]§e Stopping TPSMeter...");
         TPSMeter.meter.cancel(true);
@@ -408,7 +404,7 @@ public class Main extends JavaPlugin implements Listener {
         }
         SU.log(this, "§4[§cShutdown§4]§e Stopping AnimationAPI...");
         AnimationAPI.sch.shutdownNow();
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+        if (Reflection.ver.isAbove(v1_8)) {
             SU.log(this, "§4[§cShutdown§4]§e Stopping ScoreboardAPI...");
             for (Player p : Bukkit.getOnlinePlayers()) {
                 ScoreboardAPI.setSidebar(p, null);
@@ -428,9 +424,9 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void onEnable() {
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+        if (Reflection.ver.isAbove(v1_8)) {
             SU.cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-            SU.tp = new Protocol18_19();
+            SU.tp = new Protocol18_19_110();
             SU.pm.registerEvents(SU.tp, this);
         }
         SU.cs.sendMessage("§2[§aStartup§2]§e Initializing offline player manager...");
@@ -439,7 +435,7 @@ public class Main extends JavaPlugin implements Listener {
         SU.cs.sendMessage("§2[§aStartup§2]§e Starting BungeeAPI...");
         SU.msg.registerOutgoingPluginChannel(this, "BungeeCord");
         SU.msg.registerIncomingPluginChannel(this, "BungeeCord", new BungeeAPI());
-        if (Config.PlayerFile.backend == BackendType.MYSQL) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
             SU.cs.sendMessage("§2[§aStartup§2]§e Loading player data of online players from the MySQL...");
             for (Player p : Bukkit.getOnlinePlayers()) {
                 SU.loadPlayerConfig(p.getUniqueId());
@@ -447,21 +443,21 @@ public class Main extends JavaPlugin implements Listener {
         }
         if (!SU.vault)
             SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is not present, skipping hook...");
-        else if (SU.vault && EconomyAPI.vaultHookType == EconomyAPI.VaultHookType.NONE)
+        else if (SU.vault && EconomyAPI.vaultHookType == VaultHookType.NONE)
             SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, but the hook is disabled in config, so skipping hook...");
-        if (SU.vault && EconomyAPI.vaultHookType == EconomyAPI.VaultHookType.USER) {
+        if (SU.vault && EconomyAPI.vaultHookType == VaultHookType.USER) {
             SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, hooking to it as §cEconomy USER§e...");
             RegisteredServiceProvider<Economy> rsp = SU.srv.getServicesManager().getRegistration(Economy.class);
             if (rsp != null)
                 SU.econ = rsp.getProvider();
             if (EconomyAPI.migrate) {
                 SU.log(this, "§bMigrating economy data from old Economy " + SU.econ.getName() + "... ");
-                EconomyAPI.vaultHookType = EconomyAPI.VaultHookType.NONE;
+                EconomyAPI.vaultHookType = VaultHookType.NONE;
                 for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
                     EconomyAPI.setBalance(op.getUniqueId(), new BigDecimal(SU.econ.getBalance(op)));
                     System.out.println("Done player " + op.getName());
                 }
-                EconomyAPI.vaultHookType = EconomyAPI.VaultHookType.PROVIDER;
+                EconomyAPI.vaultHookType = VaultHookType.PROVIDER;
                 EconomyAPI.migrate = false;
                 SU.log(this, "§bFinished data migration, please restart the server!");
                 setEnabled(false);
@@ -487,14 +483,14 @@ public class Main extends JavaPlugin implements Listener {
     public void onLoad() {
         pl = this;
         try {
-            SU.srv = this.getServer();
+            SU.srv = getServer();
             SU.pm = SU.srv.getPluginManager();
             SU.cs = SU.srv.getConsoleSender();
             SU.msg = SU.srv.getMessenger();
             SU.sm = SU.srv.getServicesManager();
             SU.sch = SU.srv.getScheduler();
             SU.js = new ScriptEngineManager().getEngineByName("JavaScript");
-            dir = this.getDataFolder();
+            dir = getDataFolder();
         } catch (Throwable e) {
             SU.log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -512,7 +508,7 @@ public class Main extends JavaPlugin implements Listener {
             return;
         }
         try {
-            this.load();
+            load();
         } catch (Throwable e) {
             SU.log(this, "Failed to load plugin, trying to reset the config...");
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -525,7 +521,7 @@ public class Main extends JavaPlugin implements Listener {
         Player plr = e.getPlayer();
         UUID id = plr.getUniqueId();
         SU.loadPlayerConfig(id);
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9)
+        if (Reflection.ver.isAbove(v1_8))
             ScoreboardAPI.playerJoin(plr);
         if (BungeeAPI.running) {
             if (Config.BungeeAPI.ipOnJoin)

@@ -34,10 +34,10 @@ public class NametagBar
         if (visible) {
             SU.tp.sendPacket(plr, getObjectivePacket(0));
             SU.tp.sendPacket(plr, showPacket);
-            for (Nametag n : this.pls.values())
+            for (Nametag n : pls.values())
                 SU.tp.sendPacket(plr, n.getSetScorePacket());
         }
-        for (Nametag n : this.pls.values())
+        for (Nametag n : pls.values())
             SU.tp.sendPacket(plr, n.getTeamPacket(0));
     }
 
@@ -49,10 +49,10 @@ public class NametagBar
         if (visible) {
             SU.tp.sendPacket(plr, getObjectivePacket(0));
             SU.tp.sendPacket(plr, showPacket);
-            for (Nametag n : this.pls.values())
+            for (Nametag n : pls.values())
                 SU.tp.sendPacket(plr, n.getSetScorePacket());
         }
-        for (Nametag n : this.pls.values())
+        for (Nametag n : pls.values())
             SU.tp.sendPacket(plr, n.getTeamPacket(0));
     }
 
@@ -72,13 +72,13 @@ public class NametagBar
             }
             if (visible) {
                 getObjectivePacket(2);
-                for (Nametag n2 : this.pls.values()) {
+                for (Nametag n2 : pls.values()) {
                     SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
                     SU.tp.sendPacket(plr, n2.getSetScorePacket());
                 }
             } else {
                 getObjectivePacket(1);
-                for (Nametag n2 : this.pls.values())
+                for (Nametag n2 : pls.values())
                     SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
             }
         } else {
@@ -88,12 +88,12 @@ public class NametagBar
             }
             if (visible) {
                 SU.tp.sendPacket(plr, getObjectivePacket(0));
-                for (Nametag n2 : this.pls.values()) {
+                for (Nametag n2 : pls.values()) {
                     SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
                     SU.tp.sendPacket(plr, n2.getSetScorePacket());
                 }
             } else {
-                for (Nametag n2 : this.pls.values())
+                for (Nametag n2 : pls.values())
                     SU.tp.sendPacket(plr, n2.getTeamPacket(old.pls.containsKey(n2.name) ? 2 : 0));
             }
         }
@@ -102,7 +102,7 @@ public class NametagBar
     public void removeNametag(String name) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cremove nametag - §f" + name);
-        Nametag nt = this.pls.remove(name);
+        Nametag nt = pls.remove(name);
         if (nt != null) {
             sendPackets(nt.getTeamPacket(1));
             if (visible)
@@ -114,11 +114,11 @@ public class NametagBar
     public void removeViewer(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eremove viewer - §f" + plr.getName());
-        if (!this.viewers.remove(plr.getUniqueId()))
+        if (!viewers.remove(plr.getUniqueId()))
             return;
         if (!plr.isOnline())
             return;
-        for (Nametag n : this.pls.values())
+        for (Nametag n : pls.values())
             SU.tp.sendPacket(plr, n.getTeamPacket(1));
         if (visible)
             SU.tp.sendPacket(plr, getObjectivePacket(1));
@@ -127,20 +127,20 @@ public class NametagBar
     public void setData(String pln, String prefix, String suffix, boolean hideNameTag) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset data - §f" + pln + " - " + prefix + "§f - " + suffix);
-        Nametag nt = this.pls.get(pln);
+        Nametag nt = pls.get(pln);
         if (nt == null) {
             return;
         }
         nt.prefix = prefix;
         nt.suffix = suffix;
         nt.hide = hideNameTag;
-        this.sendPackets(nt.getTeamPacket(2));
+        sendPackets(nt.getTeamPacket(2));
     }
 
     public void setNumber(String pln, int number) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset number - §f" + pln + " - " + number);
-        Nametag nt = this.pls.get(pln);
+        Nametag nt = pls.get(pln);
         if (nt == null) {
             return;
         }

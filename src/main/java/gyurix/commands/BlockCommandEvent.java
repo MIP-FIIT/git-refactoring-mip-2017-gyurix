@@ -22,7 +22,7 @@ public class BlockCommandEvent
     }
 
     public String getCommand() {
-        return this.command;
+        return command;
     }
 
     public void setCommand(String command) {

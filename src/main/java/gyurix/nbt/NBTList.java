@@ -19,13 +19,13 @@ public class NBTList
     }
 
     public NBTList(Object tag) {
-        this.loadFromNMS(tag);
+        loadFromNMS(tag);
     }
 
     public NBTList addAll(Collection col) {
         for (Object o : col) {
             if (o == null) continue;
-            this.list.add(NBTTag.make(o));
+            list.add(NBTTag.make(o));
         }
         return this;
     }
@@ -33,7 +33,7 @@ public class NBTList
     public NBTList addAll(Object... col) {
         for (Object o : col) {
             if (o == null) continue;
-            this.list.add(NBTTag.make(o));
+            list.add(NBTTag.make(o));
         }
         return this;
     }
@@ -44,14 +44,14 @@ public class NBTList
             for (Object o : (List) listField.get(tag)) {
                 String cln = o.getClass().getSimpleName();
                 if (cln.equals("NBTTagCompound")) {
-                    this.list.add(new NBTCompound(o));
+                    list.add(new NBTCompound(o));
                     continue;
                 }
                 if (cln.equals("NBTTagList")) {
-                    this.list.add(new NBTList(o));
+                    list.add(new NBTList(o));
                     continue;
                 }
-                this.list.add(new NBTPrimitive(o));
+                list.add(new NBTPrimitive(o));
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -63,7 +63,7 @@ public class NBTList
         try {
             Object o = nmsClass.newInstance();
             ArrayList<Object> l = new ArrayList<Object>();
-            for (NBTTag t : this.list) {
+            for (NBTTag t : list) {
                 l.add(t.saveToNMS());
             }
             listField.set(o, l);
@@ -78,7 +78,7 @@ public class NBTList
     }
 
     public String toString() {
-        return "[\u00a7b" + StringUtils.join(this.list, ", \u00a7b") + "\u00a7b]";
+        return "[\u00a7b" + StringUtils.join(list, ", \u00a7b") + "\u00a7b]";
     }
 }
 

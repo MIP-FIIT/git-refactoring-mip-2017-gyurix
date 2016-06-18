@@ -16,16 +16,16 @@ public class PacketPlayOutScoreboardScore
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.ScoreboardScore.newPacket(this.player, this.board, this.score, this.action.toNMS());
+        return PacketOutType.ScoreboardScore.newPacket(player, board, score, action.toNMS());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketOutType.ScoreboardScore.getPacketData(packet);
-        this.player = (String) data[0];
-        this.board = (String) data[1];
-        this.score = (Integer) data[2];
-        this.action = ScoreAction.valueOf(data[3].toString());
+        player = (String) data[0];
+        board = (String) data[1];
+        score = (Integer) data[2];
+        action = ScoreAction.valueOf(data[3].toString());
     }
 
     public enum ScoreAction implements WrappedData {
@@ -39,7 +39,7 @@ public class PacketPlayOutScoreboardScore
 
         public Object toNMS() {
             try {
-                return valueOf.invoke(null, this.name());
+                return valueOf.invoke(null, name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;

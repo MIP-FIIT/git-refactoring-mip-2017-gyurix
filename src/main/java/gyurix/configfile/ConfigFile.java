@@ -56,7 +56,7 @@ public class ConfigFile {
     }
 
     public ConfigFile(ConfigData d) {
-        this.data = d;
+        data = d;
     }
 
     public <T> T get(String adress, Class<T> cl) {
@@ -85,7 +85,7 @@ public class ConfigFile {
     }
 
     public ConfigData getData(String address) {
-        String[] parts = address.split(this.addressSplit);
+        String[] parts = address.split(addressSplit);
         ConfigData d = data;
         for (String p : parts) {
             if (p.matches("#\\d+")) {
@@ -110,7 +110,7 @@ public class ConfigFile {
     public ConfigData getData(String address, boolean autoCreate) {
         if (!autoCreate)
             return getData(address);
-        String[] parts = address.split(this.addressSplit);
+        String[] parts = address.split(addressSplit);
         ConfigData d = data;
         for (String p : parts) {
             if (p.matches("#\\d+")) {
@@ -187,10 +187,10 @@ public class ConfigFile {
 
     public boolean load(File f) {
         try {
-            this.file = f;
+            file = f;
             f.createNewFile();
             byte[] b = Files.readAllBytes(f.toPath());
-            load(new String(b, this.charset));
+            load(new String(b, charset));
             return true;
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -202,7 +202,7 @@ public class ConfigFile {
         try {
             byte[] b = new byte[stream.available()];
             stream.read(b);
-            return load(new String(b, this.charset));
+            return load(new String(b, charset));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
@@ -211,10 +211,10 @@ public class ConfigFile {
 
     public boolean load(String in) {
         ArrayList<ConfigReader> readers = new ArrayList<ConfigReader>();
-        readers.add(new ConfigReader(-1, this.data));
+        readers.add(new ConfigReader(-1, data));
         for (String s : in.split("\r?\n")) {
             int blockLvl = 0;
-            while ((s.length() > blockLvl) && (s.charAt(blockLvl) == ' '))
+            while (s.length() > blockLvl && s.charAt(blockLvl) == ' ')
                 blockLvl++;
             s = s.substring(blockLvl);
             int id = readers.size() - 1;
@@ -265,15 +265,15 @@ public class ConfigFile {
             System.err.println("Error on reloading ConfigFile, missing file data.");
             return false;
         }
-        this.data = new ConfigData();
-        return load(this.file);
+        data = new ConfigData();
+        return load(file);
     }
 
     public boolean removeData(String address) {
-        String[] allParts = address.split(this.addressSplit);
+        String[] allParts = address.split(addressSplit);
         int len = allParts.length - 1;
         String[] parts = (String[]) ArrayUtils.subarray(allParts, 0, len);
-        ConfigData d = this.data;
+        ConfigData d = data;
         for (String p : parts) {
             if (p.matches("#\\d+")) {
                 if (d.listData == null)
@@ -387,7 +387,7 @@ public class ConfigFile {
 
     public ConfigFile subConfig(int id) {
         try {
-            return new ConfigFile(this.data.listData.get(id));
+            return new ConfigFile(data.listData.get(id));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }

@@ -25,11 +25,11 @@ public class VariableAPI {
                 if (sid < i) {
                     out.add(msg.substring(sid, i));
                 }
-                ArrayList<Object> d = VariableAPI.fill(msg, i + 1, plr, oArgs);
+                ArrayList<Object> d = fill(msg, i + 1, plr, oArgs);
                 i = (Integer) d.get(0);
                 sid = i + 1;
                 d.remove(0);
-                out.add(VariableAPI.fillVar(plr, d, oArgs));
+                out.add(fillVar(plr, d, oArgs));
                 continue;
             }
             if (c != '>') continue;
@@ -58,18 +58,20 @@ public class VariableAPI {
                 if (id != os.length() - 1) {
                     list.add(0, os.substring(id + 1));
                 }
-                return VariableAPI.handle(s, plr, list, oArgs);
+                return handle(s, plr, list, oArgs);
             }
             s = s + os;
         }
-        return VariableAPI.handle(s, plr, new ArrayList<Object>(), oArgs);
+        return handle(s, plr, new ArrayList<Object>(), oArgs);
     }
 
     public static String fillVariables(String msg, Player plr, Object... oArgs) {
-        ArrayList<Object> out = VariableAPI.fill(msg.replace("\\<", "\u0000").replace("\\>", "\u0001"), 0, plr, oArgs);
+        ArrayList<Object> out = fill(msg.replace("\\<", "\u0000").replace("\\>", "\u0001"), 0, plr, oArgs);
         out.remove(0);
         String s = StringUtils.join(out, "").replace('\u0000', '<').replace('\u0001', '>');
         if (phaHook) {
+            if (Config.debug)
+                SU.log(Main.pl, "§ePHA Fill variables - \"§f" + msg + "§e\" = \"§f" + PlaceholderAPI.setPlaceholders(plr, s) + "§e\"");
             return PlaceholderAPI.setPlaceholders(plr, s);
         }
         return s;

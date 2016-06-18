@@ -51,6 +51,18 @@ public class TitleAPI {
         }
     }
 
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Collection<? extends Player> plrs) {
+        setShowTime(fadeIn, showtime, fadeOut, plrs);
+        setSubTitle(NullUtils.to0(subtitle), plrs);
+        setTitle(title, plrs);
+    }
+
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... plrs) {
+        setShowTime(fadeIn, showtime, fadeOut, plrs);
+        setSubTitle(NullUtils.to0(subtitle), plrs);
+        setTitle(title, plrs);
+    }
+
     public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> plrs) {
         Object packet = PacketOutType.Title.newPacket(enums[2], null, fadein, show, fadeout);
         for (Player p : plrs) {
@@ -91,18 +103,6 @@ public class TitleAPI {
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
         }
-    }
-
-    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Collection<? extends Player> plrs) {
-        setShowTime(fadeIn, showtime, fadeOut, plrs);
-        setSubTitle(NullUtils.to0(subtitle), plrs);
-        setTitle(title, plrs);
-    }
-
-    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... plrs) {
-        setShowTime(fadeIn, showtime, fadeOut, plrs);
-        setSubTitle(NullUtils.to0(subtitle), plrs);
-        setTitle(title, plrs);
     }
 }
 

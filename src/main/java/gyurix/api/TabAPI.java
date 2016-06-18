@@ -10,7 +10,7 @@ import java.util.Collection;
 
 public class TabAPI {
     public static void setGlobalHeaderFooter(String header, String footer) {
-        TabAPI.setLocalHeaderFooter(header, footer, Bukkit.getOnlinePlayers());
+        setLocalHeaderFooter(header, footer, Bukkit.getOnlinePlayers());
     }
 
     public static void setGlobalTabName(Player p, String value) {

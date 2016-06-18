@@ -4,6 +4,7 @@ import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
+import net.milkbowl.vault.economy.EconomyResponse.ResponseType;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.ServicePriority;
@@ -25,37 +26,37 @@ public class EconomyVaultHook implements Economy {
     }
 
     public EconomyResponse bankBalance(String bankName) {
-        return new EconomyResponse(0, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS, "§aSuccess.");
+        return new EconomyResponse(0, EconomyAPI.getBankBalance(bankName).doubleValue(), ResponseType.SUCCESS, "§aSuccess.");
     }
 
     public EconomyResponse bankDeposit(String bankName, double v) {
         EconomyAPI.addBankBalance(bankName, new BigDecimal(v));
-        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS, "§aSuccess.");
+        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), ResponseType.SUCCESS, "§aSuccess.");
     }
 
     public EconomyResponse bankHas(String bankName, double v) {
         double bal = EconomyAPI.getBankBalance(bankName).doubleValue();
         if (v > bal) {
-            return new EconomyResponse(v, bal, EconomyResponse.ResponseType.FAILURE, "§cNot enough money.");
+            return new EconomyResponse(v, bal, ResponseType.FAILURE, "§cNot enough money.");
         }
-        return new EconomyResponse(v, bal, EconomyResponse.ResponseType.SUCCESS, "§aSuccess.");
+        return new EconomyResponse(v, bal, ResponseType.SUCCESS, "§aSuccess.");
     }
 
     public EconomyResponse bankMemberOwner(String bankName) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "§cBanks doesn't have members and owners.");
+        return new EconomyResponse(0, 0, ResponseType.FAILURE, "§cBanks doesn't have members and owners.");
     }
 
     public EconomyResponse bankWithdraw(String bankName, double v) {
         EconomyAPI.addBankBalance(bankName, new BigDecimal(0 - v));
-        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), EconomyResponse.ResponseType.SUCCESS, "§aSuccess.");
+        return new EconomyResponse(v, EconomyAPI.getBankBalance(bankName).doubleValue(), ResponseType.SUCCESS, "§aSuccess.");
     }
 
     public EconomyResponse createBank(String bankName, String s1) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.SUCCESS, "§2Banks are handled automatically, there is no need to create them.");
+        return new EconomyResponse(0, 0, ResponseType.SUCCESS, "§2Banks are handled automatically, there is no need to create them.");
     }
 
     public EconomyResponse createBank(String bankName, OfflinePlayer offlinePlayer) {
-        return new EconomyResponse(0, 0, EconomyResponse.ResponseType.SUCCESS, "§2Banks are handled automatically, there is no need to create them.");
+        return new EconomyResponse(0, 0, ResponseType.SUCCESS, "§2Banks are handled automatically, there is no need to create them.");
     }
 
     public boolean createPlayerAccount(String s) {
@@ -85,7 +86,7 @@ public class EconomyVaultHook implements Economy {
     public EconomyResponse deleteBank(String bankName) {
         double bal = EconomyAPI.getBankBalance(bankName).doubleValue();
         SU.pf.removeData("bankbalance." + bankName);
-        return new EconomyResponse(0, bal, EconomyResponse.ResponseType.SUCCESS, "§2Bank §a§l" + bankName + "§2 has been removed successfully.");
+        return new EconomyResponse(0, bal, ResponseType.SUCCESS, "§2Bank §a§l" + bankName + "§2 has been removed successfully.");
     }
 
     public EconomyResponse depositPlayer(String player, double v) {
@@ -199,7 +200,7 @@ public class EconomyVaultHook implements Economy {
         UUID id = SU.getUUID(player);
         boolean success = EconomyAPI.addBalance(id, new BigDecimal(0 - v));
         return new EconomyResponse(v, EconomyAPI.getBalance(id).doubleValue(),
-                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
+                success ? ResponseType.SUCCESS : ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
     }
 
     public EconomyResponse withdrawPlayer(OfflinePlayer offlinePlayer, double v) {
@@ -208,14 +209,14 @@ public class EconomyVaultHook implements Economy {
             id = SU.getUUID(offlinePlayer.getName());
         boolean success = EconomyAPI.addBalance(id, new BigDecimal(0 - v));
         return new EconomyResponse(v, EconomyAPI.getBalance(id).doubleValue(),
-                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
+                success ? ResponseType.SUCCESS : ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
     }
 
     public EconomyResponse withdrawPlayer(String player, String world, double v) {
         UUID id = SU.getUUID(player);
         boolean success = EconomyAPI.addBalance(id, new BigDecimal(0 - v));
         return new EconomyResponse(v, EconomyAPI.getBalance(id).doubleValue(),
-                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
+                success ? ResponseType.SUCCESS : ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
     }
 
     public EconomyResponse withdrawPlayer(OfflinePlayer offlinePlayer, String world, double v) {
@@ -224,6 +225,6 @@ public class EconomyVaultHook implements Economy {
             id = SU.getUUID(offlinePlayer.getName());
         boolean success = EconomyAPI.addBalance(id, new BigDecimal(0 - v));
         return new EconomyResponse(v, EconomyAPI.getBalance(id).doubleValue(),
-                success ? EconomyResponse.ResponseType.SUCCESS : EconomyResponse.ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
+                success ? ResponseType.SUCCESS : ResponseType.FAILURE, success ? "§aSuccess." : "§cNot enough money.");
     }
 }

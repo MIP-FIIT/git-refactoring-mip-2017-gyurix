@@ -1,5 +1,6 @@
 package gyurix.economy;
 
+import gyurix.economy.EconomyAPI.BalanceData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -10,13 +11,13 @@ public final class BankBalanceUpdateEvent
         extends Event
         implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    private final EconomyAPI.BalanceData balanceType;
+    private final BalanceData balanceType;
     private final BigDecimal before;
     private final String target;
     private BigDecimal after;
     private boolean cancel;
 
-    BankBalanceUpdateEvent(String target, BigDecimal before, BigDecimal after, EconomyAPI.BalanceData balanceType) {
+    BankBalanceUpdateEvent(String target, BigDecimal before, BigDecimal after, BalanceData balanceType) {
         this.target = target;
         this.before = before;
         this.after = after;
@@ -28,19 +29,19 @@ public final class BankBalanceUpdateEvent
     }
 
     public BigDecimal getAfter() {
-        return this.after;
+        return after;
     }
 
     public void setAfter(BigDecimal after) {
         this.after = after;
     }
 
-    public EconomyAPI.BalanceData getBalanceType() {
-        return this.balanceType;
+    public BalanceData getBalanceType() {
+        return balanceType;
     }
 
     public BigDecimal getBefore() {
-        return this.before;
+        return before;
     }
 
     public HandlerList getHandlers() {
@@ -48,11 +49,11 @@ public final class BankBalanceUpdateEvent
     }
 
     public String getTarget() {
-        return this.target;
+        return target;
     }
 
     public boolean isCancelled() {
-        return this.cancel;
+        return cancel;
     }
 
     public void setCancelled(boolean cancel) {

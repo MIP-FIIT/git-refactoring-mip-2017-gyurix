@@ -2,18 +2,20 @@ package gyurix.json;
 
 import com.google.common.primitives.Primitives;
 import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 public class JsonAPI {
     public static final Type[] emptyTypeArray = new Type[0];
 
     public static int HextoDec(char c) {
-        return c >= '0' && c <= '9' ? c - 48 : (c >= 'A' && c <= 'F' ? c - 65 : c - 97);
+        return c >= '0' && c <= '9' ? c - 48 : c >= 'A' && c <= 'F' ? c - 65 : c - 97;
     }
 
     private static Object deserialize(Object parent, StringReader in, Class cl, Type... params) throws Throwable {
@@ -181,7 +183,7 @@ public class JsonAPI {
             return;
         }
         Class cl = o.getClass();
-        if (o instanceof String || o instanceof UUID || o.getClass().isEnum() || o instanceof ConfigSerialization.StringSerializable) {
+        if (o instanceof String || o instanceof UUID || o.getClass().isEnum() || o instanceof StringSerializable) {
             sb.append('\"').append(escape(o.toString())).append("\"");
         } else if (o instanceof Boolean || o instanceof Byte || o instanceof Short || o instanceof Integer || o instanceof Long || o instanceof Float || o instanceof Double) {
             sb.append(o);
@@ -205,10 +207,10 @@ public class JsonAPI {
             }
         } else if (o instanceof Map) {
             sb.append('{');
-            for (Map.Entry<?, ?> e : ((Map<?, ?>) o).entrySet()) {
-                String key = String.valueOf(e.getValue());
+            for (Entry<?, ?> e : ((Map<?, ?>) o).entrySet()) {
+                String key = String.valueOf(e.getKey());
                 sb.append('\"').append(escape(key)).append("\":");
-                serialize(sb, key);
+                serialize(sb, e.getValue());
                 sb.append(',');
             }
             if (sb.charAt(sb.length() - 1) == ',') {
@@ -256,6 +258,7 @@ public class JsonAPI {
             return sb.toString();
         } catch (Throwable e) {
             System.err.println("JsonAPI: Error on serializing " + o.getClass().getName() + " object.");
+            e.printStackTrace();
             return "{}";
         }
     }
@@ -268,34 +271,27 @@ public class JsonAPI {
         for (char c : s.toCharArray()) {
             if (esc) {
                 switch (c) {
-                    case 'b': {
+                    case 'b':
                         out.append('\b');
                         break;
-                    }
-                    case 'f': {
+                    case 'f':
                         out.append('\f');
                         break;
-                    }
-                    case 'n': {
+                    case 'n':
                         out.append('\n');
                         break;
-                    }
-                    case 'r': {
+                    case 'r':
                         out.append('\r');
                         break;
-                    }
-                    case 't': {
+                    case 't':
                         out.append('\t');
                         break;
-                    }
-                    case 'u': {
+                    case 'u':
                         utf = 0;
                         utfc = 0;
                         break;
-                    }
-                    default: {
+                    default:
                         out.append(c);
-                    }
                 }
                 esc = false;
                 continue;

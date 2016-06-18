@@ -33,7 +33,7 @@ public class NullUtils {
     }
 
     public static String from0(String in) {
-        return (in == null || in.isEmpty()) ? null : in;
+        return in == null || in.isEmpty() ? null : in;
     }
 
     public static boolean to0(Boolean data) {

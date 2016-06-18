@@ -10,20 +10,20 @@ public class DualMap<K, V> implements Map<K, V> {
     final HashMap<V, K> values = new HashMap<>();
 
     public void clear() {
-        this.keys.clear();
-        this.values.clear();
+        keys.clear();
+        values.clear();
     }
 
     public boolean containsKey(Object key) {
-        return this.keys.containsKey(key);
+        return keys.containsKey(key);
     }
 
     public boolean containsValue(Object value) {
-        return this.values.containsKey(value);
+        return values.containsKey(value);
     }
 
-    public Set<Map.Entry<K, V>> entrySet() {
-        return this.keys.entrySet();
+    public Set<Entry<K, V>> entrySet() {
+        return keys.entrySet();
     }
 
     public V get(Object key) {
@@ -43,40 +43,40 @@ public class DualMap<K, V> implements Map<K, V> {
     }
 
     public V put(K key, V value) {
-        this.keys.remove(this.values.get(value));
-        V o = this.keys.put(key, value);
-        this.values.put(value, key);
+        keys.remove(values.get(value));
+        V o = keys.put(key, value);
+        values.put(value, key);
         return o;
     }
 
     public void putAll(Map m) {
-        this.keys.putAll(m);
+        keys.putAll(m);
         putAllValue(m);
     }
 
     private void putAllValue(Map<K, V> m) {
-        for (Map.Entry<K, V> e : m.entrySet()) {
-            this.values.put(e.getValue(), e.getKey());
+        for (Entry<K, V> e : m.entrySet()) {
+            values.put(e.getValue(), e.getKey());
         }
     }
 
     public V remove(Object key) {
-        V o = this.keys.remove(key);
-        this.values.remove(o);
+        V o = keys.remove(key);
+        values.remove(o);
         return o;
     }
 
     public K removeValue(Object value) {
-        K key = this.values.remove(value);
-        this.keys.remove(key);
+        K key = values.remove(value);
+        keys.remove(key);
         return key;
     }
 
     public int size() {
-        return this.keys.size();
+        return keys.size();
     }
 
     public Collection<V> values() {
-        return this.values.keySet();
+        return values.keySet();
     }
 }

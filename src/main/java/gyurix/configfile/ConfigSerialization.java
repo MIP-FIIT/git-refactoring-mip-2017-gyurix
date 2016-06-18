@@ -5,6 +5,7 @@ import gyurix.spigotutils.DualMap;
 import org.apache.commons.lang.ClassUtils;
 import sun.reflect.ReflectionFactory;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -63,7 +64,7 @@ public class ConfigSerialization {
             if (s != null)
                 return s;
             c = c.getSuperclass();
-            if ((c == null) || (c == Object.class))
+            if (c == null || c == Object.class)
                 break;
             s = serializers.get(c);
         }
@@ -101,7 +102,7 @@ public class ConfigSerialization {
         return null;
     }
 
-    @Target({java.lang.annotation.ElementType.FIELD})
+    @Target({ElementType.FIELD})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface ConfigOptions {
         String comment() default "";

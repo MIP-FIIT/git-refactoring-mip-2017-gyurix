@@ -27,15 +27,15 @@ public class PacketPlayOutWorldBorder
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketOutType.WorldBorder.getPacketData(packet);
-        this.action = WorldBorderAction.valueOf(data[0].toString());
-        this.portalTeleportBoundary = (Integer) data[1];
-        this.centerX = (Double) data[2];
-        this.centerZ = (Double) data[3];
-        this.newRadius = (Double) data[4];
-        this.oldRadius = (Double) data[5];
-        this.time = (Long) data[6];
-        this.warningTime = (Integer) data[7];
-        this.warningBlocks = (Integer) data[8];
+        action = WorldBorderAction.valueOf(data[0].toString());
+        portalTeleportBoundary = (Integer) data[1];
+        centerX = (Double) data[2];
+        centerZ = (Double) data[3];
+        newRadius = (Double) data[4];
+        oldRadius = (Double) data[5];
+        time = (Long) data[6];
+        warningTime = (Integer) data[7];
+        warningBlocks = (Integer) data[8];
     }
 
     public enum WorldBorderAction implements WrappedData {
@@ -50,7 +50,7 @@ public class PacketPlayOutWorldBorder
 
         public Object toNMS() {
             try {
-                return valueOf.invoke(null, this.name());
+                return valueOf.invoke(null, name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;

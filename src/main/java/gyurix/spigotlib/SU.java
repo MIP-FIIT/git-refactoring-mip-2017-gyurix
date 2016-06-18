@@ -5,14 +5,16 @@ import gyurix.configfile.ConfigFile;
 import gyurix.protocol.Protocol;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.utils.GameProfile;
+import gyurix.spigotlib.Config.PlayerFile;
 import gyurix.spigotutils.BackendType;
-import gyurix.spigotutils.ServerVersion;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
+import org.bukkit.FireworkEffect.Builder;
+import org.bukkit.FireworkEffect.Type;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.command.*;
@@ -38,7 +40,10 @@ import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
+
+import static gyurix.spigotutils.ServerVersion.v1_8;
 
 /**
  * SpigotLib utilities class
@@ -150,8 +155,8 @@ public final class SU {
                         .append("§e)");
         }
         String rep = report.toString();
-        SU.cs.sendMessage(rep);
-        if (sender != null && sender != SU.cs)
+        cs.sendMessage(rep);
+        if (sender != null && sender != cs)
             sender.sendMessage(rep);
     }
 
@@ -175,11 +180,12 @@ public final class SU {
      * #amount: the amount value of the item
      * #id: the id of the item
      * #sub: the subid of the item
-     * @param is - The ItemStack in which the variables should be filled
+     *
+     * @param is   - The ItemStack in which the variables should be filled
      * @param vars - The fillable variables
      * @return A clone of the original ItemStack with filled variables
      */
-    public static ItemStack fillVariables(ItemStack is, final Object... vars) {
+    public static ItemStack fillVariables(ItemStack is, Object... vars) {
         if (is == null || is.getType() == Material.AIR)
             return is;
         is = is.clone();
@@ -198,7 +204,7 @@ public final class SU {
                         try {
                             is.setType(Material.valueOf(vs.toUpperCase()));
                         } catch (Throwable e2) {
-                            SU.error(SU.cs, e2, "SpigotLib", "gyurix");
+                            error(cs, e2, "SpigotLib", "gyurix");
                         }
                     }
                 } else if (last.equals("#sub"))
@@ -213,8 +219,11 @@ public final class SU {
             if (meta.hasLore() && meta.getLore() != null) {
                 List<String> lore = meta.getLore();
                 for (int i = 0; i < lore.size(); i++)
-                    lore.set(i, SU.fillVariables(lore.get(i), vars));
+                    lore.set(i, fillVariables(lore.get(i), vars));
                 meta.setLore(lore);
+            }
+            if (meta instanceof SkullMeta) {
+                ((SkullMeta) meta).setOwner(fillVariables(((SkullMeta) meta).getOwner(), vars));
             }
             is.setItemMeta(meta);
         }
@@ -228,7 +237,7 @@ public final class SU {
      * @param vars - The variables and their values, which should be filled
      * @return The variable filled String
      */
-    public static String fillVariables(String s, final Object... vars) {
+    public static String fillVariables(String s, Object... vars) {
         String last = null;
         for (Object v : vars) {
             if (last == null)
@@ -248,8 +257,8 @@ public final class SU {
      * @param vars - The variables and their values, which should be filled
      * @return The variable filled String
      */
-    public static String fillVariables(String s, final HashMap<String, Object> vars) {
-        for (Map.Entry<String, Object> v : vars.entrySet())
+    public static String fillVariables(String s, HashMap<String, Object> vars) {
+        for (Entry<String, Object> v : vars.entrySet())
             s = s.replace("<" + v.getKey() + ">", String.valueOf(v.getValue()));
         return s;
     }
@@ -412,16 +421,16 @@ public final class SU {
             return plr.getUniqueId();
         OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
         for (OfflinePlayer p : offlinePls) {
-            if ((p.getName() != null) && (p.getName().equals(name)))
+            if (p.getName() != null && p.getName().equals(name))
                 return p.getUniqueId();
         }
         name = name.toLowerCase();
         for (OfflinePlayer p : offlinePls) {
-            if ((p.getName() != null) && (p.getName().toLowerCase().equals(name)))
+            if (p.getName() != null && p.getName().toLowerCase().equals(name))
                 return p.getUniqueId();
         }
         for (OfflinePlayer p : offlinePls) {
-            if ((p.getName() != null) && (p.getName().toLowerCase().contains(name)))
+            if (p.getName() != null && p.getName().toLowerCase().contains(name))
                 return p.getUniqueId();
         }
         return null;
@@ -450,23 +459,6 @@ public final class SU {
         }
     }
 
-    public static ItemStack makeItem(Material type, String name, String... lore) {
-        ItemStack is = new ItemStack(type, 1, (short) 0);
-        ItemMeta im = is.getItemMeta();
-        im.setDisplayName(name);
-        im.setLore(Arrays.asList(lore));
-        is.setItemMeta(im);
-        return is;
-    }
-
-    public static ItemStack makeItem(Material type, int amount, short sub, String name, String... lore) {
-        ItemStack is = new ItemStack(type, amount, sub);
-        ItemMeta im = is.getItemMeta();
-        im.setDisplayName(name);
-        im.setLore(Arrays.asList(lore));
-        is.setItemMeta(im);
-        return is;
-    }
     /**
      * A truth check for two items, if they are actually totally same or not
      *
@@ -498,6 +490,7 @@ public final class SU {
         item2.setAmount(1);
         return itemToString(item1).equals(itemToString(item2));
     }
+
     /**
      * Converts an ItemStack to it's representing string
      *
@@ -516,14 +509,14 @@ public final class SU {
         ItemMeta meta = in.getItemMeta();
         if (meta == null)
             return out.toString();
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9)
+        if (Reflection.ver.isAbove(v1_8))
             for (ItemFlag f : meta.getItemFlags())
                 out.append(" hide:").append(f.name().substring(5));
         if (meta.hasDisplayName())
             out.append(" name:").append(escapeText(meta.getDisplayName()));
         if (meta.hasLore())
             out.append(" lore:").append(escapeText(StringUtils.join(meta.getLore(), '\n')));
-        for (Map.Entry<Enchantment, Integer> ench : meta.getEnchants().entrySet())
+        for (Entry<Enchantment, Integer> ench : meta.getEnchants().entrySet())
             out.append(' ').append(Config.enchants.get(ench.getKey().getName()).get(0)).append(':').append(ench.getValue());
 
         if (meta instanceof BookMeta) {
@@ -535,7 +528,7 @@ public final class SU {
             for (String page : bmeta.getPages())
                 out.append(" page:").append(escapeText(page));
         }
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9)
+        if (Reflection.ver.isAbove(v1_8))
             if (meta instanceof BannerMeta) {
                 BannerMeta bmeta = (BannerMeta) meta;
                 out.append(" color:").append(bmeta.getBaseColor() == null ? "BLACK" : bmeta.getBaseColor().name());
@@ -589,7 +582,7 @@ public final class SU {
             PotionMeta bmeta = (PotionMeta) meta;
             for (PotionEffect e : bmeta.getCustomEffects()) {
                 out.append(' ').append(e.getType().getName()).append(':').append(e.getDuration()).append(':').append(e.getAmplifier());
-                if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9)
+                if (Reflection.ver.isAbove(v1_8))
                     if (!e.hasParticles())
                         out.append(":np");
                 if (!e.isAmbient())
@@ -600,7 +593,7 @@ public final class SU {
             if (bmeta.hasOwner())
                 out.append(" owner:").append(escapeText(bmeta.getOwner()));
         } else if (meta instanceof EnchantmentStorageMeta) {
-            for (Map.Entry<Enchantment, Integer> e : ((EnchantmentStorageMeta) meta).getStoredEnchants().entrySet()) {
+            for (Entry<Enchantment, Integer> e : ((EnchantmentStorageMeta) meta).getStoredEnchants().entrySet()) {
                 out.append(" +").append(e.getKey().getName()).append(':').append(e.getValue());
             }
         }
@@ -636,7 +629,7 @@ public final class SU {
     }
 
     public static void loadPlayerConfig(UUID uid) {
-        if (Config.PlayerFile.backend == BackendType.MYSQL) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
             String key = uid == null ? "CONSOLE" : uid.toString();
             pf.mysqlLoad(key, "uuid='" + key + "'");
         }
@@ -660,6 +653,24 @@ public final class SU {
      */
     public static void log(Plugin pl, Iterable<Object>... msg) {
         cs.sendMessage("[" + pl.getName() + "] " + StringUtils.join(msg, ", "));
+    }
+
+    public static ItemStack makeItem(Material type, String name, String... lore) {
+        ItemStack is = new ItemStack(type, 1, (short) 0);
+        ItemMeta im = is.getItemMeta();
+        im.setDisplayName(name);
+        im.setLore(Arrays.asList(lore));
+        is.setItemMeta(im);
+        return is;
+    }
+
+    public static ItemStack makeItem(Material type, int amount, short sub, String name, String... lore) {
+        ItemStack is = new ItemStack(type, amount, sub);
+        ItemMeta im = is.getItemMeta();
+        im.setDisplayName(name);
+        im.setLore(Arrays.asList(lore));
+        is.setItemMeta(im);
+        return is;
     }
 
     /**
@@ -709,7 +720,7 @@ public final class SU {
                         newformats.append('§').append(c);
                     }
                 } else {
-                    if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+                    if (!(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')) {
                         c = 'f';
                     }
                     if (!(formats.length() == 2 && formats.charAt(1) == c)) {
@@ -745,15 +756,14 @@ public final class SU {
 
     public static void savePlayerConfig(UUID uid) {
         String key = uid == null ? "CONSOLE" : uid.toString();
-        switch (Config.PlayerFile.backend) {
+        switch (PlayerFile.backend) {
             case FILE:
                 pf.save();
                 return;
-            case MYSQL: {
+            case MYSQL:
                 ArrayList<String> list = new ArrayList<>();
                 pf.subConfig(key, "uuid='" + key + "'").mysqlUpdate(list, null);
                 pf.db.batch(list, null);
-            }
         }
     }
 
@@ -838,7 +848,7 @@ public final class SU {
                 if (enc == null)
                     enc = Enchantment.getByName(s[0].toUpperCase());
                 if (enc == null) {
-                    if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+                    if (Reflection.ver.isAbove(v1_8)) {
                         if (s[0].equals("HIDE"))
                             meta.addItemFlags(ItemFlag.valueOf("HIDE_" + s[1].toUpperCase()));
                     }
@@ -873,7 +883,7 @@ public final class SU {
                 }
             }
         }
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9)
+        if (Reflection.ver.isAbove(v1_8))
             if (meta instanceof BannerMeta) {
                 BannerMeta bmeta = (BannerMeta) meta;
                 for (String[] s : remaining) {
@@ -903,7 +913,7 @@ public final class SU {
                     if (s[0].equals("COLOR")) {
                         String[] color = s[1].split(",", 3);
                         if (color.length == 3)
-                            bmeta.setColor(org.bukkit.Color.fromRGB(Integer.valueOf(color[0]), Integer.valueOf(color[1]), Integer.valueOf(color[2])));
+                            bmeta.setColor(Color.fromRGB(Integer.valueOf(color[0]), Integer.valueOf(color[1]), Integer.valueOf(color[2])));
                         else
                             bmeta.setColor(Color.fromRGB(Integer.parseInt(color[0], 16)));
                     }
@@ -918,8 +928,8 @@ public final class SU {
                     if (s[0].equals("POWER")) {
                         bmeta.setPower(Integer.valueOf(s[1]));
                     } else {
-                        FireworkEffect.Type type = FireworkEffect.Type.valueOf(s[0]);
-                        FireworkEffect.Builder build = FireworkEffect.builder().with(type);
+                        Type type = Type.valueOf(s[0]);
+                        Builder build = FireworkEffect.builder().with(type);
                         for (String d : s[1].toUpperCase().split("\\|")) {
                             String[] d2 = d.split(":", 2);
                             if (d2[0].equals("COLORS")) {
@@ -952,7 +962,7 @@ public final class SU {
                     PotionEffectType type = PotionEffectType.getByName(s[0]);
                     if (type != null) {
                         String[] s2 = s[1].split(":");
-                        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
+                        if (Reflection.ver.isAbove(v1_8)) {
                             bmeta.addCustomEffect(new PotionEffect(type, Integer.valueOf(s2[0]), Integer.valueOf(s2[1]),
                                     !ArrayUtils.contains(s2, "na"), !ArrayUtils.contains(s2, "np")), false);
                         } else {
@@ -1013,7 +1023,7 @@ public final class SU {
      * @return True if the unload was successful, false otherwise
      */
     public static boolean unloadPlayerConfig(UUID uid) {
-        if (Config.PlayerFile.backend == BackendType.MYSQL) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
             String key = uid == null ? "CONSOLE" : uid.toString();
             return pf.removeData(key);
         }
@@ -1031,9 +1041,9 @@ public final class SU {
             Field lookupNamesField = pm.getClass().getDeclaredField("lookupNames");
             lookupNamesField.setAccessible(true);
             Map names = (Map) lookupNamesField.get(pm);
-            Iterator<Map.Entry<String, Plugin>> it = names.entrySet().iterator();
+            Iterator<Entry<String, Plugin>> it = names.entrySet().iterator();
             while (it.hasNext()) {
-                Map.Entry<String, Plugin> e = it.next();
+                Entry<String, Plugin> e = it.next();
                 if (e.getValue() == p)
                     it.remove();
             }
@@ -1045,9 +1055,9 @@ public final class SU {
             Field knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
             knownCommandsField.setAccessible(true);
             Map<String, Command> commands = (Map<String, Command>) knownCommandsField.get(commandMap);
-            Iterator<Map.Entry<String, Command>> it2 = commands.entrySet().iterator();
+            Iterator<Entry<String, Command>> it2 = commands.entrySet().iterator();
             while (it2.hasNext()) {
-                Map.Entry<String, Command> e = it2.next();
+                Entry<String, Command> e = it2.next();
                 Command cmd = e.getValue();
                 if (cmd instanceof PluginCommand) {
                     PluginCommand c = (PluginCommand) cmd;
@@ -1062,11 +1072,11 @@ public final class SU {
         }
         pm.disablePlugin(p);
         ClassLoader cl = p.getClass().getClassLoader();
-        if ((cl instanceof URLClassLoader)) {
+        if (cl instanceof URLClassLoader) {
             try {
                 ((URLClassLoader) cl).close();
             } catch (Throwable e) {
-                SU.error(cs, e, "SpigotLib", "gyurix");
+                error(cs, e, "SpigotLib", "gyurix");
             }
         }
         System.gc();

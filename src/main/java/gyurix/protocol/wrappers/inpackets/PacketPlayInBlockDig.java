@@ -16,15 +16,15 @@ public class PacketPlayInBlockDig
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.BlockDig.newPacket(this.block.toNMS(), this.direction.toNMS(), this.digType.toVanillaDigType());
+        return PacketInType.BlockDig.newPacket(block.toNMS(), direction.toNMS(), digType.toVanillaDigType());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.BlockDig.getPacketData(packet);
-        this.block = new BlockLocation(data[0]);
-        this.direction = Direction.valueOf(data[1].toString().toUpperCase());
-        this.digType = DigType.valueOf(data[2].toString());
+        block = new BlockLocation(data[0]);
+        direction = Direction.valueOf(data[1].toString().toUpperCase());
+        digType = DigType.valueOf(data[2].toString());
     }
 
     public enum DigType {
@@ -46,7 +46,7 @@ public class PacketPlayInBlockDig
 
         public Object toVanillaDigType() {
             try {
-                return valueOf.invoke(null, this.name());
+                return valueOf.invoke(null, name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;

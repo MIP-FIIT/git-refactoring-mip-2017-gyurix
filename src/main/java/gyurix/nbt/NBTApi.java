@@ -33,9 +33,9 @@ public class NBTApi {
     public static void init() {
         getEntityHandle = Reflection.getMethod(Reflection.getOBCClass("entity.CraftEntity"), "getHandle");
         nmsEntityClass = Reflection.getNMSClass("Entity");
-        NBTApi.types[9] = NBTCompound.nmsClass = Reflection.getNMSClass("NBTTagCompound");
+        types[9] = NBTCompound.nmsClass = Reflection.getNMSClass("NBTTagCompound");
         NBTCompound.mapField = Reflection.getFirstFieldOfType(NBTCompound.nmsClass, Map.class);
-        NBTApi.types[10] = NBTList.nmsClass = Reflection.getNMSClass("NBTTagList");
+        types[10] = NBTList.nmsClass = Reflection.getNMSClass("NBTTagList");
         NBTList.listField = Reflection.getField(NBTList.nmsClass, "list");
         NBTList.listType = Reflection.getField(NBTList.nmsClass, "type");
         NBTPrimitive.init();

@@ -34,11 +34,11 @@ public final class Primitives {
 
     public static <T> Class<T> unwrap(Class<T> type) {
         Class<T> unwrapped = (Class<T>) WRAPPER_TO_PRIMITIVE_TYPE.get(type);
-        return (unwrapped == null) ? type : unwrapped;
+        return unwrapped == null ? type : unwrapped;
     }
 
     public static <T> Class<T> wrap(Class<T> type) {
         Class<T> wrapped = (Class<T>) PRIMITIVE_TO_WRAPPER_TYPE.get(type);
-        return (wrapped == null) ? type : wrapped;
+        return wrapped == null ? type : wrapped;
     }
 }

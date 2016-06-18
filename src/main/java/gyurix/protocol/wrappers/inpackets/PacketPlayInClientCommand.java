@@ -12,12 +12,12 @@ public class PacketPlayInClientCommand
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.ClientCommand.newPacket(this.command.toVanillaClientCommand());
+        return PacketInType.ClientCommand.newPacket(command.toVanillaClientCommand());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        this.command = ClientCommand.valueOf(PacketInType.ClientCommand.getPacketData(packet)[0].toString());
+        command = ClientCommand.valueOf(PacketInType.ClientCommand.getPacketData(packet)[0].toString());
     }
 
     public enum ClientCommand {
@@ -36,7 +36,7 @@ public class PacketPlayInClientCommand
 
         public Object toVanillaClientCommand() {
             try {
-                return valueOf.invoke(null, this.name());
+                return valueOf.invoke(null, name());
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;

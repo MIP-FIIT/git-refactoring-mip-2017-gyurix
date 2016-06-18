@@ -4,12 +4,13 @@ import gyurix.chat.ChatTag;
 import gyurix.json.JsonAPI;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
-import gyurix.spigotutils.ServerVersion;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
+
+import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class ChatAPI {
     /**
@@ -70,11 +71,11 @@ public class ChatAPI {
      */
     public static void sendJsonMsg(ChatMessageType type, String msg, Player... pls) {
         if (pls.length == 0) {
-            ChatAPI.sendJsonMsg(type, msg, Bukkit.getOnlinePlayers());
+            sendJsonMsg(type, msg, Bukkit.getOnlinePlayers());
             return;
         }
-        String json = type == ChatMessageType.ACTION_BAR ? ChatAPI.quoteJson(msg) : ChatAPI.TextToJson(msg);
-        ChatAPI.sendRawJson(type, json, pls);
+        String json = type == ChatMessageType.ACTION_BAR ? quoteJson(msg) : TextToJson(msg);
+        sendRawJson(type, json, pls);
     }
 
     /**
@@ -85,9 +86,9 @@ public class ChatAPI {
      * @param pls  -  The receiver list, if it is empty then all the online players will get the message
      */
     public static void sendJsonMsg(ChatMessageType type, String msg, Collection<? extends Player> pls) {
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
-            String json = type == ChatMessageType.ACTION_BAR ? ChatAPI.quoteJson(msg) : ChatAPI.TextToJson(msg);
-            ChatAPI.sendRawJson(type, json, pls);
+        if (Reflection.ver.isAbove(v1_8)) {
+            String json = type == ChatMessageType.ACTION_BAR ? quoteJson(msg) : TextToJson(msg);
+            sendRawJson(type, json, pls);
         } else {
             msg = ChatTag.stripExtras(msg);
             for (Player p : pls)
@@ -103,8 +104,8 @@ public class ChatAPI {
      * @param pls  - The receiver list
      */
     public static void sendRawJson(ChatMessageType type, String json, Player... pls) {
-        if (Reflection.ver == ServerVersion.v1_8 || Reflection.ver == ServerVersion.v1_9) {
-            Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
+        if (Reflection.ver.isAbove(v1_8)) {
+            Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
             for (Player p : pls)
                 SU.tp.sendPacket(p, packet);
         } else {
@@ -123,13 +124,14 @@ public class ChatAPI {
      * @param pls  - The receiver list
      */
     public static void sendRawJson(ChatMessageType type, String json, Collection<? extends Player> pls) {
-        Object packet = PacketOutType.Chat.newPacket(ChatAPI.toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
+        Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
         for (Player p : pls)
             SU.tp.sendPacket(p, packet);
     }
 
     /**
      * Converts a raw json message to vanilla IChatBaseComponent
+     *
      * @param json - The raw json
      * @return The vanilla IChatBaseComponent
      */
@@ -148,6 +150,7 @@ public class ChatAPI {
 
     /**
      * Converts a vanilla IChatBaseComponent to a raw Json message
+     *
      * @param icbc - The vanilla IChatBaseComponent
      * @return The raw json message
      */
@@ -165,6 +168,7 @@ public class ChatAPI {
 
     /**
      * Escapes an unicode character
+     *
      * @param ch - The escapeable character
      * @return The unicode escaped character in String
      */

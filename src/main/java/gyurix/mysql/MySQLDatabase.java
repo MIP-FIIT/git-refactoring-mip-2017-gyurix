@@ -1,10 +1,12 @@
 package gyurix.mysql;
 
 import com.mysql.jdbc.Connection;
-import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.spigotlib.Config;
+import gyurix.spigotlib.SU;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,10 +15,10 @@ import java.util.concurrent.Executors;
  * for executing MySQL querries
  */
 public class MySQLDatabase {
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private static ExecutorService executeThread = Executors.newSingleThreadExecutor(), prepareThread = Executors.newSingleThreadExecutor(), runnableThread = Executors.newSingleThreadExecutor();
     public String table;
-    @ConfigSerialization.ConfigOptions(serialize = false)
+    @ConfigOptions(serialize = false)
     private Connection con;
     private String database;
     private String host;
@@ -33,7 +35,7 @@ public class MySQLDatabase {
         this.username = username;
         this.password = password;
         this.database = database;
-        this.openConnection();
+        openConnection();
     }
 
     public static String escape(String in) {
@@ -76,35 +78,46 @@ public class MySQLDatabase {
         prepareThread.submit(new MySQLPrepare(commands, r));
     }
 
+    public void batchNoAsync(ArrayList<String> list) {
+        try {
+            Statement st = getConnection().createStatement();
+            for (String s : list)
+                st.addBatch(s);
+            st.executeBatch();
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+    }
+
     public boolean command(String cmd) {
         PreparedStatement st;
         try {
-            st = this.getConnection().prepareStatement(cmd);
+            st = getConnection().prepareStatement(cmd);
             return st.execute();
-        } catch (Throwable ex) {
-            ex.printStackTrace();
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return false;
     }
 
     private Connection getConnection() {
         try {
-            if (this.con == null || !this.con.isValid(timeout)) {
-                this.openConnection();
+            if (con == null || !con.isValid(timeout)) {
+                openConnection();
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
-        return this.con;
+        return con;
     }
 
     public boolean openConnection() {
         try {
-            this.con = (Connection) DriverManager.getConnection("jdbc:mysql://" + this.host + "/" + this.database + "?autoReconnect=true", this.username, this.password);
-            this.con.setAutoReconnect(true);
-            this.con.setConnectTimeout(timeout);
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
+            con.setAutoReconnect(true);
+            con.setConnectTimeout(timeout);
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return false;
         }
         return true;
@@ -114,11 +127,11 @@ public class MySQLDatabase {
         ResultSet rs;
         PreparedStatement st;
         try {
-            st = this.getConnection().prepareStatement(cmd);
+            st = getConnection().prepareStatement(cmd);
             rs = st.executeQuery();
             return rs;
-        } catch (Throwable ex) {
-            ex.printStackTrace();
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }
@@ -126,11 +139,11 @@ public class MySQLDatabase {
     public int update(String cmd) {
         PreparedStatement st;
         try {
-            st = this.getConnection().prepareStatement(cmd);
+            st = getConnection().prepareStatement(cmd);
             int out = st.executeUpdate();
             return out;
-        } catch (Throwable ex) {
-            ex.printStackTrace();
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return -1;
         }
     }
@@ -151,7 +164,7 @@ public class MySQLDatabase {
                 if (r != null)
                     runnableThread.submit(r);
             } catch (SQLException e) {
-                e.printStackTrace();
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
         }
     }
@@ -161,7 +174,7 @@ public class MySQLDatabase {
         private final Runnable r;
 
         public MySQLPrepare(Iterable<String> cmds, Runnable r) {
-            this.ps = cmds;
+            ps = cmds;
             this.r = r;
         }
 
@@ -174,8 +187,8 @@ public class MySQLDatabase {
                             PreparedStatement ps = getConnection().prepareStatement(s);
                             ps.execute();
                         } catch (Throwable e) {
-                            System.err.println("MySQL ERROR: error on executing command " + s + ":");
-                            e.printStackTrace();
+                            SU.cs.sendMessage("§cMySQL ERROR:§e Error on executing command §b" + s + "§c:");
+                            SU.error(SU.cs, e, "SpigotLib", "gyurix");
                         }
                     }
                 } else {
@@ -187,7 +200,7 @@ public class MySQLDatabase {
                 }
 
             } catch (Throwable e) {
-                e.printStackTrace();
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
         }
     }

@@ -13,17 +13,17 @@ public class TabPlayer {
     }
 
     public TabPlayer(Player plr) {
-        this.profile = new GameProfile(plr.getUniqueId(), plr.getName());
-        this.tabname = "\u00a7c\u00a7lTABNAME:\u00a7e" + plr.getDisplayName();
-        this.number = ScoreboardAPI.id++;
+        profile = new GameProfile(plr.getUniqueId(), plr.getName());
+        tabname = "\u00a7c\u00a7lTABNAME:\u00a7e" + plr.getDisplayName();
+        number = ScoreboardAPI.id++;
     }
 
     public Object getRemoveScorePacket() {
-        return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", 0, ScoreboardAPI.removeScore);
+        return PacketOutType.ScoreboardScore.newPacket(profile.getName(), "SBAPI-tabbar", 0, ScoreboardAPI.removeScore);
     }
 
     public Object getSetScorePacket() {
-        return PacketOutType.ScoreboardScore.newPacket(this.profile.getName(), "SBAPI-tabbar", this.number, ScoreboardAPI.setScore);
+        return PacketOutType.ScoreboardScore.newPacket(profile.getName(), "SBAPI-tabbar", number, ScoreboardAPI.setScore);
     }
 
     public Object getTabnameRestorePacket() {

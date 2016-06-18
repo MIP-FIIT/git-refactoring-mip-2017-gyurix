@@ -26,9 +26,9 @@ public class Vector implements WrappedData {
 
     public Vector(Object vanillaVector) {
         try {
-            this.x = (Double) xf.get(vanillaVector);
-            this.y = (Double) yf.get(vanillaVector);
-            this.z = (Double) zf.get(vanillaVector);
+            x = (Double) xf.get(vanillaVector);
+            y = (Double) yf.get(vanillaVector);
+            z = (Double) zf.get(vanillaVector);
         } catch (Throwable e) {
             e.printStackTrace();
         }

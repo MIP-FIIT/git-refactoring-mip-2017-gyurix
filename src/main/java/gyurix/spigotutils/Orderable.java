@@ -1,7 +1,7 @@
 package gyurix.spigotutils;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
 
 /**
@@ -18,7 +18,7 @@ public class Orderable implements Comparable<Orderable> {
 
     public static TreeSet<Orderable> order(HashMap<Object, Comparable> data) {
         TreeSet<Orderable> out = new TreeSet<>();
-        for (Map.Entry<Object, Comparable> e : data.entrySet()) {
+        for (Entry<Object, Comparable> e : data.entrySet()) {
             out.add(new Orderable(e.getKey(), e.getValue()));
         }
         return out;
@@ -38,6 +38,6 @@ public class Orderable implements Comparable<Orderable> {
 
     @Override
     public String toString() {
-        return key.toString() + " - " + value.toString();
+        return key + " - " + value;
     }
 }

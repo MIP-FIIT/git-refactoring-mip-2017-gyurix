@@ -12,16 +12,16 @@ public class PacketPlayInSteerVehicle
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.SteerVehicle.newPacket(Float.valueOf(this.sideways), Float.valueOf(this.forward), this.jump, this.unmount);
+        return PacketInType.SteerVehicle.newPacket(Float.valueOf(sideways), Float.valueOf(forward), jump, unmount);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.SteerVehicle.getPacketData(packet);
-        this.sideways = ((Float) data[0]).floatValue();
-        this.forward = ((Float) data[1]).floatValue();
-        this.jump = (Boolean) data[2];
-        this.unmount = (Boolean) data[3];
+        sideways = ((Float) data[0]).floatValue();
+        forward = ((Float) data[1]).floatValue();
+        jump = (Boolean) data[2];
+        unmount = (Boolean) data[3];
     }
 }
 

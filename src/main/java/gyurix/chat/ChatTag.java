@@ -34,7 +34,7 @@ public class ChatTag {
         for (BaseComponent bc : baseComponents) {
             data.append(bc.toLegacyText());
         }
-        return ChatTag.fromColoredText(data.toString());
+        return fromColoredText(data.toString());
     }
 
     public static ChatTag fromColoredText(String colText) {
@@ -87,7 +87,7 @@ public class ChatTag {
             sb.append('§');
         ct.text = sb.toString();
         ctl.add(ct);
-        return ChatTag.fromSeveralTag(ctl);
+        return fromSeveralTag(ctl);
     }
 
     public static ChatTag fromExtraText(String extraText) {
@@ -95,7 +95,7 @@ public class ChatTag {
         ArrayList<ChatTag> tags = new ArrayList<>();
         for (String part : parts) {
             String[] sa = part.split("\\\\-");
-            ChatTag tag = ChatTag.fromColoredText(sa[0]);
+            ChatTag tag = fromColoredText(sa[0]);
             for (int i = 1; i < sa.length; i++) {
                 if (sa[i].length() > 0) {
                     tag.setExtra(sa[i].charAt(0), sa[i].substring(1));
@@ -103,11 +103,11 @@ public class ChatTag {
             }
             tags.add(tag);
         }
-        return ChatTag.fromSeveralTag(tags);
+        return fromSeveralTag(tags);
     }
 
     public static ChatTag fromICBC(Object icbc) {
-        return (ChatTag) JsonAPI.deserialize(ChatAPI.toJson(icbc), ChatTag.class);
+        return JsonAPI.deserialize(ChatAPI.toJson(icbc), ChatTag.class);
     }
 
     public static ChatTag fromSeveralTag(ArrayList<ChatTag> ctl) {
@@ -161,7 +161,6 @@ public class ChatTag {
 
     /**
      * Sets an extra data for this ChatTag. Available extra types:
-     * <p/>
      * T - Hover event, show text
      * I - Hover event, show item
      * A - Hover event, show achievement
@@ -176,7 +175,8 @@ public class ChatTag {
      *
      * @param extraType The character representing the extra type
      * @param value     A String representing the value of this extra
-     * @ - Selector
+     * \@ - Selector
+     * @return This chat tag
      */
     public ChatTag setExtra(char extraType, String value) {
         if (extraType == '+')

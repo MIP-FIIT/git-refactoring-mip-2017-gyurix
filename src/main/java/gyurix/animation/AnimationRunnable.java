@@ -6,42 +6,42 @@ import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class AnimationRunnable
         implements Runnable {
     public final Animation a;
-    public String name;
-    public FramesEffect frames;
     public HashMap<String, HashMap<String, CustomEffect>> effects = new HashMap();
-    public Player plr;
+    public FramesEffect frames;
+    public String name;
     public Object obj;
+    public Player plr;
     public ScheduledFuture running;
 
     protected AnimationRunnable(Animation anim, String name, Player player, Object object) {
-        this.a = anim;
+        a = anim;
         this.name = name;
-        this.plr = player;
-        this.obj = object;
-        for (Map.Entry<String, HashMap<String, CustomEffect>> e : anim.effects.entrySet()) {
+        plr = player;
+        obj = object;
+        for (Entry<String, HashMap<String, CustomEffect>> e : anim.effects.entrySet()) {
             HashMap<String, CustomEffect> map = new HashMap<String, CustomEffect>();
-            this.effects.put(e.getKey(), map);
-            for (Map.Entry<String, CustomEffect> e2 : e.getValue().entrySet()) {
+            effects.put(e.getKey(), map);
+            for (Entry<String, CustomEffect> e2 : e.getValue().entrySet()) {
                 map.put(e2.getKey(), e2.getValue().clone());
             }
         }
-        this.frames = (FramesEffect) this.effects.get("frame").get("main").clone();
-        this.run();
+        frames = (FramesEffect) effects.get("frame").get("main").clone();
+        run();
     }
 
     @Override
     public void run() {
         AnimationUpdateEvent e = new AnimationUpdateEvent(this,
-                SU.optimizeColorCodes(VariableAPI.fillVariables(this.frames.next(""), this.plr, this)));
+                SU.optimizeColorCodes(VariableAPI.fillVariables(frames.next(""), plr, this)));
         SU.pm.callEvent(e);
-        this.running = AnimationAPI.sch.schedule(this, this.frames.delay, TimeUnit.MILLISECONDS);
+        running = AnimationAPI.sch.schedule(this, frames.delay, TimeUnit.MILLISECONDS);
     }
 }
 

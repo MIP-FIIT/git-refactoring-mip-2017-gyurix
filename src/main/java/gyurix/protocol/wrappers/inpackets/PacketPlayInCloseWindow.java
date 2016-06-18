@@ -9,12 +9,12 @@ public class PacketPlayInCloseWindow
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.CloseWindow.newPacket(this.id);
+        return PacketInType.CloseWindow.newPacket(id);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        this.id = (Integer) PacketInType.CloseWindow.getPacketData(packet)[0];
+        id = (Integer) PacketInType.CloseWindow.getPacketData(packet)[0];
     }
 }
 

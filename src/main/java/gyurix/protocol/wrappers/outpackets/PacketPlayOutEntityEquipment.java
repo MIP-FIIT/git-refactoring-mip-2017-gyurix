@@ -9,11 +9,11 @@ import gyurix.protocol.wrappers.WrappedPacket;
  */
 public class PacketPlayOutEntityEquipment extends WrappedPacket {
     public int entityId;
+    public ItemStackWrapper item;
     /**
      * Slot number: 0 - held 1 - boots 2 - leggings 3 - chestplate 4 - helmet
      */
     public int slot;
-    private ItemStackWrapper item;
 
     @Override
     public Object getVanillaPacket() {

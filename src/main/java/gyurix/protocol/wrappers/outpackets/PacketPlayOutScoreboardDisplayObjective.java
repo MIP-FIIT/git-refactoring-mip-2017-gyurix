@@ -10,14 +10,14 @@ public class PacketPlayOutScoreboardDisplayObjective
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.ScoreboardDisplayObjective.newPacket(this.slot, this.name);
+        return PacketOutType.ScoreboardDisplayObjective.newPacket(slot, name);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] o = PacketOutType.ScoreboardDisplayObjective.getPacketData(packet);
-        this.slot = (Integer) o[0];
-        this.name = (String) o[1];
+        slot = (Integer) o[0];
+        name = (String) o[1];
     }
 }
 
