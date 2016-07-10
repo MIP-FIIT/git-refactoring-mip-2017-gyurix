@@ -55,14 +55,50 @@ public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
     }
 
     @Override
-    public Inventory getInventory() {
-        return inv;
+    public void postLoad () {
+        int size = layout.size() * 9;
+        HashMap<String, Object> vs = vars.get("title");
+        String invtitle = SU.setLength(vs == null ? title : SU.fillVariables(title, vs), 32);
+        inv = Bukkit.createInventory(this, size, invtitle);
+        int i = 0;
+        for (Layer l : layout) {
+            for (String data : l.data) {
+                inv.setItem(i++, varFill(data));
+            }
+        }
     }
 
-    public String getSlot(int slot) {
-        if (slot < 0 || slot >= layout.size() * 9)
-            return null;
-        return layout.get(slot / 9).data[slot % 9];
+    public ItemStack varFill (String id) {
+        ItemStack is = items.get(id);
+        if (is == null || is.getType() == Material.AIR)
+            return is;
+        is = is.clone();
+        HashMap<String, Object> vs = vars.get(id);
+        if (vs == null || !is.hasItemMeta())
+            return is;
+        ItemMeta im = is.getItemMeta();
+        if (im.hasDisplayName()) {
+            im.setDisplayName(SU.fillVariables(im.getDisplayName(), vs));
+        }
+        if (im.hasLore()) {
+            List<String> lore = im.getLore();
+            int size = lore.size();
+            for (int i = 0; i < size; i++)
+                lore.set(i, SU.fillVariables(lore.get(i), vs));
+            im.setLore(lore);
+        }
+        if (im instanceof SkullMeta) {
+            SkullMeta sm = (SkullMeta) im;
+            if (sm.hasOwner())
+                sm.setOwner(SU.fillVariables(sm.getOwner(), vs));
+        }
+        is.setItemMeta(im);
+        return is;
+    }
+
+    @Override
+    public Inventory getInventory () {
+        return inv;
     }
 
     public ArrayList<Integer> getSlotIds(String slot) {
@@ -103,6 +139,12 @@ public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
             handler.onClick(this, plr, name, e);
     }
 
+    public String getSlot (int slot) {
+        if (slot < 0 || slot >= layout.size() * 9)
+            return null;
+        return layout.get(slot / 9).data[slot % 9];
+    }
+
     @EventHandler
     public void onClose(final InventoryCloseEvent e) {
         Inventory clicked = e.getInventory();
@@ -125,29 +167,15 @@ public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
             HandlerList.unregisterAll(this);
     }
 
-    public void openInv(Player plr, Plugin pl) {
-        this.plr = plr;
-        SU.pm.registerEvents(this, pl);
-        plr.openInventory(inv);
-    }
-
     public void openInv(Player plr, Plugin pl, Inventory fallBack) {
         this.fallBack = fallBack;
         openInv(plr, pl);
     }
 
-    @Override
-    public void postLoad() {
-        int size = layout.size() * 9;
-        HashMap<String, Object> vs = vars.get("title");
-        String invtitle = SU.setLength(vs == null ? title : SU.fillVariables(title, vs), 32);
-        inv = Bukkit.createInventory(this, size, invtitle);
-        int i = 0;
-        for (Layer l : layout) {
-            for (String data : l.data) {
-                inv.setItem(i++, varFill(data));
-            }
-        }
+    public void openInv (Player plr, Plugin pl) {
+        this.plr = plr;
+        SU.pm.registerEvents(this, pl);
+        plr.openInventory(inv);
     }
 
     public void resetVars(String item) {
@@ -202,36 +230,8 @@ public class ItemGUI implements InventoryHolder, Listener, PostLoadable {
         items.put(slot, item);
     }
 
-    public ItemStack varFill(String id) {
-        ItemStack is = items.get(id);
-        if (is == null || is.getType() == Material.AIR)
-            return is;
-        is = is.clone();
-        HashMap<String, Object> vs = vars.get(id);
-        if (vs == null || !is.hasItemMeta())
-            return is;
-        ItemMeta im = is.getItemMeta();
-        if (im.hasDisplayName()) {
-            im.setDisplayName(SU.fillVariables(im.getDisplayName(), vs));
-        }
-        if (im.hasLore()) {
-            List<String> lore = im.getLore();
-            int size = lore.size();
-            for (int i = 0; i < size; i++)
-                lore.set(i, SU.fillVariables(lore.get(i), vs));
-            im.setLore(lore);
-        }
-        if (im instanceof SkullMeta) {
-            SkullMeta sm = (SkullMeta) im;
-            if (sm.hasOwner())
-                sm.setOwner(SU.fillVariables(sm.getOwner(), vs));
-        }
-        is.setItemMeta(im);
-        return is;
-    }
-
     public static class Layer implements StringSerializable {
-        String[] data = new String[9];
+        public String[] data = new String[9];
 
         public Layer(String in) {
             String[] d = in.split(" +", 10);

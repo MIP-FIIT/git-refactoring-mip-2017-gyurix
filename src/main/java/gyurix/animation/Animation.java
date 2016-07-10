@@ -3,6 +3,7 @@ package gyurix.animation;
 import gyurix.animation.effects.FramesEffect;
 import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigSerialization.Serializer;
+import gyurix.spigotlib.SU;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -11,11 +12,13 @@ import java.util.Map.Entry;
 
 public class Animation {
     public HashMap<String, HashMap<String, CustomEffect>> effects = new HashMap();
+    public HashMap<String, String> init = new HashMap<>();
 
     public static class AnimationSerializer
             implements Serializer {
+        @SuppressWarnings("TailRecursion")
         @Override
-        public Object fromData(ConfigData data, Class cl, Type... args) {
+        public Object fromData (ConfigData data, Class cl, Type... args) {
             Animation anim = new Animation();
             long ft = 0;
             if (data.mapData != null) {
@@ -27,11 +30,11 @@ public class Animation {
                             anim.effects.put(key, e.getValue().deserialize(HashMap.class, String.class, AnimationAPI.effects.get(key)));
                             continue;
                         }
-                        System.err.println("Unregistered effect type " + key + " can't be loaded.");
+                        SU.cs.sendMessage("§e[AnimationAPI] §cUnregistered effect type §e" + key + "§c can't be loaded.");
                         continue;
                     }
-                    if (!key.equals("frameTime")) continue;
-                    ft = Long.valueOf(value.stringData);
+                    if (key.equals("frameTime"))
+                        ft = Long.valueOf(value.stringData);
                 }
             }
             if (data.listData != null) {
@@ -40,42 +43,49 @@ public class Animation {
                     fe.frames.add(new Frame(cd.stringData));
                 }
                 HashMap<String, CustomEffect> map = anim.effects.get("frame");
-                if (map == null) {
+                if (map == null)
                     map = new HashMap<>();
-                }
                 map.put("main", fe);
                 anim.effects.put("frame", map);
-            } else if (data.stringData != null && !data.stringData.isEmpty()) {
-                HashMap map = anim.effects.get("frame");
-                if (map == null) {
-                    map = new HashMap();
+            }
+            if (data.stringData != null && !data.stringData.isEmpty()) {
+                if (data.stringData.startsWith("{")) {
+                    int id = data.stringData.indexOf("}");
+                    for (String d : data.stringData.substring(1, id).split(" ")) {
+                        String[] d2 = d.split(":", 2);
+                        if (d2[0].equals("FT"))
+                            ft = Integer.valueOf(d2[1]);
+                        else
+                            anim.init.put(d2[0], d2.length == 1 ? null : d2[1]);
+                    }
+                    data.stringData = data.stringData.substring(id + 1);
                 }
+                HashMap map = anim.effects.get("frame");
+                if (map == null)
+                    anim.effects.put("frame", map = new HashMap());
                 if (!map.containsKey("main")) {
                     FramesEffect fe = new FramesEffect();
                     if (data.stringData.contains(";")) {
-                        for (String s : data.stringData.split(";")) {
+                        for (String s : data.stringData.split(";"))
                             fe.frames.add(new Frame(s));
-                        }
-                    } else {
+                    } else
                         fe.frames.add(new Frame(data.stringData));
-                    }
                     map.put("main", fe);
-                    anim.effects.put("frame", map);
                 }
             }
             if (!anim.effects.containsKey("frame")) {
-                System.err.println("Error, the animation doesn't contain ANY frames parts.");
+                SU.cs.sendMessage("§e[AnimationAPI] §cError, the animation doesn't contain ANY frames parts.");
                 return fromData(new ConfigData("ERROR-NO-FRAMES"), cl, args);
             }
             if (!anim.effects.get("frame").containsKey("main")) {
-                System.err.println("Error, the animation doesn't contain the main frames part.");
+                SU.cs.sendMessage("§e[AnimationAPI] §cError, the animation doesn't contain the main frames part.");
                 return fromData(new ConfigData("ERROR-NO-MAINFRAMEPART"), cl, args);
             }
             if (((FramesEffect) anim.effects.get("frame").get("main")).frames.isEmpty()) {
-                System.err.println("Error, the animation doesn't contain any main frames.");
+                SU.cs.sendMessage("§e[AnimationAPI] §cError, the animation doesn't contain any frames.");
                 return fromData(new ConfigData("ERROR-NO-MAINFRAMES"), cl, args);
             }
-            if (ft != 0) {
+            if (ft > 0) {
                 ((FramesEffect) anim.effects.get("frame").get("main")).frameTime = ft;
             }
             for (CustomEffect fe : anim.effects.get("frame").values()) {
@@ -115,7 +125,7 @@ public class Animation {
         }
 
         @Override
-        public ConfigData toData(Object obj, Type... types) {
+        public ConfigData toData (Object obj, Type... types) {
             Animation anim = (Animation) obj;
             ConfigData out = new ConfigData();
             out.mapData = new LinkedHashMap();

@@ -3,7 +3,8 @@ package gyurix.spigotutils;
 import gyurix.nbt.NBTApi;
 import gyurix.nbt.NBTCompound;
 import gyurix.nbt.NBTPrimitive;
-import gyurix.protocol.Reflection;
+import gyurix.spigotlib.SU;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -11,15 +12,16 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import static gyurix.protocol.Reflection.*;
+
 /**
  * Created by GyuriX on 2016. 06. 09..
  */
 public class EntityUtils {
-    private static final Class craftEntity = Reflection.getOBCClass("entity.CraftEntity");
-    private static final Field killerField = Reflection.getField(Reflection.getNMSClass("EntityLiving"), "killer");
-    private static final Class nmsEntity = Reflection.getNMSClass("Entity");
-    private static final Method bukkitEntity = Reflection.getMethod(nmsEntity, "getBukkitEntity");
-    private static final Field nmsEntityGet = Reflection.getField(craftEntity, "entity");
+    private static final Method bukkitEntity = getMethod(nmsEntity, "getBukkitEntity");
+    private static final Class craftEntity = getOBCClass("entity.CraftEntity"), nmsEntity = getNMSClass("Entity"), craftWorld = getOBCClass("CraftWorld"), nmsWorld = getNMSClass("World");
+    private static final Field killerField = getField(getNMSClass("EntityLiving"), "killer"), nmsEntityGet = getField(craftEntity, "entity"),
+            nmsWorldGet = getField(craftWorld, "world"), craftWorldGet = getField(nmsWorld, "world");
 
     /**
      * Converts the given NMS entity to a Bukkit entity
@@ -31,21 +33,37 @@ public class EntityUtils {
         try {
             return (Entity) bukkitEntity.invoke(ent);
         } catch (Throwable e) {
-
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
 
     /**
-     * Converts the given Bukkit entity to an NMS entity
+     * Converts the given NMS World or WorldServer to Bukkit World
      *
-     * @param ent - The Bukkit entity
+     * @param world - The Bukkit world
      * @return The NMS entity
      */
-    public static Object getNMSEntity(Entity ent) {
+    public static World getBukkitWorld (Object world) {
         try {
-            return nmsEntityGet.get(ent);
-        } catch (IllegalAccessException e) {
+            return (World) craftWorldGet.get(world);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
+    }
+
+    /**
+     * Converts the given Bukkit world to an NMS WorldServer
+     *
+     * @param world - The Bukkit world
+     * @return The NMS entity
+     */
+    public static Object getNMSWorld (World world) {
+        try {
+            return nmsWorldGet.get(world);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
@@ -77,6 +95,21 @@ public class EntityUtils {
         } catch (IllegalAccessException e) {
 
         }
+    }
+
+    /**
+     * Converts the given Bukkit entity to an NMS entity
+     *
+     * @param ent - The Bukkit entity
+     * @return The NMS entity
+     */
+    public static Object getNMSEntity (Entity ent) {
+        try {
+            return nmsEntityGet.get(ent);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
     }
 
     /**

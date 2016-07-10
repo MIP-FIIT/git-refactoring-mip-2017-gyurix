@@ -3,7 +3,6 @@ package gyurix.configfile;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.DualMap;
 import org.apache.commons.lang.ClassUtils;
-import sun.reflect.ReflectionFactory;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -19,7 +18,6 @@ import java.util.List;
 public class ConfigSerialization {
     public static final DualMap<Class, String> aliases = new DualMap();
     public static final DualMap<Class, Class> interfaceBasedClasses = new DualMap();
-    public static final ReflectionFactory rf = ReflectionFactory.getReflectionFactory();
     public static final HashMap<Class, Serializer> serializers = new HashMap();
     public static ArrayList<String> errors = new ArrayList<>();
 
@@ -77,19 +75,6 @@ public class ConfigSerialization {
         return serializers.get(Object.class);
     }
 
-    public static Object newInstance(Class cl) {
-        try {
-            try {
-                return cl.newInstance();
-            } catch (Throwable err) {
-                return rf.newConstructorForSerialization(cl, Object.class.getDeclaredConstructor()).newInstance();
-            }
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return null;
-    }
-
     public static Class realClass(String alias) {
         Class alC = aliases.getKey(alias);
         try {
@@ -102,13 +87,11 @@ public class ConfigSerialization {
         return null;
     }
 
-    @Target({ElementType.FIELD})
+    @Target({ElementType.FIELD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface ConfigOptions {
         String comment() default "";
-
         String defaultValue() default "null";
-
         boolean serialize() default true;
     }
 

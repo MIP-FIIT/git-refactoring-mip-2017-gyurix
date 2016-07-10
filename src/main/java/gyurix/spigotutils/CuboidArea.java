@@ -23,17 +23,6 @@ public class CuboidArea {
         fix();
     }
 
-    public CuboidArea(LocationData pos1, LocationData pos2) {
-        this.pos1 = pos1;
-        this.pos2 = pos2;
-    }
-
-    public boolean contains(Location loc) {
-        return pos1.world.equals(loc.getWorld().getName())
-                && loc.getX() >= pos1.x && loc.getY() >= pos1.y && loc.getZ() >= pos1.z
-                && loc.getX() <= pos2.x && loc.getY() <= pos2.y && loc.getZ() <= pos2.z;
-    }
-
     public void fix() {
         double tmp;
         if (pos1.x > pos2.x) {
@@ -53,8 +42,15 @@ public class CuboidArea {
         }
     }
 
-    public void resetOutlineBlock(Block block, Player plr) {
-        plr.sendBlockChange(block.getLocation(), block.getTypeId(), block.getData());
+    public CuboidArea (LocationData pos1, LocationData pos2) {
+        this.pos1 = pos1;
+        this.pos2 = pos2;
+    }
+
+    public boolean contains (Location loc) {
+        return pos1.world.equals(loc.getWorld().getName())
+                && loc.getX() >= pos1.x && loc.getY() >= pos1.y && loc.getZ() >= pos1.z
+                && loc.getX() <= pos2.x && loc.getY() <= pos2.y && loc.getZ() <= pos2.z;
     }
 
     public void resetOutlineWithBlock(Player plr) {
@@ -80,6 +76,10 @@ public class CuboidArea {
         }
     }
 
+    public void resetOutlineBlock (Block block, Player plr) {
+        plr.sendBlockChange(block.getLocation(), block.getTypeId(), block.getData());
+    }
+
     public void showOutlineWithBlock(Player plr, BlockData bd) {
         World w = pos1.getWorld();
         for (int x = (int) pos1.x + 1; x < pos2.x; x++) {
@@ -100,5 +100,9 @@ public class CuboidArea {
             plr.sendBlockChange(new Location(w, pos2.x, pos1.y, z), bd.id, bd.data);
             plr.sendBlockChange(new Location(w, pos2.x, pos2.y, z), bd.id, bd.data);
         }
+    }
+
+    public int size () {
+        return ((int) pos2.x - (int) pos1.x + 1) * ((int) pos2.y - (int) pos1.y + 1) * ((int) pos2.z - (int) pos1.z + 1);
     }
 }

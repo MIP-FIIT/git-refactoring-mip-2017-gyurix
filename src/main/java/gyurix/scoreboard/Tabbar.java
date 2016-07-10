@@ -11,8 +11,8 @@ import java.util.UUID;
 
 public class Tabbar
         extends ScoreboardBar {
-    public String footer = "\u00a7c\u00a7l--------------------\nTabbar, made by gyuriX\n\u00a7c\u00a7l--------------------";
-    public String header = "\u00a7b\u00a7lTest header";
+    public String footer = "§c§l--------------------\nTabbar, made by gyuriX\n§c§l--------------------";
+    public String header = "§b§lTest header";
     public HashMap<UUID, TabPlayer> pls = new HashMap();
 
     public Tabbar() {
@@ -28,7 +28,7 @@ public class Tabbar
     public void addViewer(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer - §f" + plr.getName());
-        viewers.add(plr.getUniqueId());
+        viewers.add(plr);
         SU.tp.sendPacket(plr, getObjectivePacket(2));
         for (TabPlayer p : pls.values()) {
             SU.tp.sendPacket(plr, p.getSetScorePacket());
@@ -44,7 +44,7 @@ public class Tabbar
     public void addViewerFirstBar(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer first bar - §f" + plr.getName());
-        viewers.add(plr.getUniqueId());
+        viewers.add(plr);
         SU.tp.sendPacket(plr, getObjectivePacket(0));
         for (TabPlayer p : pls.values()) {
             SU.tp.sendPacket(plr, p.getSetScorePacket());
@@ -61,7 +61,7 @@ public class Tabbar
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §emove viewer - §f" + plr.getName());
         Tabbar old = (Tabbar) oldBar;
-        viewers.add(plr.getUniqueId());
+        viewers.add(plr);
         SU.tp.sendPacket(plr, getObjectivePacket(2));
         for (TabPlayer p2 : pls.values()) {
             TabPlayer op = old.pls.get(p2.profile.getId());
@@ -87,20 +87,11 @@ public class Tabbar
         }
     }
 
-    public void removePlayer(UUID uuid) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cremove player - §f" + SU.getName(uuid));
-        TabPlayer tp = pls.remove(uuid);
-        if (tp != null) {
-            sendPackets(tp.getRemoveScorePacket(), tp.getTabnameRestorePacket());
-        }
-    }
-
     @Override
     public void removeViewer(Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eremove viewer - §f" + plr.getName());
-        if (!viewers.remove(plr.getUniqueId()))
+        if (!viewers.remove(plr))
             return;
         if (!plr.isOnline())
             return;
@@ -111,6 +102,15 @@ public class Tabbar
         SU.tp.sendPacket(plr, PacketOutType.PlayerListHeaderFooter.newPacket(ChatAPI.toICBC(ChatAPI.TextToJson("")), ChatAPI.toICBC(ChatAPI.TextToJson(""))));
         if (visible) {
             SU.tp.sendPacket(plr, hidePacket);
+        }
+    }
+
+    public void removePlayer (UUID uuid) {
+        if (Config.debug)
+            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cremove player - §f" + SU.getName(uuid));
+        TabPlayer tp = pls.remove(uuid);
+        if (tp != null) {
+            sendPackets(tp.getRemoveScorePacket(), tp.getTabnameRestorePacket());
         }
     }
 

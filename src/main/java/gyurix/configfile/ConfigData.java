@@ -41,7 +41,7 @@ public class ConfigData {
         for (char c : in.toCharArray()) {
             switch (c) {
                 case ' ':
-                    out.append(escSpace.contains("" + prev) ? "\\" + c : c);
+                    out.append(escSpace.contains(String.valueOf(prev)) ? "\\" + c : c);
                     break;
                 case '‼':
                     if (prev == '\\')
@@ -58,7 +58,7 @@ public class ConfigData {
                     out.append("\\b");
                     break;
                 case '\n':
-                    out.append(escSpace.contains("" + prev) || escSpace.contains("" + prev) ? "\\n" : '\n');
+                    out.append(escSpace.contains(String.valueOf(prev)) ? "\\n" : '\n');
                     break;
                 case '\\':
                     out.append("\\\\");
@@ -183,30 +183,13 @@ public class ConfigData {
         return (T) objectData;
     }
 
-    public boolean equals(Object obj) {
-        return obj != null && obj instanceof ConfigData && (((ConfigData) obj).stringData + "").equals("" + stringData);
-    }
-
     public int hashCode() {
         return stringData == null ? objectData == null ? listData == null ? mapData == null ? 0 :
                 mapData.hashCode() : listData.hashCode() : objectData.hashCode() : stringData.hashCode();
     }
 
-    public void saveToMySQL(ArrayList<String> l, String dbTable, String args, String key) {
-        DefaultSerializers.leftPad = 16;
-        ConfigData cd = objectData == null ? this : serializeObject(objectData, types);
-        if (cd.mapData != null) {
-            if (!key.isEmpty())
-                key += ".";
-            for (Entry<ConfigData, ConfigData> e : cd.mapData.entrySet()) {
-                e.getValue().saveToMySQL(l, dbTable, args.replace("<key>", MySQLDatabase.escape(key) + "<key>"), e.getKey().toString());
-            }
-        } else {
-            String value = cd.toString();
-            if (value != null)
-                l.add("INSERT INTO  `" + dbTable + "` (`uuid`,`key`,`value`) VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", "" + MySQLDatabase.escape(value)) + ')');
-        }
-        DefaultSerializers.leftPad = 0;
+    public boolean equals (Object obj) {
+        return obj != null && obj instanceof ConfigData && ((ConfigData) obj).stringData.equals(stringData);
     }
 
     public String toString() {
@@ -248,5 +231,22 @@ public class ConfigData {
         if (out.length() == 0)
             return null;
         return out.toString();
+    }
+
+    public void saveToMySQL (ArrayList<String> l, String dbTable, String args, String key) {
+        DefaultSerializers.leftPad = 16;
+        ConfigData cd = objectData == null ? this : serializeObject(objectData, types);
+        if (cd.mapData != null) {
+            if (!key.isEmpty())
+                key += ".";
+            for (Entry<ConfigData, ConfigData> e : cd.mapData.entrySet()) {
+                e.getValue().saveToMySQL(l, dbTable, args.replace("<key>", MySQLDatabase.escape(key) + "<key>"), e.getKey().toString());
+            }
+        } else {
+            String value = cd.toString();
+            if (value != null)
+                l.add("INSERT INTO  `" + dbTable + "` (`uuid`,`key`,`value`) VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", MySQLDatabase.escape(value)) + ')');
+        }
+        DefaultSerializers.leftPad = 0;
     }
 }

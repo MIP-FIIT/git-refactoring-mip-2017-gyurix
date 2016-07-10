@@ -19,58 +19,23 @@ en:
       mp: <m> minutes
       s: <s> second
       sp: <s> seconds
-    wrongsyntax: §cFailed to execute command, enter /sl and check it's syntax.
-    noperm: §c§lYou don't have permission for using SpigotLib commands.
-      command: §c§lYou don't have permission for using this SpigotLib subcommand.
-    help: §5§l－＞  ＭＥＳＳＡＧＥ  ＳＥＮＤＩＮＧ  ＜－
-          \\|§dabm\\-T§d /sl abm [p:<players|*>] <message>:§f
-          Send action bar message\\|, \\|§dchm\\-T§d /sl chm [p:<players|*>] <message>:§f
-          Send hoverable/clickable chat message\\|, \\|§dsym\\-T§d /sl sym [p:<players|*>] <message>:§f
-          Send hoverable/clickable system message\\|, \\|§dtitle\\-T§d /sl title [p:<players|*>] [<fadein> <showtime> <fadeout>] [title] [subtitle]:§f
-          Send title message\\|, \\|§dlang\\-T§d /sl lang [p:<players|*>] [new-language]:§f
-          Check or select language\\|, \\|§dvars\\-T§d /sl vars [p:<players|*>] [text]:§f
-          List all the variables or fill them in a text\\|
-          §f
-          §4§l－＞  ＤＡＴＡ  ＣＯＮＴＲＯＬ  ＜－
-          \\|§cperms\\-T§c /sl perms [p:<players|*>] [permission]:§f
-          Check permissions and access to a permission\\|§c, \\|§cdata\\-T§c /sl data [p:<players|*>] [datakey] [datavalue]:§f
-          Check and set players data\\|§c, \\|§cinv\\-T§c /sl inv [p:<players>|*]:§f
-          Check/modify players inventory\\|§c, \\|§citem\\-T§c /sl item [p:<players>|*] <item>:§f
-          Check the item in players hand, or give an item\\|§c, \\|§cforce\\-T§c /sl force [p:<players>|*] <message>:§f
-          Force players/console to enter the given message\\|§c, \\|§cpf\\-T§c /sl pf [p:<players>|*] [[un]load <playername>|save
-          §c|reload|migratetodb|key [value]]:§f
-          Manage player file or migrate it to MySQL database\\|
-          §f
-          §9§l－＞  ＣＯＮＮＥＣＴＩＯＮ  ＜－
-          \\|§bcappackets\\-T§b§b /sl cappackets [p:<players|*>]:§f
-          Start / stop capturing packets\\|§b, \\|§bcapresults\\-T§b /sl capresults [p:<players|*>]:§f
-          Stop all packet capturing and show the results\\|§b, \\|§bslc\\-T§b /sl inv [p:<players>|*]:§f
-          Manage SpigotLib config\\|§b, \\|§bslm\\-T§b /sl slc <save|reload|reloadlf>:§f
-          Open SpigotLib module manager\\|
-          §f
-          §6§l－＞  ＦＵＮ  ＜－
-          \\|§evelocity\\-T§e /sl velocity [p:<players>|*] [<x> <y> <z>]:§f
-          Get or set players velocity\\|§e, \\|§etp\\-T§e /sl tp [p:<players>|*] [<player>|[world] [<x> <y> <z>]] :§f
-          Teleport / get location of players\\|§e, \\|§espawn\\-T§e /sl spawn [mobtype1[:amount1] [mobtype2[:amount2]]...] :§f
-          Spawn mobs / list mobtypes\\|§e, \\|§ekill\\-T§e /sl kill [p:<players>|*] [category|mobtypes] [radius]:§f
-          Show kill categories / kill mobs in a category\\|§e, \\|§eenchant\\-T§e /sl enchant [p:<players>|*] [enchantment] [level]:§f
-          List enchants / (un)enchant the item in hand\\|§e, \\|§epotion\\-T§e /sl potion [p:<players>|*] [effect] [time] [level]:§f
-          Add/remove/list effects on potions in hand\\|§e, \\|§eeffect\\-T§e /sl effect [p:<players>|*] [effect] [time] [level]:§f
-          Add/remove/list effects on players\\|§e, \\|§ename\\-T§e /sl name [p:<players>|*] [newname]:§f
-          Set/remove name of item in hand\\|§e, \\|§elore\\-T§e /sl lore [p:<players>|*] [newlore]:§f
-          Set/remove lore of item in hand\\|§e, \\|
-          §f
-          §f
-          §e▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-      abm: §dabm
-        hover: \\-T§d /sl abm [p:<players|*>] <message>:§f
-               Send action bar message
-        click: \\-S/sl abm p:*
-      chm: §dchm
-        hover: \\-T§d /sl chm [p:<players|*>] <message>:§f
-               Send hoverable/clickable chat message
-        click: \\-S/sl chm p:*
-    errors: Found errors from server startup:<errors>
+    player:
+      notfound: §cPlayer §e§l<player>§c was not found.
+      notonline: §cPlayer §e§l<player>§c is not online.
+    noperm: §4§lACCESS DENIED
+    help: §6§lＳｐｉｇｏｔＬｉｂ§e§l - §6§l5.0§e§l - §6§lｂｙ ＧｙｕｒｉＸ
+          §b§l➯ §e§lCONTACT:§f on Skype - gyurixdev
+          §b§l➯ §e§lSUBCOMMANDS:§f
+          §b§l➯ §e/sl§f cmd
+          §b§l➯ §e/sl§f debug
+          §b§l➯ §e/sl§f item
+          §b§l➯ §e/sl§f lang
+          §b§l➯ §e/sl§f migratetodb
+          §b§l➯ §e/sl§f perm
+          §b§l➯ §e/sl§f reload
+          §b§l➯ §e/sl§f save
+          §b§l➯ §e/sl§f vars
+          §b§l➯ §e/sl§f velocity
     lang:
       list: §6§lAvailable languages: §e<langs>
       other: §6§l<player>§e has §6§l<lang>§e language selected.
@@ -90,8 +55,8 @@ en:
     executed: The entered command has been executed successfully.
     item:
       own: You are holding the following item: \|<item>\-T§bClick to insert the item name to chat\-S<item>
-      player: Player <name>§b is holding the following item: \|<item>\-T§bClick to insert the item name to chat\-S<item>
-        set: Player <name>§bs currently holding item has been set to: \|<item>\-T§bClick to insert the item name to chat\-S<item>
+      player: Player §b<player>§e is holding the following item: \|<item>\\-T§bClick to insert the item name to chat\-S<item>
+        set: Player §b<player>s§e currently holding item has been set to: \|<item>\-T§bClick to insert the item name to chat\-S<item>
     player:
       notfound: §cThe given player (§e§l<player>§c) was not found.
     reload:

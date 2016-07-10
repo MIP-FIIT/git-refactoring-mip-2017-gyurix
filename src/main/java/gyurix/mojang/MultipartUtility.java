@@ -104,7 +104,7 @@ public class MultipartUtility {
      *
      * @return A list of Strings as response in case the server returned
      * status OK, otherwise an exception is thrown.
-     * @throws IOException - The error what can happen during the operation
+     * @throws IOException - The ewrror what can happen during the operation
      */
     public String finish() throws IOException {
         writer.append(LINE_FEED).append("--").append(boundary).append("--").append(LINE_FEED);

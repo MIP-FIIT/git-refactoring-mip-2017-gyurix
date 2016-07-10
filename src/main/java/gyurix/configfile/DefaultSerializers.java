@@ -17,10 +17,12 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-public class DefaultSerializers {
-    public static int leftPad = 0;
+import static gyurix.protocol.Reflection.newInstance;
 
-    public static void init() {
+public class DefaultSerializers {
+    public static int leftPad;
+
+    public static void init () {
         ConfigSerialization.serializers.put(String.class, new StringSerializer());
         ConfigSerialization.serializers.put(Class.class, new ClassSerializer());
         ConfigSerialization.serializers.put(UUID.class, new UUIDSerializer());
@@ -68,7 +70,7 @@ public class DefaultSerializers {
     }
 
     public static class ArraySerializer implements Serializer {
-        public Object fromData(ConfigData input, Class fixClass, Type... parameterTypes) {
+        public Object fromData (ConfigData input, Class fixClass, Type... parameterTypes) {
             Class cl = Object.class;
             Type[] types = new Type[0];
             if (parameterTypes.length >= 1) {
@@ -99,7 +101,7 @@ public class DefaultSerializers {
         }
 
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             Class cl = parameters.length >= 1 ? (Class) parameters[0] : Object.class;
             ConfigData d = new ConfigData();
             d.listData = new ArrayList<>();
@@ -113,28 +115,28 @@ public class DefaultSerializers {
     }
 
     public static class BooleanSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+        public Object fromData (ConfigData input, Class cl, Type... parameters) {
             String s = input.stringData.toLowerCase();
             return s.equals("+") || s.equals("true") || s.equals("yes");
         }
 
-        public ConfigData toData(Object in, Type... parameters) {
+        public ConfigData toData (Object in, Type... parameters) {
             return new ConfigData((boolean) in ? "+" : "-");
         }
     }
 
     public static class CharacterSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+        public Object fromData (ConfigData input, Class cl, Type... parameters) {
             return input.stringData.charAt(0);
         }
 
-        public ConfigData toData(Object in, Type... parameters) {
-            return new ConfigData("" + in);
+        public ConfigData toData (Object in, Type... parameters) {
+            return new ConfigData(String.valueOf(in));
         }
     }
 
     private static class ClassSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+        public Object fromData (ConfigData input, Class cl, Type... parameters) {
             try {
                 return Class.forName(input.stringData);
             } catch (ClassNotFoundException e) {
@@ -143,13 +145,13 @@ public class DefaultSerializers {
             return null;
         }
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             return new ConfigData(((Class) input).getName());
         }
     }
 
     public static class CollectionSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class fixClass, Type... parameterTypes) {
+        public Object fromData (ConfigData input, Class fixClass, Type... parameterTypes) {
             try {
                 Collection col = (Collection) fixClass.newInstance();
                 Class cl;
@@ -183,7 +185,7 @@ public class DefaultSerializers {
         }
 
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             Type[] types = new Type[0];
             Class cl = Object.class;
             if (parameters.length >= 1) {
@@ -207,17 +209,17 @@ public class DefaultSerializers {
     }
 
     public static class ConfigDataSerializer implements Serializer {
-        public Object fromData(ConfigData data, Class cl, Type... type) {
+        public Object fromData (ConfigData data, Class cl, Type... type) {
             return data;
         }
 
-        public ConfigData toData(Object data, Type... type) {
+        public ConfigData toData (Object data, Type... type) {
             return (ConfigData) data;
         }
     }
 
     public static class MapSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class fixClass, Type... parameterTypes) {
+        public Object fromData (ConfigData input, Class fixClass, Type... parameterTypes) {
             try {
                 Map map;
                 if (fixClass == EnumMap.class)
@@ -270,7 +272,7 @@ public class DefaultSerializers {
         }
 
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             if (((Map) input).isEmpty())
                 return new ConfigData();
             Class keyClass = Object.class;
@@ -324,7 +326,7 @@ public class DefaultSerializers {
             }
         }
 
-        public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
+        public Object fromData (ConfigData input, Class fixClass, Type... parameters) {
             Method m = methods.get(Primitives.wrap(fixClass));
             try {
                 String s = StringUtils.stripStart(input.stringData.replace(" ", ""), "0");
@@ -342,7 +344,7 @@ public class DefaultSerializers {
             return null;
         }
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             String s = input.toString();
             int id = (s + ".").indexOf(".");
             return new ConfigData(StringUtils.leftPad(s, Math.max(leftPad + s.length() - id, 0), '0'));
@@ -351,7 +353,7 @@ public class DefaultSerializers {
     }
 
     public static class ObjectSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
+        public Object fromData (ConfigData input, Class fixClass, Type... parameters) {
             try {
                 if (fixClass.isEnum()) {
                     if (input.stringData == null || input.stringData.equals(""))
@@ -372,7 +374,7 @@ public class DefaultSerializers {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 return null;
             }
-            Object obj = ConfigSerialization.newInstance(fixClass);
+            Object obj = newInstance(fixClass);
             if (input.mapData == null)
                 return obj;
             for (Field f : Reflection.getAllFields(fixClass)) {
@@ -402,26 +404,34 @@ public class DefaultSerializers {
             return obj;
         }
 
-        public ConfigData toData(Object obj, Type... parameters) {
+        public ConfigData toData (Object obj, Type... parameters) {
             Class c = Primitives.wrap(obj.getClass());
             if (c.isEnum() || ArrayUtils.contains(c.getInterfaces(), StringSerializable.class) || c == BigDecimal.class || c == BigInteger.class) {
                 return new ConfigData(obj.toString());
             }
+            ConfigOptions dfOptions = (ConfigOptions) c.getAnnotation(ConfigOptions.class);
+            String dfValue = dfOptions == null ? "null" : dfOptions.defaultValue();
+            boolean dfSerialize = dfOptions == null || dfOptions.serialize();
+            String comment = dfOptions == null ? "" : dfOptions.comment();
             ConfigData out = new ConfigData();
+            if (!comment.isEmpty())
+                out.comment = comment;
             out.mapData = new LinkedHashMap();
             for (Field f : Reflection.getAllFields(c)) {
                 try {
-                    String dfValue = "null";
-                    String comment = "";
+                    String dffValue = dfValue;
+                    boolean serialize = dfSerialize;
+                    comment = "";
                     ConfigOptions options = f.getAnnotation(ConfigOptions.class);
                     if (options != null) {
-                        if (!options.serialize())
-                            continue;
-                        dfValue = "" + options.defaultValue();
-                        comment = "" + options.comment();
+                        serialize = options.serialize();
+                        dffValue = options.defaultValue();
+                        comment = options.comment();
                     }
+                    if (!serialize)
+                        continue;
                     Object o = f.get(obj);
-                    if (o != null && !o.toString().matches(dfValue)) {
+                    if (o != null && !o.toString().matches(dffValue)) {
                         String fn = f.getName();
                         String cn = ConfigSerialization.calculateClassName(Primitives.wrap(f.getType()), o.getClass());
                         Type t = f.getGenericType();
@@ -441,11 +451,11 @@ public class DefaultSerializers {
     }
 
     public static class PatternSerializer implements Serializer {
-        public Object fromData(ConfigData data, Class paramClass, Type... paramVarArgs) {
+        public Object fromData (ConfigData data, Class paramClass, Type... paramVarArgs) {
             return Pattern.compile(data.stringData);
         }
 
-        public ConfigData toData(Object pt, Type... paramVarArgs) {
+        public ConfigData toData (Object pt, Type... paramVarArgs) {
             return new ConfigData(((Pattern) pt).pattern());
         }
     }
@@ -453,11 +463,11 @@ public class DefaultSerializers {
     public static class SimpleDateFormatSerializer implements Serializer {
         public static final Field patternF = Reflection.getField(SimpleDateFormat.class, "pattern");
 
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+        public Object fromData (ConfigData input, Class cl, Type... parameters) {
             return new SimpleDateFormat(input.stringData);
         }
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             try {
                 return new ConfigData((String) patternF.get(input));
             } catch (Throwable e) {
@@ -468,21 +478,21 @@ public class DefaultSerializers {
     }
 
     public static class StringSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+        public Object fromData (ConfigData input, Class cl, Type... parameters) {
             return input.stringData;
         }
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             return new ConfigData((String) input);
         }
     }
 
     public static class UUIDSerializer implements Serializer {
-        public Object fromData(ConfigData input, Class cl, Type... parameters) {
+        public Object fromData (ConfigData input, Class cl, Type... parameters) {
             return UUID.fromString(input.stringData);
         }
 
-        public ConfigData toData(Object input, Type... parameters) {
+        public ConfigData toData (Object input, Type... parameters) {
             return new ConfigData(input.toString());
         }
     }

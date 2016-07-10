@@ -3,6 +3,7 @@ start: §eStarting server...
 debug: -
 #Servers default language.
 defaultLang: en
+disableWeatherChange: -
 #EconomyAPI settings
 economy:
   balanceTypes:
@@ -36,13 +37,13 @@ playerFile:
 #BungeeAPI
 bungee:
   playerCount: 100
-  playerList: 100
+  playerList: -1
   servers: 1000000
   currentServerName: 1000000
-  uuidAll: 1000000
-  serverIP: 1000000
-  ipOnJoin: +
-  uuidOnJoin: +
+  uuidAll: -1
+  serverIP: -1
+  ipOnJoin: -
+  uuidOnJoin: -
 #Allows sync and async metrics of the truth server tps, for the <tps>
 #variable, it also helps to detect informations about possible server crashes.
 tpsMeter:

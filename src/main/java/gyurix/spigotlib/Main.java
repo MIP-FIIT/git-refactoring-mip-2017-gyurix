@@ -12,6 +12,7 @@ import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
 import gyurix.economy.EconomyAPI.VaultHookType;
 import gyurix.economy.EconomyVaultHook;
+import gyurix.map.MapPacketCanceler;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
@@ -19,7 +20,6 @@ import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.manager.Protocol18_19_110;
 import gyurix.protocol.utils.WrapperFactory;
 import gyurix.scoreboard.ScoreboardAPI;
-import gyurix.spigotlib.ChatAPI.ChatMessageType;
 import gyurix.spigotlib.Config.PlayerFile;
 import gyurix.spigotlib.GlobalLangFile.PluginLang;
 import gyurix.spigotutils.BackendType;
@@ -27,6 +27,7 @@ import gyurix.spigotutils.TPSMeter;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -44,6 +45,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.ServiceRegisterEvent;
 import org.bukkit.event.server.ServiceUnregisterEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.permissions.PermissionAttachmentInfo;
@@ -64,17 +66,17 @@ import java.util.Map.Entry;
 import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class Main extends JavaPlugin implements Listener {
-    public static final String[] commands = new String[]{"chm", "abm", "sym", "title", "titledata", "titlehide", "vars",
-            "hasperm", "packets", "lang", "lf", "pf", "save", "reload", "errors", "velocity", "setamount", "item"};
-    public static final String version = "4.0";
+    public static final String[] commands = new String[]{"chm", "abm", "sym", "title", "vars",
+            "perm", "lang", "save", "reload", "velocity", "setamount", "item"};
+    public static final String version = "5.0";
     public static File dir;
-    public static boolean fullyEnabled = false;
+    public static boolean fullyEnabled;
     public static ConfigFile kf;
     public static PluginLang lang;
     public static Main pl;
 
     @EventHandler(priority = EventPriority.LOWEST)
-    public void editBook(PlayerEditBookEvent e) {
+    public void editBook (PlayerEditBookEvent e) {
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta old = e.getNewBookMeta();
         BookMeta meta = (BookMeta) book.getItemMeta();
@@ -86,7 +88,270 @@ public class Main extends JavaPlugin implements Listener {
         e.setNewBookMeta(meta);
     }
 
-    public void load() throws Throwable {
+    public boolean onCommand (final CommandSender sender, Command command, String label, String[] args) {
+        try {
+            Player plr = sender instanceof Player ? (Player) sender : null;
+            String cmd = args.length == 0 ? "help" : args[0].toLowerCase();
+            if (!sender.hasPermission("spigotlib.command." + cmd)) {
+                lang.msg(sender, "noperm");
+                return true;
+            }
+            ArrayList<Player> pls = Lists.newArrayList(plr);
+            int stripArg = 1;
+            if (args.length > 1) {
+                if (args[1].equals("*")) {
+                    stripArg = 2;
+                    pls = (ArrayList<Player>) Bukkit.getOnlinePlayers();
+                } else if (args[1].startsWith("p:")) {
+                    stripArg = 2;
+                    pls.clear();
+                    for (String s : args[1].substring(2).split(",")) {
+                        Player p = SU.getPlayer(s);
+                        if (p == null) {
+                            lang.msg(sender, "player.notfound", "player", p.getName());
+                            continue;
+                        }
+                        pls.add(p);
+                    }
+                }
+            }
+            args = (String[]) ArrayUtils.subarray(args, stripArg, args.length);
+            String fullMsg = VariableAPI.fillVariables(StringUtils.join(args, ' '), plr);
+            switch (cmd) {
+                case "help": {
+                    lang.msg(sender, "help");
+                    return true;
+                }
+                case "cmd": {
+                    for (Player p : pls) {
+                        for (String s : fullMsg.split(";")) {
+                            new gyurix.commands.Command(s).execute(p);
+                        }
+                    }
+                    return true;
+                }
+                case "vars": {
+                    if (args.length == 0) {
+                        lang.msg(sender, "vars", "vars", StringUtils.join(new TreeSet<>(VariableAPI.handlers.keySet()), ", "));
+                    } else {
+                        String f = lang.get(plr, "vars.fillformat");
+                        StringBuilder filled = new StringBuilder();
+                        for (Player p : pls) {
+                            filled.append('\n').append(SU.fillVariables(f, "player", p.getName(), "value", VariableAPI.fillVariables(fullMsg, p)));
+                        }
+                        lang.msg(sender, "vars.filled", "original", fullMsg, "filled", filled.length() == 0 ? "" : filled.substring(1));
+                    }
+                    return true;
+                }
+                case "perm": {
+                    if (args.length == 0) {
+                        String f = lang.get(plr, "perms.fillformat");
+                        String denyperm = lang.get(plr, "perms.denyformat");
+                        String allowperm = lang.get(plr, "perms.allowformat");
+                        StringBuilder sb = new StringBuilder();
+                        for (Player p : pls) {
+                            Set<PermissionAttachmentInfo> perms = p.getEffectivePermissions();
+                            for (PermissionAttachmentInfo perm : perms) {
+                                sb.append('\n');
+                                for (Entry<String, Boolean> e : perm.getAttachment().getPermissions().entrySet()) {
+                                    if (e.getValue())
+                                        sb.append('\n').append(allowperm.replace("<perm>", e.getKey()));
+                                    else
+                                        sb.append('\n').append(denyperm.replace("<perm>", e.getKey()));
+                                }
+                            }
+                            sender.sendMessage(f.replace("<perms>", sb.toString()));
+                        }
+                        return true;
+                    }
+                    for (Player p : pls)
+                        lang.msg(sender, p.hasPermission(args[0]) ? "perms.yes" : "perms.no", "perm", args[0]);
+                    return true;
+                }
+                case "debug": {
+                    Config.debug = !Config.debug;
+                    lang.msg(sender, "debug." + (Config.debug ? "on" : "off"));
+                    return true;
+                }
+                case "reload": {
+                    if (args[0].equals("config")) {
+                        kf.reload();
+                        kf.data.deserialize(Config.class);
+                        lang.msg(sender, "reload.config");
+                        return true;
+                    } else if (args[0].equals("lf")) {
+                        GlobalLangFile.unloadLF(lang);
+                        SU.saveResources(this, "lang.yml");
+                        lang = GlobalLangFile.loadLF("spigotlib", getDataFolder() + File.separator + "lang.yml");
+                        lang.msg(sender, "reload.lf");
+                        return true;
+                    } else if (args[0].equals("pf")) {
+                        if (PlayerFile.backend == BackendType.FILE) {
+                            SU.pf.reload();
+                        } else {
+                            SU.pf.data.mapData = new LinkedHashMap<>();
+                            for (Player pl : Bukkit.getOnlinePlayers()) {
+                                SU.loadPlayerConfig(pl.getUniqueId());
+                            }
+                            SU.loadPlayerConfig(null);
+                        }
+                        lang.msg(sender, "reload.pf");
+                        return true;
+                    }
+                    lang.msg(sender, "invalidcmd");
+                    return true;
+                }
+                case "save": {
+                    if (args[0].equals("pf")) {
+                        if (PlayerFile.backend == BackendType.FILE)
+                            SU.pf.save();
+                        else {
+                            for (ConfigData cd : new ArrayList<>(SU.pf.data.mapData.keySet())) {
+                                SU.savePlayerConfig(cd.stringData.length() == 40 ? UUID.fromString(cd.stringData) : null);
+                            }
+                        }
+                        lang.msg(sender, "save.pf");
+                        return true;
+                    }
+                    lang.msg(sender, "invalidcmd");
+                    return true;
+                }
+                case "velocity": {
+                    Vector v = new Vector(Double.valueOf(args[0]), Double.valueOf(args[1]), Double.valueOf(args[2]));
+                    for (Player p : pls) {
+                        p.setVelocity(v);
+                        lang.msg(sender, "velocity.set");
+                    }
+                    return true;
+                }
+                case "migratetodb": {
+                    SU.pf.db = PlayerFile.mysql;
+                    SU.pf.dbKey = "key";
+                    SU.pf.dbValue = "value";
+                    SU.pf.dbTable = PlayerFile.mysql.table;
+                    lang.msg(sender, "migrate.start");
+                    ArrayList<String> l = new ArrayList<>();
+                    l.add("DROP TABLE IF EXISTS " + PlayerFile.mysql.table);
+                    l.add("CREATE TABLE " + PlayerFile.mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
+                    for (Entry<ConfigData, ConfigData> e : SU.pf.data.mapData.entrySet()) {
+                        ConfigFile kf = SU.pf.subConfig("" + e.getKey(), "uuid='" + e.getKey() + "'");
+                        kf.mysqlUpdate(l, null);
+                    }
+                    ConfigFile kff = SU.pf.subConfig("CONSOLE", "uuid='CONSOLE'");
+                    kff.mysqlUpdate(l, null);
+                    PlayerFile.mysql.batch(l, new Runnable() {
+                        @Override
+                        public void run () {
+                            lang.msg(sender, "migrate.end");
+                        }
+                    });
+                    PlayerFile.backend = BackendType.MYSQL;
+                    kf.save();
+                    return true;
+                }
+                case "lang": {
+                    if (args.length == 0) {
+                        lang.msg(sender, "lang.list", "langs", StringUtils.join(GlobalLangFile.map.keySet(), ", "));
+                        for (Player p : pls) {
+                            String lng = SU.getPlayerConfig(p).getString("lang");
+                            if (lng == null)
+                                lng = Config.defaultLang;
+                            lang.msg(sender, "lang." + (p == sender ? "own" : "other"), "player", sender.getName(), "lang", lng);
+                        }
+                        return true;
+                    }
+                    args[0] = args[0].toLowerCase();
+                    for (Player p : pls) {
+                        SU.getPlayerConfig(p).setString("lang", args[0]);
+                        CommandSender cs = p == null ? SU.cs : p;
+                        lang.msg(sender, "lang.set" + (p == sender ? "" : ".other"), "player", cs.getName(), "lang", args[0]);
+                    }
+                    return true;
+                }
+                case "item": {
+                    if (args.length == 0) {
+                        for (Player p : pls)
+                            lang.msg(sender, p == sender ? "item.own" : "item.player", "name", p.getName(), "item", SU.itemToString(p.getItemInHand()));
+                        return true;
+                    }
+                    ItemStack is = SU.stringToItemStack(fullMsg);
+                    fullMsg = SU.itemToString(is);
+                    for (Player p : pls) {
+                        p.setItemInHand(is);
+                        lang.msg(sender, "item.set", "player", p.getName(), "item", fullMsg);
+                    }
+                    return true;
+                }
+                default:
+                    lang.msg(sender, "notdone");
+                    return true;
+            }
+        } catch (Throwable e) {
+            SU.error(sender, e, "SpigotLib", "gyurix");
+
+        }
+        return true;
+    }
+
+    public List<String> onTabComplete (CommandSender sender, Command command, String alias, String[] args) {
+        ArrayList<String> out = new ArrayList<>();
+        if (!sender.hasPermission("spigotlib.use")) {
+            lang.msg(sender, "noperm");
+            return out;
+        }
+        if (args.length == 1) {
+            args[0] = args[0].toLowerCase();
+            for (String cmd : commands) {
+                if (!cmd.startsWith(args[0]) || !sender.hasPermission("spigotlib.command." + cmd)) continue;
+                out.add(cmd);
+            }
+        } else if (args.length == 2) {
+            if (args[0].equals("reload")) {
+                return SU.filterStart(new String[]{"config", "pf", "lf"}, args[1]);
+            } else {
+                return null;
+            }
+        }
+        return out;
+    }
+
+    public void onLoad () {
+        pl = this;
+        try {
+            SU.srv = getServer();
+            SU.pm = SU.srv.getPluginManager();
+            SU.cs = SU.srv.getConsoleSender();
+            SU.msg = SU.srv.getMessenger();
+            SU.sm = SU.srv.getServicesManager();
+            SU.sch = SU.srv.getScheduler();
+            SU.js = new ScriptEngineManager().getEngineByName("JavaScript");
+            dir = getDataFolder();
+        } catch (Throwable e) {
+            SU.log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            SU.pm.disablePlugin(this);
+            return;
+        }
+        try {
+            DefaultSerializers.init();
+            ConfigHook.registerSerializers();
+            ConfigHook.registerVariables();
+        } catch (Throwable e) {
+            SU.log(this, "§cFailed to load config hook :-( The plugin is shutting down...");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            SU.pm.disablePlugin(this);
+            return;
+        }
+        try {
+            load();
+        } catch (Throwable e) {
+            SU.log(this, "Failed to load plugin, trying to reset the config...");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            resetConfig();
+        }
+    }
+
+    public void load () throws Throwable {
         SU.cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
         SU.saveResources(this, "lang.yml", "config.yml", "enchants.yml");
         kf = new ConfigFile(getResource("config.yml"));
@@ -138,254 +403,36 @@ public class Main extends JavaPlugin implements Listener {
         VariableAPI.phaHook = SU.pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
     }
 
-    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
+    public void resetConfig () {
         try {
-            if (!sender.hasPermission("spigotlib.use")) {
-                return true;
+            File oldConf = new File(dir + File.separator + "config.yml");
+            File backupConf = new File(dir + File.separator + "config.yml.bak");
+            if (backupConf.exists()) {
+                backupConf.delete();
             }
-            Player plr = sender instanceof Player ? (Player) sender : null;
-            if (args.length == 0) {
-                String msg2 = "\n \n \n§e▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n§l" +
-                        "      －－＞  §6§lＳＰＩＧＯＴＬＩＢ  －  ＭＡＩＮ  ＭＥＮＵ§e§l  ＜－－\n" +
-                        "§eCoded by §6§lgyuriX§e, contact him on Skype (gyuriskipe) if you need a custom plugin.\n \n \n" + lang.get(plr, "help");
-                if (plr == null) {
-                    sender.sendMessage(msg2);
-                    return true;
-                }
-                ChatAPI.sendJsonMsg(ChatMessageType.SYSTEM, msg2, plr);
-                return true;
+            oldConf.renameTo(backupConf);
+            File oldLang = new File(dir + File.separator + "lang.yml");
+            File backupLang = new File(dir + File.separator + "lang.yml.bak");
+            if (backupLang.exists()) {
+                backupLang.delete();
             }
-            if (!sender.hasPermission("spigotlib.command." + args[0])) {
-                lang.msg(sender, "noperm.command");
-                return true;
-            }
-            ArrayList<Player> pls = new ArrayList<>();
-            String fullMsg = StringUtils.join(args, " ", 1, args.length);
-            if (args.length >= 2) {
-                if (args[1].startsWith("p:")) {
-                    args[1] = args[1].substring(2);
-                    if (args[1].equals("*")) {
-                        pls = (ArrayList<Player>) Bukkit.getOnlinePlayers();
-                    } else {
-                        pls = new ArrayList<>();
-                        for (String pn : args[1].split(",")) {
-                            Player p2 = Bukkit.getPlayer(pn);
-                            if (p2 == null)
-                                continue;
-                            pls.add(p2);
-                        }
-                    }
-                    fullMsg = StringUtils.join(args, " ", 2, args.length);
-                } else if (plr != null) {
-                    pls.add(plr);
-                }
-            }
-            String[] d = fullMsg.split(" ");
-            if (d.length == 1 && d[0].isEmpty())
-                d = null;
-            switch (args[0]) {
-                case "chm":
-                    for (Player p : pls) {
-                        ChatAPI.sendJsonMsg(ChatMessageType.CHAT, VariableAPI.fillVariables(fullMsg, plr, p), p);
-                    }
-                    lang.msg(sender, "executed");
-                    return true;
-                case "sym":
-                    for (Player p : pls) {
-                        ChatAPI.sendJsonMsg(ChatMessageType.SYSTEM, VariableAPI.fillVariables(fullMsg, plr, p), p);
-                    }
-                    lang.msg(sender, "executed");
-                    return true;
-                case "abm":
-                    for (Player p : pls) {
-                        ChatAPI.sendJsonMsg(ChatMessageType.ACTION_BAR, VariableAPI.fillVariables(fullMsg, plr, p), p);
-                    }
-                    lang.msg(sender, "executed");
-                    return true;
-                case "title":
-                    String title = "";
-                    String sub = "";
-                    if (d.length > 2) {
-                        TitleAPI.setShowTime(Integer.valueOf(d[0]), Integer.valueOf(d[1]), Integer.valueOf(d[2]), pls);
-                        if (d.length > 3)
-                            title = d[3];
-                        if (d.length > 4)
-                            sub = d[4];
-                    } else {
-                        if (d.length > 0)
-                            title = d[0];
-                        if (d.length > 1)
-                            sub = d[1];
-                    }
-                    TitleAPI.setSubTitle(sub, pls);
-                    TitleAPI.setTitle(title, pls);
-                    lang.msg(sender, "executed");
-                    return true;
-                case "vars":
-                    if (d == null) {
-                        lang.msg(sender, "vars", "vars", StringUtils.join(new TreeSet<>(VariableAPI.handlers.keySet()), ", "));
-                    } else {
-                        String f = lang.get(plr, "vars.fillformat");
-                        StringBuilder filled = new StringBuilder();
-                        for (Player p : pls) {
-                            filled.append('\n').append(f.replace("<player>", p.getName()).replace("<value>", VariableAPI.fillVariables(fullMsg, p)));
-                        }
-                        lang.msg(sender, "vars.filled", "original", fullMsg, "filled", filled.length() == 0 ? "" : filled.substring(1));
-                    }
-                    return true;
-                case "perm":
-                    if (d == null) {
-                        String f = lang.get(plr, "perms.fillformat");
-                        String denyperm = lang.get(plr, "perms.denyformat");
-                        String allowperm = lang.get(plr, "perms.allowformat");
-                        StringBuilder sb = new StringBuilder();
-                        for (Player p : pls) {
-                            Set<PermissionAttachmentInfo> perms = p.getEffectivePermissions();
-                            for (PermissionAttachmentInfo perm : perms) {
-                                sb.append('\n');
-                                for (Entry<String, Boolean> e : perm.getAttachment().getPermissions().entrySet()) {
-                                    if (e.getValue())
-                                        sb.append('\n').append(allowperm.replace("<perm>", e.getKey()));
-                                    else
-                                        sb.append('\n').append(denyperm.replace("<perm>", e.getKey()));
-                                }
-                            }
-                            sender.sendMessage(f.replace("<perms>", sb.toString()));
-                        }
-                    } else {
-                        for (Player p : pls)
-                            lang.msg(sender, p.hasPermission(d[0]) ? "perms.yes" : "perms.no", "perm", d[0]);
-                    }
-                case "debug":
-                    Config.debug = !Config.debug;
-                    lang.msg(sender, "debug." + (Config.debug ? "on" : "off"));
-                    return true;
-                case "reload":
-                    if (args[1].equals("config")) {
-                        kf.reload();
-                        kf.data.deserialize(Config.class);
-                        lang.msg(sender, "reload.config");
-                        return true;
-                    } else if (args[1].equals("lf")) {
-                        GlobalLangFile.unloadLF(lang);
-                        SU.saveResources(this, "lang.yml");
-                        lang = GlobalLangFile.loadLF("spigotlib", getDataFolder() + File.separator + "lang.yml");
-                        lang.msg(sender, "reload.lf");
-                        return true;
-                    } else if (args[1].equals("pf")) {
-                        if (PlayerFile.backend == BackendType.FILE) {
-                            SU.pf.reload();
-                        } else {
-                            SU.pf.data.mapData = new LinkedHashMap<>();
-                            for (Player pl : Bukkit.getOnlinePlayers()) {
-                                SU.loadPlayerConfig(pl.getUniqueId());
-                            }
-                            SU.loadPlayerConfig(null);
-                        }
-                        lang.msg(sender, "reload.pf");
-                        return true;
-                    }
-                    lang.msg(sender, "invalidcmd");
-                    return true;
-                case "save":
-                    if (args[1].equals("pf")) {
-                        if (PlayerFile.backend == BackendType.FILE)
-                            SU.pf.save();
-                        else {
-                            for (ConfigData cd : new ArrayList<>(SU.pf.data.mapData.keySet())) {
-                                SU.savePlayerConfig(cd.stringData.length() == 40 ? UUID.fromString(cd.stringData) : null);
-                            }
-                        }
-                        lang.msg(sender, "save.pf");
-                        return true;
-                    }
-                    lang.msg(sender, "invalidcmd");
-                    return true;
-                case "velocity":
-                    if (args.length == 4) {
-                        if (plr == null) {
-                            lang.msg(sender, "noconsole");
-                            return true;
-                        }
-                        plr.setVelocity(new Vector(Double.valueOf(args[1]).doubleValue(), Double.valueOf(args[2]).doubleValue(), Double.valueOf(args[3]).doubleValue()));
-                    } else {
-                        if (args.length < 5) {
-                            lang.msg(sender, "invalidcmd");
-                            return true;
-                        }
-                        Vector v = new Vector(Double.valueOf(args[2]).doubleValue(), Double.valueOf(args[3]).doubleValue(), Double.valueOf(args[4]).doubleValue());
-                        for (Player p : pls) {
-                            p.setVelocity(v);
-                            lang.msg(sender, "velocity.set");
-                        }
-                    }
-                    return true;
-                case "migratetodb":
-                    SU.pf.db = PlayerFile.mysql;
-                    SU.pf.dbKey = "key";
-                    SU.pf.dbValue = "value";
-                    SU.pf.dbTable = PlayerFile.mysql.table;
-                    lang.msg(sender, "migrate.start");
-                    ArrayList<String> l = new ArrayList<>();
-                    l.add("DROP TABLE IF EXISTS " + PlayerFile.mysql.table);
-                    l.add("CREATE TABLE " + PlayerFile.mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
-
-                    for (Entry<ConfigData, ConfigData> e : SU.pf.data.mapData.entrySet()) {
-                        ConfigFile kf = SU.pf.subConfig("" + e.getKey(), "uuid='" + e.getKey() + "'");
-                        kf.mysqlUpdate(l, null);
-                    }
-                    ConfigFile kff = SU.pf.subConfig("CONSOLE", "uuid='CONSOLE'");
-                    kff.mysqlUpdate(l, null);
-                    PlayerFile.mysql.batch(l, new Runnable() {
-                        @Override
-                        public void run() {
-                            lang.msg(sender, "migrate.end");
-                        }
-                    });
-                    PlayerFile.backend = BackendType.MYSQL;
-                    kf.save();
-                    return true;
-                case "lang":
-                    if (args.length == 1) {
-                        lang.msg(sender, "lang.list", "langs", StringUtils.join(GlobalLangFile.map.keySet(), ", "));
-                        return true;
-                    }
-                    if (!sender.hasPermission("spigotlib.command.lang.others"))
-                        pls = Lists.newArrayList(plr);
-
-                    if (d == null) {
-                        for (Player p : pls) {
-                            String lng = SU.getPlayerConfig(p).getString("lang");
-                            if (lng == null)
-                                lng = Config.defaultLang;
-                            CommandSender cs = p == null ? SU.cs : p;
-                            lang.msg(sender, "lang." + (cs.getName().equals(p.getName()) ? "own" : "other"), "player", cs.getName(), "lang", lng);
-                        }
-                        return true;
-                    }
-                    d[0] = d[0].toLowerCase();
-                    if (!GlobalLangFile.map.keySet().contains(d[0])) {
-                        lang.msg(sender, "lang.notfound", "lang", d[0]);
-                        return true;
-                    }
-                    for (Player p : pls) {
-                        SU.getPlayerConfig(p).setString("lang", d[0]);
-                        CommandSender cs = p == null ? SU.cs : p;
-                        lang.msg(sender, "lang.set" + (cs.getName().equals(p.getName()) ? "" : ".other"), "player", cs.getName(), "lang", d[0]);
-                    }
-                    return true;
-                default:
-                    lang.msg(sender, "notdone");
-                    return true;
-            }
+            oldLang.renameTo(backupLang);
         } catch (Throwable e) {
-            SU.error(sender, e, "SpigotLib", "gyurix");
-
+            SU.log(this, "§cFailed to reset the config :-( The plugin is shutting down...");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            SU.pm.disablePlugin(this);
+            return;
         }
-        return true;
+        try {
+            load();
+        } catch (Throwable e) {
+            SU.log(this, "§cFailed to load plugin after config reset :-( The plugin is shutting down...");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            SU.pm.disablePlugin(this);
+        }
     }
 
-    public void onDisable() {
+    public void onDisable () {
         SU.log(this, "§4[§cShutdown§4]§e Saving players...");
         if (PlayerFile.backend == BackendType.FILE)
             SU.pf.save();
@@ -423,11 +470,12 @@ public class Main extends JavaPlugin implements Listener {
         SU.log(this, "§4[§cShutdown§4]§a The SpigotLib has shutted down properly.");
     }
 
-    public void onEnable() {
+    public void onEnable () {
         if (Reflection.ver.isAbove(v1_8)) {
             SU.cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
             SU.tp = new Protocol18_19_110();
             SU.pm.registerEvents(SU.tp, this);
+            SU.tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
         }
         SU.cs.sendMessage("§2[§aStartup§2]§e Initializing offline player manager...");
         SU.initOfflinePlayerManager();
@@ -467,57 +515,21 @@ public class Main extends JavaPlugin implements Listener {
         SU.cs.sendMessage("§2[§aStartup§2]§e Scheduling §cTpsMeter§e startup...");
         SU.sch.scheduleSyncDelayedTask(this, new Runnable() {
             @Override
-            public void run() {
+            public void run () {
                 Config.tpsMeter.start();
                 SU.cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
             }
         }, 1);
         SU.sch.scheduleSyncDelayedTask(this, new Runnable() {
             @Override
-            public void run() {
+            public void run () {
                 fullyEnabled = true;
             }
         }, 40);
     }
 
-    public void onLoad() {
-        pl = this;
-        try {
-            SU.srv = getServer();
-            SU.pm = SU.srv.getPluginManager();
-            SU.cs = SU.srv.getConsoleSender();
-            SU.msg = SU.srv.getMessenger();
-            SU.sm = SU.srv.getServicesManager();
-            SU.sch = SU.srv.getScheduler();
-            SU.js = new ScriptEngineManager().getEngineByName("JavaScript");
-            dir = getDataFolder();
-        } catch (Throwable e) {
-            SU.log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
-            return;
-        }
-        try {
-            DefaultSerializers.init();
-            ConfigHook.registerSerializers();
-            ConfigHook.registerVariables();
-        } catch (Throwable e) {
-            SU.log(this, "§cFailed to load config hook :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
-            return;
-        }
-        try {
-            load();
-        } catch (Throwable e) {
-            SU.log(this, "Failed to load plugin, trying to reset the config...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            resetConfig();
-        }
-    }
-
     @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerJoin(PlayerJoinEvent e) {
+    public void onPlayerJoin (PlayerJoinEvent e) {
         Player plr = e.getPlayer();
         UUID id = plr.getUniqueId();
         SU.loadPlayerConfig(id);
@@ -532,7 +544,7 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerLeave(PlayerQuitEvent e) {
+    public void onPlayerLeave (PlayerQuitEvent e) {
         Player plr = e.getPlayer();
         UUID uid = plr.getUniqueId();
         SU.savePlayerConfig(uid);
@@ -541,7 +553,7 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void onPluginUnload(PluginDisableEvent e) {
+    public void onPluginUnload (PluginDisableEvent e) {
         Plugin pl = e.getPlugin();
         if (SU.tp != null) {
             SU.tp.unregisterIncomingListener(pl);
@@ -549,30 +561,14 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        ArrayList<String> out = new ArrayList<>();
-        if (!sender.hasPermission("spigotlib.use")) {
-            lang.msg(sender, "noperm");
-            return out;
-        }
-        if (args.length == 1) {
-            args[0] = args[0].toLowerCase();
-            for (String cmd : commands) {
-                if (!cmd.startsWith(args[0]) || !sender.hasPermission("spigotlib.command." + cmd)) continue;
-                out.add(cmd);
-            }
-        } else if (args.length == 2) {
-            if (args[0].equals("reload")) {
-                return SU.filterStart(new String[]{"config", "pf", "lf"}, args[1]);
-            } else {
-                return null;
-            }
-        }
-        return out;
+    @EventHandler
+    public void onWeatherChange (WeatherChangeEvent e) {
+        if (Config.disableWeatherChange)
+            e.setCancelled(true);
     }
 
     @EventHandler
-    public void registerServiceEvent(ServiceRegisterEvent e) {
+    public void registerServiceEvent (ServiceRegisterEvent e) {
         RegisteredServiceProvider p = e.getProvider();
         String sn = p.getService().getName();
         SU.log(this, "Register service - " + sn);
@@ -589,37 +585,8 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public void resetConfig() {
-        try {
-            File oldConf = new File(dir + File.separator + "config.yml");
-            File backupConf = new File(dir + File.separator + "config.yml.bak");
-            if (backupConf.exists()) {
-                backupConf.delete();
-            }
-            oldConf.renameTo(backupConf);
-            File oldLang = new File(dir + File.separator + "lang.yml");
-            File backupLang = new File(dir + File.separator + "lang.yml.bak");
-            if (backupLang.exists()) {
-                backupLang.delete();
-            }
-            oldLang.renameTo(backupLang);
-        } catch (Throwable e) {
-            SU.log(this, "§cFailed to reset the config :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
-            return;
-        }
-        try {
-            load();
-        } catch (Throwable e) {
-            SU.log(this, "§cFailed to load plugin after config reset :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
-        }
-    }
-
     @EventHandler
-    public void unregisterServiceEvent(ServiceUnregisterEvent e) {
+    public void unregisterServiceEvent (ServiceUnregisterEvent e) {
         RegisteredServiceProvider p = e.getProvider();
         String sn = p.getService().getName();
         SU.log(this, "Unregister service - " + sn);

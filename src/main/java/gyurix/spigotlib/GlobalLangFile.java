@@ -48,7 +48,20 @@ public class GlobalLangFile {
             return msg2;
         }
         SU.log(Main.pl, "§cThe requested key (" + adr + ") wasn't found in any language.");
-        return lang + "." + adr;
+        return "§cNot found (§f" + lang + "." + adr + "§c)\\-T§eClick here to set the missing language data\\-S/sl lang " + lang + "." + adr + " ";
+    }
+
+    public static PluginLang loadLF (String pn, InputStream stream, String fn) {
+        try {
+            byte[] bytes = new byte[stream.available()];
+            stream.read(bytes);
+            load(new String(bytes, "UTF-8").split("\r?\n"));
+            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
+            return new PluginLang(pn);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private static void load(String[] data) {
@@ -93,16 +106,14 @@ public class GlobalLangFile {
         put(adr.substring(1), cs.toString());
     }
 
-    public static PluginLang loadLF(String pn, InputStream stream, String fn) {
-        try {
-            byte[] bytes = new byte[stream.available()];
-            stream.read(bytes);
-            load(new String(bytes, "UTF-8").split("\r?\n"));
-            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
-            return new PluginLang(pn);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
+    private static void put (String adr, String value) {
+        if (!adr.contains(".")) {
+            if (!map.containsKey(adr)) {
+                map.put(adr, new HashMap());
+            }
+        } else {
+            HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf(".")));
+            m.put(adr.substring(adr.indexOf(".") + 1), value);
         }
     }
 
@@ -113,17 +124,6 @@ public class GlobalLangFile {
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
-        }
-    }
-
-    private static void put(String adr, String value) {
-        if (!adr.contains(".")) {
-            if (!map.containsKey(adr)) {
-                map.put(adr, new HashMap());
-            }
-        } else {
-            HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf(".")));
-            m.put(adr.substring(adr.indexOf(".") + 1), value);
         }
     }
 
@@ -171,7 +171,7 @@ public class GlobalLangFile {
         public void msg(String prefix, CommandSender sender, String msg, String... repl) {
             Player plr = sender instanceof Player ? (Player) sender : null;
             msg = prefix + get(plr, msg, repl);
-            if (plr == null || Reflection.ver != ServerVersion.v1_8 && Reflection.ver != ServerVersion.v1_9) {
+            if (plr == null || Reflection.ver.isBellow(ServerVersion.v1_7)) {
                 sender.sendMessage(ChatTag.stripExtras(msg));
             } else {
                 ChatAPI.sendJsonMsg(ChatMessageType.CHAT, msg, plr);

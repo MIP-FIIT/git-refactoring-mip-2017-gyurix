@@ -8,27 +8,23 @@ import gyurix.spigotlib.SU;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class FramesEffect
-        implements CustomEffect {
-    @ConfigOptions(serialize = false)
+@ConfigOptions(serialize = false)
+public class FramesEffect implements CustomEffect {
     public long delay;
-    @ConfigOptions(serialize = false)
     public Iterator<Long> delays;
-    @ConfigOptions(serialize = false)
     public Frame f;
     @ConfigOptions(defaultValue = "9223372036854775807")
     public long frameTime = Long.MAX_VALUE;
+    @ConfigOptions()
     public ArrayList<Frame> frames = new ArrayList();
+    @ConfigOptions()
     public boolean random;
-    @ConfigOptions(serialize = false)
     public long repeat;
-    @ConfigOptions(serialize = false)
     public Iterator<Long> repeats;
-    @ConfigOptions(serialize = false)
     public int state = -1;
 
     @Override
-    public CustomEffect clone() {
+    public CustomEffect clone () {
         FramesEffect fe = new FramesEffect();
         fe.frameTime = frameTime;
         fe.state = state;
@@ -43,16 +39,16 @@ public class FramesEffect
     }
 
     @Override
-    public String getText() {
+    public String getText () {
         return f != null ? f.text : "";
     }
 
     @Override
-    public void setText(String newText) {
+    public void setText (String newText) {
     }
 
     @Override
-    public String next(String in) {
+    public String next (String in) {
         if (repeat == 0) {
             if (delays == null || !delays.hasNext()) {
                 state = random ? SU.rand.nextInt(frames.size()) : (state + 1) % frames.size();

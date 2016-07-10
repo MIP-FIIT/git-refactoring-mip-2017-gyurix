@@ -14,7 +14,7 @@ public class TabPlayer {
 
     public TabPlayer(Player plr) {
         profile = new GameProfile(plr.getUniqueId(), plr.getName());
-        tabname = "\u00a7c\u00a7lTABNAME:\u00a7e" + plr.getDisplayName();
+        tabname = "§c§lTABNAME:§e" + plr.getDisplayName();
         number = ScoreboardAPI.id++;
     }
 

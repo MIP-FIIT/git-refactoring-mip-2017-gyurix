@@ -1,105 +1,66 @@
 package gyurix.scoreboard;
 
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.UUID;
 
 public class Sidebar extends ScoreboardBar {
     /**
      * The lines of the Sidebar (0-14)
      */
-    public ArrayList<SidebarLine> lines = new ArrayList<>();
+    public final ArrayList<SidebarLine> lines = new ArrayList<>();
 
     /**
      * Default sidebar constructor
      */
-    public Sidebar() {
+    public Sidebar () {
         super("SBAPI-sidebar", "SLSB", 1);
-        for (int i = 1; i < 16; ++i) {
-            SidebarLine line = new SidebarLine(this, (char) (280 + i));
-            lines.add(line);
-            line.setText("§6§lLine - §e§l" + i);
-            line.number = 100 - i;
-        }
+        for (int i = 1; i < 16; ++i)
+            lines.add(new SidebarLine(this, (char) (280 + i), "§6§lLine - §e§l" + i, 100 - i));
     }
 
     @Override
-    public void addViewer(Player plr) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer - §f" + plr.getName());
-        viewers.add(plr.getUniqueId());
+    protected void addViewer (Player plr) {
+        viewers.add(plr);
         SU.tp.sendPacket(plr, getObjectivePacket(2));
-        for (SidebarLine line : lines) {
-            if (!line.hide)
+        for (SidebarLine line : lines)
+            if (!line.hidden)
                 line.show(plr);
-        }
         if (visible)
             SU.tp.sendPacket(plr, showPacket);
     }
 
     @Override
-    public void addViewerFirstBar(Player plr) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer first bar - §f" + plr.getName());
-        viewers.add(plr.getUniqueId());
+    protected void addViewerFirstBar (Player plr) {
+        viewers.add(plr);
         SU.tp.sendPacket(plr, getObjectivePacket(0));
-        for (SidebarLine line : lines) {
-            if (!line.hide)
+        for (SidebarLine line : lines)
+            if (!line.hidden)
                 line.show(plr);
-        }
         if (visible)
             SU.tp.sendPacket(plr, showPacket);
     }
 
-    public void hideLine(int line) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §chide line - " + line);
-        SidebarLine sl = lines.get(line - 1);
-        if (!sl.hide) {
-            Iterator<UUID> it = viewers.iterator();
-            while (it.hasNext()) {
-                Player p = Bukkit.getPlayer(it.next());
-                if (p == null) {
-                    it.remove();
-                    continue;
-                }
-                sl.hide(p);
-            }
-            sl.hide = true;
-        }
-    }
-
     @Override
-    public void moveViewer(ScoreboardBar oldBar, Player plr) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cmove viewer - §f" + plr.getName());
-        UUID uuid = plr.getUniqueId();
-        oldBar.viewers.remove(uuid);
-        viewers.add(uuid);
+    protected void moveViewer (ScoreboardBar oldBar, Player plr) {
+        oldBar.viewers.remove(plr);
+        viewers.add(plr);
         Sidebar old = (Sidebar) oldBar;
         for (int i = 0; i < 15; ++i) {
             old.lines.get(i).hide(plr);
             lines.get(i).show(plr);
         }
         SU.tp.sendPacket(plr, getObjectivePacket(2));
-        if (!old.visible && visible) {
+        if (!old.visible && visible)
             SU.tp.sendPacket(plr, showPacket);
-        }
-        if (!visible && old.visible) {
+        if (!visible && old.visible)
             SU.tp.sendPacket(plr, hidePacket);
-        }
     }
 
     @Override
-    public void removeViewer(Player plr) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eremove viewer - §f" + plr.getName());
-        if (!viewers.remove(plr.getUniqueId()))
+    protected void removeViewer (Player plr) {
+        if (!viewers.remove(plr))
             return;
         if (!plr.isOnline())
             return;
@@ -109,54 +70,49 @@ public class Sidebar extends ScoreboardBar {
             line.hide(plr);
     }
 
-    public void setLine(int line, String text) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset line - " + line + " - §f" + text);
+    public void hideLine (int line) {
+        if (line < 1 || line > 15)
+            return;
         SidebarLine sl = lines.get(line - 1);
+        if (sl.hidden)
+            return;
+        for (Player p : viewers)
+            sl.hide(p);
+        sl.hidden = true;
+    }
+
+    public void setLine (int line, String text) {
+        if (line < 1 || line > 15)
+            return;
+        SidebarLine sl = lines.get(line - 1);
+        if (sl.text.equals(text))
+            return;
         sl.setText(text);
-        Iterator<UUID> it = viewers.iterator();
-        while (it.hasNext()) {
-            Player p = Bukkit.getPlayer(it.next());
-            if (p == null) {
-                it.remove();
-                continue;
-            }
+        for (Player p : viewers)
             sl.update(p);
-        }
     }
 
-    public void setNumber(int line, int number) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset number - " + line + " - §f" + number);
+    public void setNumber (int line, int number) {
+        if (line < 1 || line > 15)
+            return;
         SidebarLine sl = lines.get(line - 1);
+        if (sl.number == number)
+            return;
         sl.number = number;
-        Iterator<UUID> it = viewers.iterator();
-        while (it.hasNext()) {
-            Player p = Bukkit.getPlayer(it.next());
-            if (p == null) {
-                it.remove();
-                continue;
-            }
-            sl.updateNumber(p);
-        }
+        for (Player p : viewers)
+            SU.tp.sendPacket(p, sl.getScorePacket(sl.user, ScoreboardAPI.setScore));
     }
 
-    public void showLine(int line) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §ashow line - " + line);
+    public void showLine (int line) {
+        if (line < 1 || line > 15)
+            return;
         SidebarLine sl = lines.get(line - 1);
-        if (sl.hide) {
-            sl.hide = false;
-            Iterator<UUID> it = viewers.iterator();
-            while (it.hasNext()) {
-                Player p = Bukkit.getPlayer(it.next());
-                if (p == null) {
-                    it.remove();
-                    continue;
-                }
-                sl.show(p);
-            }
-        }
+        if (!sl.hidden)
+            return;
+        sl.hidden = false;
+        for (Player p : viewers)
+            sl.show(p);
     }
 }
+
 

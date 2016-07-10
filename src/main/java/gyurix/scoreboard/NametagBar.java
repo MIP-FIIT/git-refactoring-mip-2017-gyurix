@@ -5,17 +5,16 @@ import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
-import java.util.UUID;
 
 public class NametagBar
         extends ScoreboardBar {
     public HashMap<String, Nametag> pls = new HashMap();
 
-    public NametagBar() {
+    public NametagBar () {
         super("SBAPI-nametag", "SLNB", 2);
     }
 
-    public void addNametag(Nametag nt) {
+    public void addNametag (Nametag nt) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §aadd nametag - §f" + nt.name);
         if (pls.containsKey(nt.name))
@@ -27,10 +26,10 @@ public class NametagBar
     }
 
     @Override
-    public void addViewer(Player plr) {
+    public void addViewer (Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer - §f" + plr.getName());
-        viewers.add(plr.getUniqueId());
+        viewers.add(plr);
         if (visible) {
             SU.tp.sendPacket(plr, getObjectivePacket(0));
             SU.tp.sendPacket(plr, showPacket);
@@ -42,10 +41,10 @@ public class NametagBar
     }
 
     @Override
-    public void addViewerFirstBar(Player plr) {
+    public void addViewerFirstBar (Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eadd viewer first bar - §f" + plr.getName());
-        viewers.add(plr.getUniqueId());
+        viewers.add(plr);
         if (visible) {
             SU.tp.sendPacket(plr, getObjectivePacket(0));
             SU.tp.sendPacket(plr, showPacket);
@@ -57,13 +56,12 @@ public class NametagBar
     }
 
     @Override
-    public void moveViewer(ScoreboardBar oldBar, Player plr) {
+    public void moveViewer (ScoreboardBar oldBar, Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §emove viewer - §f" + plr.getName());
         NametagBar old = (NametagBar) oldBar;
-        UUID id = plr.getUniqueId();
-        viewers.add(id);
-        old.viewers.remove(id);
+        viewers.add(plr);
+        old.viewers.remove(plr);
         if (old.visible) {
             for (Nametag n : old.pls.values()) {
                 if (!pls.containsKey(n.name)) continue;
@@ -99,22 +97,11 @@ public class NametagBar
         }
     }
 
-    public void removeNametag(String name) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cremove nametag - §f" + name);
-        Nametag nt = pls.remove(name);
-        if (nt != null) {
-            sendPackets(nt.getTeamPacket(1));
-            if (visible)
-                sendPackets(nt.getRemoveScorePacket());
-        }
-    }
-
     @Override
-    public void removeViewer(Player plr) {
+    public void removeViewer (Player plr) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §eremove viewer - §f" + plr.getName());
-        if (!viewers.remove(plr.getUniqueId()))
+        if (!viewers.remove(plr))
             return;
         if (!plr.isOnline())
             return;
@@ -124,33 +111,8 @@ public class NametagBar
             SU.tp.sendPacket(plr, getObjectivePacket(1));
     }
 
-    public void setData(String pln, String prefix, String suffix, boolean hideNameTag) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset data - §f" + pln + " - " + prefix + "§f - " + suffix);
-        Nametag nt = pls.get(pln);
-        if (nt == null) {
-            return;
-        }
-        nt.prefix = prefix;
-        nt.suffix = suffix;
-        nt.hide = hideNameTag;
-        sendPackets(nt.getTeamPacket(2));
-    }
-
-    public void setNumber(String pln, int number) {
-        if (Config.debug)
-            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset number - §f" + pln + " - " + number);
-        Nametag nt = pls.get(pln);
-        if (nt == null) {
-            return;
-        }
-        nt.number = number;
-        if (visible)
-            sendPackets(nt.getSetScorePacket());
-    }
-
     @Override
-    public void setVisible(boolean visible) {
+    public void setVisible (boolean visible) {
         if (Config.debug)
             SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset visibility - §f" + visible);
         if (visible != this.visible) {
@@ -164,6 +126,42 @@ public class NametagBar
                 sendPackets(getObjectivePacket(1));
             this.visible = visible;
         }
+    }
+
+    public void removeNametag (String name) {
+        if (Config.debug)
+            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §cremove nametag - §f" + name);
+        Nametag nt = pls.remove(name);
+        if (nt != null) {
+            sendPackets(nt.getTeamPacket(1));
+            if (visible)
+                sendPackets(nt.getRemoveScorePacket());
+        }
+    }
+
+    public void setData (String pln, String prefix, String suffix, boolean hideNameTag) {
+        if (Config.debug)
+            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset data - §f" + pln + " - " + prefix + "§f - " + suffix);
+        Nametag nt = pls.get(pln);
+        if (nt == null) {
+            return;
+        }
+        nt.prefix = prefix;
+        nt.suffix = suffix;
+        nt.hide = hideNameTag;
+        sendPackets(nt.getTeamPacket(2));
+    }
+
+    public void setNumber (String pln, int number) {
+        if (Config.debug)
+            SU.cs.sendMessage("§6[ §eScoreboardAPI §6] §f" + barname + " - §bset number - §f" + pln + " - " + number);
+        Nametag nt = pls.get(pln);
+        if (nt == null) {
+            return;
+        }
+        nt.number = number;
+        if (visible)
+            sendPackets(nt.getSetScorePacket());
     }
 }
 

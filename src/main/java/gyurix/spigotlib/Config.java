@@ -19,6 +19,7 @@ public class Config {
     public static boolean debug;
     @ConfigOptions(comment = "Servers default language.")
     public static String defaultLang = "en";
+    public static boolean disableWeatherChange;
     @ConfigOptions(comment = "EconomyAPI settings")
     public static EconomyAPI economy = new EconomyAPI();
     @ConfigOptions(serialize = false)
@@ -29,7 +30,7 @@ public class Config {
             "ability for developers to catch packets and code awesome plugin features :)")
     public static boolean packetAPI;
     @ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
-    public static boolean phaHook = false;
+    public static boolean phaHook;
     @ConfigOptions(comment = "PlayerFile settings")
     public static PlayerFile playerFile;
     public static String start = "§eSzerver indítása...";

@@ -1,15 +1,15 @@
 package gyurix.json;
 
 import com.google.common.primitives.Primitives;
-import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.protocol.Reflection;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.Map.Entry;
+
+import static gyurix.protocol.Reflection.newInstance;
 
 public class JsonAPI {
     public static final Type[] emptyTypeArray = new Type[0];
@@ -75,7 +75,7 @@ public class JsonAPI {
             Object[] out = (Object[]) Array.newInstance(dataClass, col.size());
             return col.toArray(out);
         } else if (c == '{') {
-            Object obj = ConfigSerialization.newInstance(cl);
+            Object obj = newInstance(cl);
             if (in.next() == '}')
                 return obj;
             else
@@ -190,10 +190,11 @@ public class JsonAPI {
         } else if (o instanceof Iterable || cl.isArray()) {
             sb.append('[');
             if (cl.isArray()) {
-                for (Object obj : (Object[]) o) {
-                    serialize(sb, obj);
+                int max = Array.getLength(o);
+                /*for (int i = 0; i < max; i++) {
+                    serialize(sb, Array.get(o, i));
                     sb.append(',');
-                }
+                }*/
             } else {
                 for (Object obj : (Iterable) o) {
                     serialize(sb, obj);
@@ -220,6 +221,10 @@ public class JsonAPI {
             }
         } else {
             sb.append('{');
+            if (cl.getName().startsWith("java.")) {
+                sb.append("Class ").append(cl.getName()).append(" shouldn't be serialized}");
+                return;
+            }
             for (Field f : cl.getDeclaredFields()) {
                 try {
                     f.setAccessible(true);
@@ -236,11 +241,8 @@ public class JsonAPI {
                     sb.append('\"').append(escape(fn)).append("\":");
                     serialize(sb, fo);
                     sb.append(',');
-                    continue;
                 } catch (Throwable e) {
-                    System.err.println("JsonAPI: Error on serializing " + f.getName() + " field in " + o.getClass().getName() + " class.");
-                    if (!Config.debug) continue;
-                    e.printStackTrace();
+                    SU.cs.sendMessage("§eJsonAPI:§c Error on serializing §e" + f.getName() + "§c field in §e" + o.getClass().getName() + "§c class. Current JSON:\n§f" + sb);
                 }
             }
             if (sb.charAt(sb.length() - 1) == ',') {

@@ -20,6 +20,7 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.command.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.*;
@@ -111,6 +112,46 @@ public final class SU {
     private static Object worldServer, mcServer;
 
     /**
+     * Adds the given item to the given inventory
+     * @param inv - The inventory to which the item should be added
+     * @param is - The addable item
+     * @param maxStack - Maximal stack size of the item
+     * @return The remaining items after the addition
+     */
+    public static int addItem (Inventory inv, ItemStack is, int maxStack) {
+        int left = is.getAmount();
+        int size = inv.getSize();
+        for (int i = 0; i < size; i++) {
+            ItemStack is2 = inv.getItem(i);
+            if (itemSimiliar(is2, is)) {
+                int am = is2.getAmount();
+                int canPlace = maxStack - am;
+                if (canPlace >= left) {
+                    is2.setAmount(am + left);
+                    return 0;
+                } else if (canPlace > 0) {
+                    is2.setAmount(am + canPlace);
+                    left -= canPlace;
+                }
+            }
+        }
+        for (int i = 0; i < size; i++) {
+            ItemStack is2 = inv.getItem(i);
+            if (is2 == null || is2.getType() == Material.AIR) {
+                is2 = is.clone();
+                if (maxStack >= left) {
+                    is2.setAmount(left);
+                    return 0;
+                } else {
+                    is2.setAmount(maxStack);
+                    left -= maxStack;
+                }
+            }
+        }
+        return left;
+    }
+
+    /**
      * A truth check if an iterable contains the given typed item or not
      *
      * @param source ItemStack iterable
@@ -126,38 +167,134 @@ public final class SU {
     }
 
     /**
-     * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
-     * contains the authors name
+     * A truth check for two items, if they type is actually totally same or not.
+     * The only allowed difference between the stacks could be only their count.
      *
-     * @param sender - The CommandSender who should receive the error report
-     * @param err    - The error
-     * @param plugin - The plugin where the error appeared
-     * @param author - The author name, which will be searched in the error report
+     * @param item1 first item of the similiar checking
+     * @param item2 second item of the similiar checking
+     * @return True if the two itemstack contains exactly the same abilities (id, durability, metadata),
+     * the item counts could be different; false otherwise.
      */
-    public static void error(CommandSender sender, Throwable err, String plugin, String author) {
-        StringBuilder report = new StringBuilder();
-        report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
-                .append(err.getClass().getSimpleName());
-        if (err.getMessage() != null)
-            report.append('\n').append(err.getMessage());
-        int i = 0;
-        boolean startrep = true;
-        for (StackTraceElement el : err.getStackTrace()) {
-            boolean force = el.getClassName() != null && el.getClassName().contains(author);
-            if (force)
-                startrep = false;
-            if (startrep || force)
-                report.append("\n§c #").append(++i)
-                        .append(": §eLINE §a").append(el.getLineNumber())
-                        .append("§e in FILE §6").append(el.getFileName())
-                        .append("§e (§7").append(el.getClassName())
-                        .append("§e.§b").append(el.getMethodName())
-                        .append("§e)");
+    public static boolean itemSimiliar (ItemStack item1, ItemStack item2) {
+        if (item1 == item2)
+            return true;
+        if (item1 == null || item2 == null)
+            return false;
+        item1 = item1.clone();
+        item1.setAmount(1);
+        item2 = item2.clone();
+        item2.setAmount(1);
+        return itemToString(item1).equals(itemToString(item2));
+    }
+
+    /**
+     * Converts an ItemStack to it's representing string
+     *
+     * @param in convertable ItemStack
+     * @return the conversion output String or "0:-1 0" if the given ItemStack is null
+     */
+    public static String itemToString (ItemStack in) {
+        if (in == null)
+            return "0:-1 0";
+        StringBuilder out = new StringBuilder();
+        out.append(in.getType().name());
+        if (in.getDurability() != 0)
+            out.append(':').append(in.getDurability());
+        if (in.getAmount() != 1)
+            out.append(' ').append(in.getAmount());
+        ItemMeta meta = in.getItemMeta();
+        if (meta == null)
+            return out.toString();
+        if (Reflection.ver.isAbove(v1_8))
+            for (ItemFlag f : meta.getItemFlags())
+                out.append(" hide:").append(f.name().substring(5));
+        if (meta.hasDisplayName())
+            out.append(" name:").append(escapeText(meta.getDisplayName()));
+        if (meta.hasLore())
+            out.append(" lore:").append(escapeText(StringUtils.join(meta.getLore(), '\n')));
+        for (Entry<Enchantment, Integer> ench : meta.getEnchants().entrySet())
+            out.append(' ').append(Config.enchants.get(ench.getKey().getName()).get(0)).append(':').append(ench.getValue());
+
+        if (meta instanceof BookMeta) {
+            BookMeta bmeta = (BookMeta) meta;
+            if (bmeta.hasAuthor())
+                out.append(" author:").append(bmeta.getAuthor());
+            if (bmeta.hasTitle())
+                out.append(" title:").append(bmeta.getTitle());
+            for (String page : bmeta.getPages())
+                out.append(" page:").append(escapeText(page));
         }
-        String rep = report.toString();
-        cs.sendMessage(rep);
-        if (sender != null && sender != cs)
-            sender.sendMessage(rep);
+        if (Reflection.ver.isAbove(v1_8))
+            if (meta instanceof BannerMeta) {
+                BannerMeta bmeta = (BannerMeta) meta;
+                out.append(" color:").append(bmeta.getBaseColor() == null ? "BLACK" : bmeta.getBaseColor().name());
+                for (Pattern p : bmeta.getPatterns())
+                    out.append(' ').append(p.getPattern().getIdentifier()).append(':').append(p.getColor().name());
+            }
+        if (meta instanceof LeatherArmorMeta) {
+            LeatherArmorMeta bmeta = (LeatherArmorMeta) meta;
+            Color c = bmeta.getColor();
+            if (!c.equals(Bukkit.getItemFactory().getDefaultLeatherColor()))
+                out.append(" color:").append(Integer.toHexString(c.asRGB()));
+        } else if (meta instanceof FireworkMeta) {
+            FireworkMeta bmeta = (FireworkMeta) meta;
+            out.append(" power:").append(bmeta.getPower());
+            for (FireworkEffect e : bmeta.getEffects()) {
+                out.append(' ').append(e.getType().name()).append(':');
+                boolean pref = false;
+                if (!e.getColors().isEmpty()) {
+                    pref = true;
+                    out.append("colors:");
+                    for (Color c : e.getColors()) {
+                        out.append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue()).append(';');
+                    }
+                    out.setLength(out.length() - 1);
+                }
+                if (!e.getFadeColors().isEmpty()) {
+                    if (pref)
+                        out.append('|');
+                    else
+                        pref = true;
+                    out.append("fades:");
+                    for (Color c : e.getFadeColors()) {
+                        out.append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue()).append(';');
+                    }
+                    out.setLength(out.length() - 1);
+                }
+                if (e.hasFlicker()) {
+                    if (pref)
+                        out.append('|');
+                    else
+                        pref = true;
+                    out.append("flicker");
+                }
+                if (e.hasTrail()) {
+                    if (pref)
+                        out.append('|');
+                    out.append("trail");
+                }
+            }
+        } else if (meta instanceof PotionMeta) {
+            PotionMeta bmeta = (PotionMeta) meta;
+            for (PotionEffect e : bmeta.getCustomEffects()) {
+                out.append(' ').append(e.getType().getName()).append(':').append(e.getDuration()).append(':').append(e.getAmplifier());
+                if (Reflection.ver.isAbove(v1_8))
+                    if (!e.hasParticles())
+                        out.append(":np");
+                if (!e.isAmbient())
+                    out.append(":na");
+            }
+        } else if (meta instanceof SkullMeta) {
+            SkullMeta bmeta = (SkullMeta) meta;
+            if (bmeta.hasOwner())
+                out.append(" owner:").append(bmeta.getOwner());
+        } else if (meta instanceof EnchantmentStorageMeta) {
+            for (Entry<Enchantment, Integer> e : ((EnchantmentStorageMeta) meta).getStoredEnchants().entrySet()) {
+                out.append(" +").append(e.getKey().getName()).append(':').append(e.getValue());
+            }
+        }
+
+        return out.toString();
     }
 
     /**
@@ -220,7 +357,13 @@ public final class SU {
                 List<String> lore = meta.getLore();
                 for (int i = 0; i < lore.size(); i++)
                     lore.set(i, fillVariables(lore.get(i), vars));
-                meta.setLore(lore);
+                ArrayList<String> newLore = new ArrayList<>();
+                for (int i = 0; i < lore.size(); i++) {
+                    for (String s : lore.get(i).split("\n")) {
+                        newLore.add(s);
+                    }
+                }
+                meta.setLore(newLore);
             }
             if (meta instanceof SkullMeta) {
                 ((SkullMeta) meta).setOwner(fillVariables(((SkullMeta) meta).getOwner(), vars));
@@ -228,6 +371,41 @@ public final class SU {
             is.setItemMeta(meta);
         }
         return is;
+    }
+
+    /**
+     * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
+     * contains the authors name
+     *
+     * @param sender - The CommandSender who should receive the error report
+     * @param err    - The error
+     * @param plugin - The plugin where the error appeared
+     * @param author - The author name, which will be searched in the error report
+     */
+    public static void error (CommandSender sender, Throwable err, String plugin, String author) {
+        StringBuilder report = new StringBuilder();
+        report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
+                .append(err.getClass().getSimpleName());
+        if (err.getMessage() != null)
+            report.append('\n').append(err.getMessage());
+        int i = 0;
+        boolean startrep = true;
+        for (StackTraceElement el : err.getStackTrace()) {
+            boolean force = el.getClassName() != null && el.getClassName().contains(author);
+            if (force)
+                startrep = false;
+            if (startrep || force)
+                report.append("\n§c #").append(++i)
+                        .append(": §eLINE §a").append(el.getLineNumber())
+                        .append("§e in FILE §6").append(el.getFileName())
+                        .append("§e (§7").append(el.getClassName())
+                        .append("§e.§b").append(el.getMethodName())
+                        .append("§e)");
+        }
+        String rep = report.toString();
+        cs.sendMessage(rep);
+        if (sender != null && sender != cs)
+            sender.sendMessage(rep);
     }
 
     /**
@@ -243,7 +421,7 @@ public final class SU {
             if (last == null)
                 last = (String) v;
             else {
-                s = s.replace("<" + last + ">", String.valueOf(v));
+                s = s.replace('<' + last + '>', String.valueOf(v));
                 last = null;
             }
         }
@@ -259,7 +437,7 @@ public final class SU {
      */
     public static String fillVariables(String s, HashMap<String, Object> vars) {
         for (Entry<String, Object> v : vars.entrySet())
-            s = s.replace("<" + v.getKey() + ">", String.valueOf(v.getValue()));
+            s = s.replace('<' + v.getKey() + '>', String.valueOf(v.getValue()));
         return s;
     }
 
@@ -300,40 +478,6 @@ public final class SU {
     }
 
     /**
-     * Get the numeric id of the given itemname, it works for both numeric and text ids.
-     *
-     * @param name the case insensitive material name of the item or the numeric id of the item.
-     * @return the numeric id of the requested item or 1, if the given name is incorrect or null
-     */
-    public static int getId(String name) {
-        try {
-            return Material.valueOf(name.toUpperCase()).getId();
-        } catch (Throwable e) {
-            try {
-                return Integer.valueOf(name);
-            } catch (Throwable e2) {
-                return 1;
-            }
-        }
-    }
-
-    /**
-     * Get the name of an offline player based on it's UUID.
-     *
-     * @param id UUID of the target player
-     * @return The name of the requested player or null if the name was not found.
-     */
-    public static String getName(UUID id) {
-        Player plr = Bukkit.getPlayer(id);
-        if (plr != null)
-            return plr.getName();
-        OfflinePlayer op = Bukkit.getOfflinePlayer(id);
-        if (op == null)
-            return null;
-        return op.getName();
-    }
-
-    /**
      * Get the ping of a player in milliseconds
      *
      * @param plr target player
@@ -366,6 +510,60 @@ public final class SU {
         if (p == null)
             p = loadPlayer(getUUID(name));
         return p;
+    }
+
+    /**
+     * Load an offline player to be handleable like an online one.
+     *
+     * @param uuid uuid of the loadable offline player
+     * @return the loaded Player object, or null if the player was not found.
+     */
+    public static Player loadPlayer (UUID uuid) {
+        try {
+            if (uuid == null) {
+                return null;
+            }
+            OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+            if (player == null) {
+                return null;
+            }
+
+            Player plr = (Player) getBukkitEntityM.invoke(entityPlayerC.newInstance(mcServer, worldServer, new GameProfile(player.getName(), uuid).toNMS(), playerInterractManagerC.newInstance(worldServer)));
+            if (plr != null) {
+                loadDataM.invoke(plr);
+                return plr;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Get the UUID of an offline player based on his name.
+     *
+     * @param name name of the target player
+     * @return The UUID of the requested player, or null if it was not found.
+     */
+    public static UUID getUUID (String name) {
+        Player plr = Bukkit.getPlayer(name);
+        if (plr != null)
+            return plr.getUniqueId();
+        OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().equals(name))
+                return p.getUniqueId();
+        }
+        name = name.toLowerCase();
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().toLowerCase().equals(name))
+                return p.getUniqueId();
+        }
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().toLowerCase().contains(name))
+                return p.getUniqueId();
+        }
+        return null;
     }
 
     /**
@@ -409,33 +607,6 @@ public final class SU {
         }
     }
 
-    /**
-     * Get the UUID of an offline player based on his name.
-     *
-     * @param name name of the target player
-     * @return The UUID of the requested player, or null if it was not found.
-     */
-    public static UUID getUUID(String name) {
-        Player plr = Bukkit.getPlayer(name);
-        if (plr != null)
-            return plr.getUniqueId();
-        OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
-        for (OfflinePlayer p : offlinePls) {
-            if (p.getName() != null && p.getName().equals(name))
-                return p.getUniqueId();
-        }
-        name = name.toLowerCase();
-        for (OfflinePlayer p : offlinePls) {
-            if (p.getName() != null && p.getName().toLowerCase().equals(name))
-                return p.getUniqueId();
-        }
-        for (OfflinePlayer p : offlinePls) {
-            if (p.getName() != null && p.getName().toLowerCase().contains(name))
-                return p.getUniqueId();
-        }
-        return null;
-    }
-
     static void initOfflinePlayerManager() {
         try {
             Class mcServerClass = Reflection.getNMSClass("MinecraftServer");
@@ -460,6 +631,16 @@ public final class SU {
     }
 
     /**
+     * Logs messages from the given plugin. You can use color codes in the msg.
+     *
+     * @param pl  - The plugin who wants to log the message
+     * @param msg - The message which should be logged
+     */
+    public static void log (Plugin pl, Object... msg) {
+        cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
+    }
+
+    /**
      * A truth check for two items, if they are actually totally same or not
      *
      * @param item1 first item of the equal checking
@@ -470,179 +651,11 @@ public final class SU {
         return itemToString(item1).equals(itemToString(item2));
     }
 
-    /**
-     * A truth check for two items, if they type is actually totally same or not.
-     * The only allowed difference between the stacks could be only their count.
-     *
-     * @param item1 first item of the similiar checking
-     * @param item2 second item of the similiar checking
-     * @return True if the two itemstack contains exactly the same abilities (id, durability, metadata),
-     * the item counts could be different; false otherwise.
-     */
-    public static boolean itemSimiliar(ItemStack item1, ItemStack item2) {
-        if (item1 == item2)
-            return true;
-        if (item1 == null || item2 == null)
-            return false;
-        item1 = item1.clone();
-        item1.setAmount(1);
-        item2 = item2.clone();
-        item2.setAmount(1);
-        return itemToString(item1).equals(itemToString(item2));
-    }
-
-    /**
-     * Converts an ItemStack to it's representing string
-     *
-     * @param in convertable ItemStack
-     * @return the conversion output String or "0:-1 0" if the given ItemStack is null
-     */
-    public static String itemToString(ItemStack in) {
-        if (in == null)
-            return "0:-1 0";
-        StringBuilder out = new StringBuilder();
-        out.append(in.getType().name());
-        if (in.getDurability() != 0)
-            out.append(':').append(in.getDurability());
-        if (in.getAmount() != 1)
-            out.append(' ').append(in.getAmount());
-        ItemMeta meta = in.getItemMeta();
-        if (meta == null)
-            return out.toString();
-        if (Reflection.ver.isAbove(v1_8))
-            for (ItemFlag f : meta.getItemFlags())
-                out.append(" hide:").append(f.name().substring(5));
-        if (meta.hasDisplayName())
-            out.append(" name:").append(escapeText(meta.getDisplayName()));
-        if (meta.hasLore())
-            out.append(" lore:").append(escapeText(StringUtils.join(meta.getLore(), '\n')));
-        for (Entry<Enchantment, Integer> ench : meta.getEnchants().entrySet())
-            out.append(' ').append(Config.enchants.get(ench.getKey().getName()).get(0)).append(':').append(ench.getValue());
-
-        if (meta instanceof BookMeta) {
-            BookMeta bmeta = (BookMeta) meta;
-            if (bmeta.hasAuthor())
-                out.append(" author:").append(bmeta.getAuthor());
-            if (bmeta.hasTitle())
-                out.append(" title:").append(bmeta.getTitle());
-            for (String page : bmeta.getPages())
-                out.append(" page:").append(escapeText(page));
-        }
-        if (Reflection.ver.isAbove(v1_8))
-            if (meta instanceof BannerMeta) {
-                BannerMeta bmeta = (BannerMeta) meta;
-                out.append(" color:").append(bmeta.getBaseColor() == null ? "BLACK" : bmeta.getBaseColor().name());
-                for (Pattern p : bmeta.getPatterns())
-                    out.append(' ').append(p.getPattern().getIdentifier()).append(":").append(p.getColor().name());
-            }
-        if (meta instanceof LeatherArmorMeta) {
-            LeatherArmorMeta bmeta = (LeatherArmorMeta) meta;
-            Color c = bmeta.getColor();
-            if (!c.equals(Bukkit.getItemFactory().getDefaultLeatherColor()))
-                out.append(" color:").append(Integer.toHexString(c.asRGB()));
-        } else if (meta instanceof FireworkMeta) {
-            FireworkMeta bmeta = (FireworkMeta) meta;
-            out.append(" power:").append(bmeta.getPower());
-            for (FireworkEffect e : bmeta.getEffects()) {
-                out.append(' ').append(e.getType().name()).append(":");
-                boolean pref = false;
-                if (!e.getColors().isEmpty()) {
-                    pref = true;
-                    out.append("colors:");
-                    for (Color c : e.getColors()) {
-                        out.append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue()).append(';');
-                    }
-                    out.setLength(out.length() - 1);
-                }
-                if (!e.getFadeColors().isEmpty()) {
-                    if (pref)
-                        out.append("|");
-                    else
-                        pref = true;
-                    out.append("fades:");
-                    for (Color c : e.getFadeColors()) {
-                        out.append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue()).append(';');
-                    }
-                    out.setLength(out.length() - 1);
-                }
-                if (e.hasFlicker()) {
-                    if (pref)
-                        out.append("|");
-                    else
-                        pref = true;
-                    out.append("flicker");
-                }
-                if (e.hasTrail()) {
-                    if (pref)
-                        out.append("|");
-                    out.append("trail");
-                }
-            }
-        } else if (meta instanceof PotionMeta) {
-            PotionMeta bmeta = (PotionMeta) meta;
-            for (PotionEffect e : bmeta.getCustomEffects()) {
-                out.append(' ').append(e.getType().getName()).append(':').append(e.getDuration()).append(':').append(e.getAmplifier());
-                if (Reflection.ver.isAbove(v1_8))
-                    if (!e.hasParticles())
-                        out.append(":np");
-                if (!e.isAmbient())
-                    out.append(":na");
-            }
-        } else if (meta instanceof SkullMeta) {
-            SkullMeta bmeta = (SkullMeta) meta;
-            if (bmeta.hasOwner())
-                out.append(" owner:").append(escapeText(bmeta.getOwner()));
-        } else if (meta instanceof EnchantmentStorageMeta) {
-            for (Entry<Enchantment, Integer> e : ((EnchantmentStorageMeta) meta).getStoredEnchants().entrySet()) {
-                out.append(" +").append(e.getKey().getName()).append(':').append(e.getValue());
-            }
-        }
-
-        return out.toString();
-    }
-
-    /**
-     * Load an offline player to be handleable like an online one.
-     *
-     * @param uuid uuid of the loadable offline player
-     * @return the loaded Player object, or null if the player was not found.
-     */
-    public static Player loadPlayer(UUID uuid) {
-        try {
-            if (uuid == null) {
-                return null;
-            }
-            OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-            if (player == null) {
-                return null;
-            }
-
-            Player plr = (Player) getBukkitEntityM.invoke(entityPlayerC.newInstance(mcServer, worldServer, new GameProfile(player.getName(), uuid).toNMS(), playerInterractManagerC.newInstance(worldServer)));
-            if (plr != null) {
-                loadDataM.invoke(plr);
-                return plr;
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     public static void loadPlayerConfig(UUID uid) {
         if (PlayerFile.backend == BackendType.MYSQL) {
             String key = uid == null ? "CONSOLE" : uid.toString();
-            pf.mysqlLoad(key, "uuid='" + key + "'");
+            pf.mysqlLoad(key, "uuid='" + key + '\'');
         }
-    }
-
-    /**
-     * Logs messages from the given plugin. You can use color codes in the msg.
-     *
-     * @param pl  - The plugin who wants to log the message
-     * @param msg - The message which should be logged
-     */
-    public static void log(Plugin pl, Object... msg) {
-        cs.sendMessage("[" + pl.getName() + "] " + StringUtils.join(msg, ", "));
     }
 
     /**
@@ -652,7 +665,7 @@ public final class SU {
      * @param msg - The message which should be logged
      */
     public static void log(Plugin pl, Iterable<Object>... msg) {
-        cs.sendMessage("[" + pl.getName() + "] " + StringUtils.join(msg, ", "));
+        cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
     }
 
     public static ItemStack makeItem(Material type, String name, String... lore) {
@@ -685,6 +698,22 @@ public final class SU {
             out.add(getName(id));
         }
         return out;
+    }
+
+    /**
+     * Get the name of an offline player based on it's UUID.
+     *
+     * @param id UUID of the target player
+     * @return The name of the requested player or null if the name was not found.
+     */
+    public static String getName (UUID id) {
+        Player plr = Bukkit.getPlayer(id);
+        if (plr != null)
+            return plr.getName();
+        OfflinePlayer op = Bukkit.getOfflinePlayer(id);
+        if (op == null)
+            return null;
+        return op.getName();
     }
 
     /**
@@ -762,7 +791,7 @@ public final class SU {
                 return;
             case MYSQL:
                 ArrayList<String> list = new ArrayList<>();
-                pf.subConfig(key, "uuid='" + key + "'").mysqlUpdate(list, null);
+                pf.subConfig(key, "uuid='" + key + '\'').mysqlUpdate(list, null);
                 pf.db.batch(list, null);
         }
     }
@@ -863,7 +892,8 @@ public final class SU {
                     meta.addEnchant(enc, Integer.valueOf(s[1]), true);
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
+                log(Main.pl, "§cError on deserializing §eItemMeta§c data of item \"§f" + in + "§c\"");
+                error(cs, e, "SpigotLib", "gyurix");
             }
         }
         if (meta instanceof BookMeta) {
@@ -879,7 +909,8 @@ public final class SU {
                         bmeta.addPage(text);
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    log(Main.pl, "§cError on deserializing §eBookMeta§c data of item \"§f" + in + "§c\"");
+                    error(cs, e, "SpigotLib", "gyurix");
                 }
             }
         }
@@ -902,7 +933,8 @@ public final class SU {
                             bmeta.addPattern(new Pattern(DyeColor.valueOf(s[1].toUpperCase()), type));
                         }
                     } catch (Throwable e) {
-                        e.printStackTrace();
+                        log(Main.pl, "§cError on deserializing §eBannerMeta§c data of item \"§f" + in + "§c\"");
+                        error(cs, e, "SpigotLib", "gyurix");
                     }
                 }
             }
@@ -918,7 +950,8 @@ public final class SU {
                             bmeta.setColor(Color.fromRGB(Integer.parseInt(color[0], 16)));
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    log(Main.pl, "§cError on deserializing §eLeatherArmorMeta§c data of item \"§f" + in + "§c\"");
+                    error(cs, e, "SpigotLib", "gyurix");
                 }
             }
         } else if (meta instanceof FireworkMeta) {
@@ -952,7 +985,8 @@ public final class SU {
 
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    log(Main.pl, "§cError on deserializing §eFireworkMeta§c data of item \"§f" + in + "§c\"");
+                    error(cs, e, "SpigotLib", "gyurix");
                 }
             }
         } else if (meta instanceof PotionMeta) {
@@ -971,7 +1005,8 @@ public final class SU {
                         }
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    log(Main.pl, "§cError on deserializing §ePotionMeta§c data of item \"§f" + in + "§c\"");
+                    error(cs, e, "SpigotLib", "gyurix");
                 }
             }
         } else if (meta instanceof SkullMeta) {
@@ -979,10 +1014,11 @@ public final class SU {
             for (String[] s : remaining) {
                 try {
                     if (s[0].equals("OWNER")) {
-                        bmeta.setOwner(unescapeText(s[1]));
+                        bmeta.setOwner(s[1]);
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    log(Main.pl, "§cError on deserializing §eSkullMeta§c data of item \"§f" + in + "§c\"");
+                    error(cs, e, "SpigotLib", "gyurix");
                 }
             }
         } else if (meta instanceof EnchantmentStorageMeta) {
@@ -993,12 +1029,31 @@ public final class SU {
                     if (enc != null)
                         bmeta.addStoredEnchant(enc, Integer.valueOf(s[1]), true);
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    log(Main.pl, "§cError on deserializing §eEnchantmentStorageMeta§c data of item \"§f" + in + "§c\"");
+                    error(cs, e, "SpigotLib", "gyurix");
                 }
             }
         }
         out.setItemMeta(meta);
         return out;
+    }
+
+    /**
+     * Get the numeric id of the given itemname, it works for both numeric and text ids.
+     *
+     * @param name the case insensitive material name of the item or the numeric id of the item.
+     * @return the numeric id of the requested item or 1, if the given name is incorrect or null
+     */
+    public static int getId (String name) {
+        try {
+            return Material.valueOf(name.toUpperCase()).getId();
+        } catch (Throwable e) {
+            try {
+                return Integer.valueOf(name);
+            } catch (Throwable e2) {
+                return 1;
+            }
+        }
     }
 
     /**
@@ -1009,7 +1064,7 @@ public final class SU {
      */
 
     public static String unescapeText(String text) {
-        return (" " + text).replaceAll("([^\\\\])_", "$1 ")
+        return (' ' + text).replaceAll("([^\\\\])_", "$1 ")
                 .replaceAll("([^\\\\])\\|", "$1\n")
                 .replaceAll("([^\\\\])\\\\([_\\|])", "$1$2")
                 .replace("\\\\", "\\").substring(1);
