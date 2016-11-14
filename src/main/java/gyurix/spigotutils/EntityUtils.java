@@ -21,8 +21,6 @@ import static gyurix.protocol.Reflection.*;
  * Created by GyuriX on 2016. 06. 09..
  */
 public class EntityUtils {
-    public static final Method bukkitEntityM = getMethod(nmsEntityCL, "getBukkitEntity"),
-            setLocationM = getMethod(nmsEntityCL, "setLocation", double.class, double.class, double.class, float.class, float.class);
     public static final Class craftEntity = getOBCClass("entity.CraftEntity"),
             nmsEntityCL = getNMSClass("Entity"),
             craftWorldCL = getOBCClass("CraftWorld"),
@@ -36,6 +34,8 @@ public class EntityUtils {
             nmsWorldDataF = getField(nmsWorldCL, "worldData"),
             dataWatcherF = getField(nmsEntityCL, "datawatcher"),
             craftWorldF = getField(nmsWorldCL, "world");
+    public static final Method setLocationM = getMethod(nmsEntityCL, "setLocation", double.class, double.class, double.class, float.class, float.class),
+            bukkitEntityM = getMethod(nmsEntityCL, "getBukkitEntity");
 
     /**
      * Converts the given NMS entity to a Bukkit entity
