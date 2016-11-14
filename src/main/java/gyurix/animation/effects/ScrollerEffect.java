@@ -5,8 +5,7 @@ import gyurix.animation.CustomEffect;
 import java.util.HashSet;
 import java.util.Iterator;
 
-public class ScrollerEffect
-        implements CustomEffect {
+public class ScrollerEffect implements CustomEffect {
     public char fill = 32;
     public int max = 80;
     public boolean reversed;

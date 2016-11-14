@@ -4,8 +4,7 @@ import gyurix.animation.CustomEffect;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.spigotlib.SU;
 
-public class FlameEffect
-        implements CustomEffect {
+public class FlameEffect implements CustomEffect {
     public FlameInfo info;
     public boolean rotate;
     public int speed = 1;

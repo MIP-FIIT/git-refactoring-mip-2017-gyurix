@@ -12,7 +12,7 @@ public abstract class ScoreboardBar {
     public final Object hidePacket;
     public final Object showPacket;
     public final String teamNamePrefix;
-    protected final HashSet<Player> viewers = new HashSet<>();
+    public final HashSet<Player> viewers = new HashSet<>();
     protected boolean visible = true;
     private ScoreboardDisplayMode displayMode = ScoreboardDisplayMode.INTEGER;
     private String title;
@@ -39,19 +39,6 @@ public abstract class ScoreboardBar {
     public ScoreboardDisplayMode getDisplayMode () {
         return displayMode;
     }
-
-    /**
-     * Check if this scoreboard bar is visible or not
-     *
-     * @return The scoreboard bars visibility
-     */
-    public boolean isVisible () {
-        return visible;
-    }
-
-    protected abstract void moveViewer (ScoreboardBar oldBar, Player plr);
-
-    protected abstract void removeViewer (Player plr);
 
     /**
      * Sets the display mode of this Scoreboard, it has no effect on sidebar.
@@ -82,6 +69,31 @@ public abstract class ScoreboardBar {
     }
 
     /**
+     * Check if this scoreboard bar is visible or not
+     *
+     * @return The scoreboard bars visibility
+     */
+    public boolean isVisible() {
+        return visible;
+    }
+
+    /**
+     * Toggles the visibility of this scoreboard bar
+     *
+     * @param visible - The new visibility state
+     */
+    public void setVisible(boolean visible) {
+        if (visible != this.visible) {
+            sendPackets(visible ? showPacket : hidePacket);
+            this.visible = visible;
+        }
+    }
+
+    protected abstract void moveViewer(ScoreboardBar oldBar, Player plr);
+
+    protected abstract void removeViewer(Player plr);
+
+    /**
      * Sets the title of this scoreboard bar.
      *
      * @param newtitle - The new title
@@ -92,18 +104,6 @@ public abstract class ScoreboardBar {
             return;
         title = newtitle;
         sendPackets(getObjectivePacket(2));
-    }
-
-    /**
-     * Toggles the visibility of this scoreboard bar
-     *
-     * @param visible - The new visibility state
-     */
-    public void setVisible (boolean visible) {
-        if (visible != this.visible) {
-            sendPackets(visible ? showPacket : hidePacket);
-            this.visible = visible;
-        }
     }
 }
 

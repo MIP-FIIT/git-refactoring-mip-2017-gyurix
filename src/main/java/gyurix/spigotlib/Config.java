@@ -6,10 +6,8 @@ import gyurix.mysql.MySQLDatabase;
 import gyurix.spigotutils.BackendType;
 import gyurix.spigotutils.BlockData;
 import gyurix.spigotutils.TPSMeter;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Config {
@@ -22,13 +20,6 @@ public class Config {
     public static boolean disableWeatherChange;
     @ConfigOptions(comment = "EconomyAPI settings")
     public static EconomyAPI economy = new EconomyAPI();
-    @ConfigOptions(serialize = false)
-    public static HashMap<String, Enchantment> enchantAliases = new HashMap<>();
-    @ConfigOptions(serialize = false)
-    public static HashMap<String, ArrayList<String>> enchants = new HashMap<>();
-    @ConfigOptions(comment = "Enable / disable packet events which costs some performance, but gives\n" +
-            "ability for developers to catch packets and code awesome plugin features :)")
-    public static boolean packetAPI;
     @ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
     public static boolean phaHook;
     @ConfigOptions(comment = "PlayerFile settings")

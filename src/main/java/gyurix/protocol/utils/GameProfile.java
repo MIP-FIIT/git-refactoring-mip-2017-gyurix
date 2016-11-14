@@ -18,13 +18,13 @@ import java.util.UUID;
 public class GameProfile implements WrappedData {
     @JsonSettings(serialize = false)
     @ConfigOptions(serialize = false)
-    private static final Class cl = Reflection.getUtilClass("com.mojang.authlib.GameProfile");
+    public static final Class cl = Reflection.getUtilClass("com.mojang.authlib.GameProfile");
     @JsonSettings(serialize = false)
     @ConfigOptions(serialize = false)
-    private static final Constructor con = Reflection.getConstructor(cl, UUID.class, String.class);
+    public static final Constructor con = Reflection.getConstructor(cl, UUID.class, String.class);
     @JsonSettings(serialize = false)
     @ConfigOptions(serialize = false)
-    private static final Field fid = Reflection.getField(cl, "id"),
+    public static final Field fid = Reflection.getField(cl, "id"),
             fname = Reflection.getField(cl, "name"),
             fproperties = Reflection.getField(cl, "properties"),
             flegacy = Reflection.getField(cl, "legacy");
@@ -42,6 +42,7 @@ public class GameProfile implements WrappedData {
         name = n;
         id = UUID.nameUUIDFromBytes(("OfflinePlayer:" + n).getBytes());
     }
+
     public GameProfile(String n, UUID uid) {
         name = n;
         id = uid;
@@ -52,12 +53,8 @@ public class GameProfile implements WrappedData {
             id = (UUID) fid.get(nmsProfile);
             name = (String) fname.get(nmsProfile);
             legacy = flegacy.getBoolean(nmsProfile);
-            try {
-                for (Object obj : ((Multimap) fproperties.get(nmsProfile)).values()) {
-                    properties.add(new Property(obj));
-                }
-            } catch (Throwable e) {
-            }
+            for (Object obj : ((Multimap) fproperties.get(nmsProfile)).values())
+                properties.add(new Property(obj));
 
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -69,12 +66,9 @@ public class GameProfile implements WrappedData {
         try {
             Object o = con.newInstance(id, name);
             flegacy.set(o, legacy);
-            try {
-                Multimap m = (Multimap) fproperties.get(o);
-                for (Property p : properties)
-                    m.put(p.name, p.toNMS());
-            } catch (Throwable e) {
-            }
+            Multimap m = (Multimap) fproperties.get(o);
+            for (Property p : properties)
+                m.put(p.name, p.toNMS());
             return o;
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");

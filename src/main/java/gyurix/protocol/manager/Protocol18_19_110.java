@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -28,7 +27,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-public class Protocol18_19_110 extends Protocol implements Listener {
+public class Protocol18_19_110 extends Protocol {
     private static final Field getChannel = Reflection.getFirstFieldOfType(Reflection.getNMSClass("NetworkManager"), Channel.class);
     private static final Field getConnection = Reflection.getField(Reflection.getNMSClass("EntityPlayer"), "playerConnection");
     private static final Field getGameProfile = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PacketLoginInStart"), GameProfile.class);
@@ -49,17 +48,6 @@ public class Protocol18_19_110 extends Protocol implements Listener {
     private ChannelInboundHandlerAdapter serverChannel;
 
     public Protocol18_19_110() {
-        try {
-            minecraftServer = Reflection.getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
-            serverConnection = Reflection.getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(minecraftServer);
-            channelFutures = (List) Reflection.getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection);
-            networkManagers = (List) Reflection.getLastFieldOfType(serverConnectionClass, List.class).get(serverConnection);
-            registerChannelHandler();
-            registerPlayers();
-        } catch (Throwable e) {
-            System.err.println("Error on initializing Protocol.");
-            e.printStackTrace();
-        }
     }
 
     public final void close() {
@@ -73,31 +61,13 @@ public class Protocol18_19_110 extends Protocol implements Listener {
         }
     }
 
-    private void createServerChannelHandler() {
-        endInit = new ChannelInitializer<Channel>() {
-
-            protected void initChannel(Channel channel) throws Exception {
-                try {
-                    if (!closed)
-                        injectChannelInternal(channel);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        beginInit = new ChannelInitializer<Channel>() {
-
-            protected void initChannel(Channel channel) throws Exception {
-                channel.pipeline().addLast(endInit);
-            }
-        };
-        serverChannel = new ChannelInboundHandlerAdapter() {
-            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                Channel channel = (Channel) msg;
-                channel.pipeline().addFirst(beginInit);
-                ctx.fireChannelRead(msg);
-            }
-        };
+    public final void init() throws Throwable {
+        minecraftServer = Reflection.getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
+        serverConnection = Reflection.getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(minecraftServer);
+        channelFutures = (List) Reflection.getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection);
+        networkManagers = (List) Reflection.getLastFieldOfType(serverConnectionClass, List.class).get(serverConnection);
+        registerChannelHandler();
+        registerPlayers();
     }
 
     @Override
@@ -131,12 +101,79 @@ public class Protocol18_19_110 extends Protocol implements Listener {
         return ch.player;
     }
 
-    public boolean hasInjected(Player player) {
-        return hasInjected(getChannel(player));
+    public void receivePacket(Player player, Object packet) {
+        receivePacket(getChannel(player), packet);
     }
 
-    public boolean hasInjected(Channel channel) {
-        return channel.pipeline().get("SpigotLib") != null;
+    public void receivePacket(Channel channel, Object packet) {
+        if (packet instanceof WrappedPacket)
+            packet = ((WrappedPacket) packet).getVanillaPacket();
+        channel.pipeline().context("encoder").fireChannelRead(packet);
+    }
+
+    public void sendPacket(Player player, Object packet) {
+        sendPacket(getChannel(player), packet);
+    }
+
+    public void sendPacket(Channel channel, Object packet) {
+        if (packet instanceof WrappedPacket)
+            packet = ((WrappedPacket) packet).getVanillaPacket();
+        channel.pipeline().writeAndFlush(packet);
+    }
+
+    @Override
+    public void setCapturer(Player plr, PacketCapture packetCapture) {
+        NewChannelHandler handler = getChannel(plr).pipeline().get(NewChannelHandler.class);
+        PacketCapture pc = handler.pc;
+        if (pc != null)
+            pc.stop();
+        handler.pc = packetCapture;
+    }
+
+    private void registerChannelHandler() {
+        createServerChannelHandler();
+        for (ChannelFuture ch : channelFutures) {
+            Channel serverChannel = ch.channel();
+            serverChannels.add(serverChannel);
+            serverChannel.pipeline().addFirst(this.serverChannel);
+        }
+    }
+
+    private void registerPlayers() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            injectPlayer(player);
+        }
+    }
+
+    private void createServerChannelHandler() {
+        endInit = new ChannelInitializer<Channel>() {
+
+            protected void initChannel(Channel channel) throws Exception {
+                try {
+                    if (!closed)
+                        injectChannelInternal(channel);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        beginInit = new ChannelInitializer<Channel>() {
+
+            protected void initChannel(Channel channel) throws Exception {
+                channel.pipeline().addLast(endInit);
+            }
+        };
+        serverChannel = new ChannelInboundHandlerAdapter() {
+            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+                Channel channel = (Channel) msg;
+                channel.pipeline().addFirst(beginInit);
+                ctx.fireChannelRead(msg);
+            }
+        };
+    }
+
+    public void injectPlayer(Player player) {
+        injectChannelInternal(getChannel(player)).player = player;
     }
 
     private NewChannelHandler injectChannelInternal(final Channel channel) {
@@ -163,81 +200,6 @@ public class Protocol18_19_110 extends Protocol implements Listener {
         return interceptor;
     }
 
-    public void injectPlayer(Player player) {
-        injectChannelInternal(getChannel(player)).player = player;
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerLogin(PlayerLoginEvent e) {
-        if (!Main.fullyEnabled) {
-            e.disallow(Result.KICK_OTHER, Config.start);
-            return;
-        }
-        if (closed) {
-            return;
-        }
-        Channel channel = getChannel(e.getPlayer());
-        injectPlayer(e.getPlayer());
-    }
-
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerQuit(PlayerQuitEvent e) {
-        channelLookup.remove(e.getPlayer().getName());
-    }
-
-    public void receivePacket(Player player, Object packet) {
-        receivePacket(getChannel(player), packet);
-    }
-
-    public void receivePacket(Channel channel, Object packet) {
-        if (packet instanceof WrappedPacket)
-            packet = ((WrappedPacket) packet).getVanillaPacket();
-        channel.pipeline().context("encoder").fireChannelRead(packet);
-    }
-
-    private void registerChannelHandler() {
-        createServerChannelHandler();
-        for (ChannelFuture ch : channelFutures) {
-            Channel serverChannel = ch.channel();
-            serverChannels.add(serverChannel);
-            serverChannel.pipeline().addFirst(this.serverChannel);
-        }
-    }
-
-    private void registerPlayers() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            injectPlayer(player);
-        }
-    }
-
-    public void sendPacket(Player player, Object packet) {
-        sendPacket(getChannel(player), packet);
-    }
-
-    public void sendPacket(Channel channel, Object packet) {
-        if (packet instanceof WrappedPacket)
-            packet = ((WrappedPacket) packet).getVanillaPacket();
-        channel.pipeline().writeAndFlush(packet);
-    }
-
-    @Override
-    public void setCapturer(Player plr, PacketCapture packetCapture) {
-        NewChannelHandler handler = getChannel(plr).pipeline().get(NewChannelHandler.class);
-        PacketCapture pc = handler.pc;
-        if (pc != null)
-            pc.stop();
-        handler.pc = packetCapture;
-    }
-
-    public void uninjectChannel(final Channel channel) {
-        channel.eventLoop().execute(new Runnable() {
-            @Override
-            public void run() {
-                channel.pipeline().remove("SpigotLib");
-            }
-        });
-    }
-
     public void uninjectPlayer(Player player) {
         uninjectChannel(getChannel(player));
     }
@@ -261,10 +223,62 @@ public class Protocol18_19_110 extends Protocol implements Listener {
         }
     }
 
+    public void uninjectChannel(final Channel channel) {
+        channel.eventLoop().execute(new Runnable() {
+            @Override
+            public void run() {
+                channel.pipeline().remove("SpigotLib");
+            }
+        });
+    }
+
+    public boolean hasInjected(Player player) {
+        return hasInjected(getChannel(player));
+    }
+
+    public boolean hasInjected(Channel channel) {
+        return channel.pipeline().get("SpigotLib") != null;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerLogin(PlayerLoginEvent e) {
+        try {
+            if (!Main.fullyEnabled) {
+                e.disallow(Result.KICK_OTHER, Config.start);
+                return;
+            }
+            if (closed)
+                return;
+            Channel channel = getChannel(e.getPlayer());
+            injectPlayer(e.getPlayer());
+        } catch (Throwable err) {
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerQuit(PlayerQuitEvent e) {
+        channelLookup.remove(e.getPlayer().getName());
+    }
+
     public final class NewChannelHandler
             extends ChannelDuplexHandler {
         public PacketCapture pc;
         public Player player;
+
+        public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
+            try {
+                if (pc != null)
+                    pc.capOut(packet);
+                PacketOutEvent e = new PacketOutEvent(ctx.channel(), player, packet);
+                dispatchPacketOutEvent(e);
+                packet = e.getPacket();
+                if (!e.isCancelled()) {
+                    super.write(ctx, packet, promise);
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
 
         public void channelRead(ChannelHandlerContext ctx, Object packet) throws Exception {
             try {
@@ -281,21 +295,6 @@ public class Protocol18_19_110 extends Protocol implements Listener {
                 packet = e.getPacket();
                 if (!e.isCancelled()) {
                     super.channelRead(ctx, packet);
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
-            try {
-                if (pc != null)
-                    pc.capOut(packet);
-                PacketOutEvent e = new PacketOutEvent(ctx.channel(), player, packet);
-                dispatchPacketOutEvent(e);
-                packet = e.getPacket();
-                if (!e.isCancelled()) {
-                    super.write(ctx, packet, promise);
                 }
             } catch (Throwable e) {
                 e.printStackTrace();

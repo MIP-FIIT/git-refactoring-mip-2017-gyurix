@@ -6,11 +6,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
-public class LocationData
-        implements StringSerializable {
+public class LocationData implements StringSerializable {
     public float pitch;
     public String world;
     public double x;
@@ -57,16 +55,25 @@ public class LocationData
         this(ld.world, ld.x, ld.y, ld.z, ld.yaw, ld.pitch);
     }
 
+    public LocationData(String world, double x, double y, double z, float yaw, float pitch) {
+        this.world = world;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.yaw = yaw;
+        this.pitch = pitch;
+    }
+
     public LocationData(BlockLocation bl) {
         this(bl.x, bl.y, bl.z);
     }
 
-    public LocationData(Vector v) {
-        this(v.getX(), v.getY(), v.getZ());
-    }
-
     public LocationData(double x, double y, double z) {
         this(null, x, y, z, 0.0f, 0.0f);
+    }
+
+    public LocationData(Vector v) {
+        this(v.getX(), v.getY(), v.getZ());
     }
 
     public LocationData(String world, double x, double y, double z) {
@@ -85,24 +92,8 @@ public class LocationData
         this(loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
     }
 
-    public LocationData(String world, double x, double y, double z, float yaw, float pitch) {
-        this.world = world;
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.yaw = yaw;
-        this.pitch = pitch;
-    }
-
     public LocationData add(LocationData ld) {
         return ld == null ? this : add(ld.x, ld.y, ld.z);
-    }
-
-    public LocationData add(double num) {
-        x += num;
-        y += num;
-        z += num;
-        return this;
     }
 
     public LocationData add(double nx, double ny, double nz) {
@@ -112,16 +103,11 @@ public class LocationData
         return this;
     }
 
-    public LocationData clone() {
-        return new LocationData(this);
-    }
-
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof LocationData)) {
-            return false;
-        }
-        LocationData ld = (LocationData) obj;
-        return (world == null && ld.world == null || world != null && ld.world != null && world.equals(ld.world)) && x == ld.x && y == ld.y && z == ld.z && yaw == ld.yaw && pitch == ld.pitch;
+    public LocationData add(double num) {
+        x += num;
+        y += num;
+        z += num;
+        return this;
     }
 
     public Block getBlock() {
@@ -129,6 +115,10 @@ public class LocationData
             return null;
         }
         return Bukkit.getWorld(world).getBlockAt((int) x, (int) y, (int) z);
+    }
+
+    public boolean isAvailable() {
+        return world != null && Bukkit.getWorld(world) != null;
     }
 
     public BlockLocation getBlockLocation() {
@@ -153,15 +143,19 @@ public class LocationData
         }
         double theta = Math.atan2(-x, z);
         yaw = (float) Math.toDegrees((theta + 6.283185307179586) % 6.283185307179586);
-        double x2 = NumberConversions.square(x);
-        double z2 = NumberConversions.square(z);
+        double x2 = x * x;
+        double z2 = z * z;
         double xz = Math.sqrt(x2 + z2);
         pitch = (float) Math.toDegrees(Math.atan(-vector.getY() / xz));
         return this;
     }
 
     public Location getLocation() {
-        return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
+        return new Location(world == null ? null : Bukkit.getWorld(world), x, y, z, yaw, pitch);
+    }
+
+    public Location getLocation(World w) {
+        return new Location(w, x, y, z, yaw, pitch);
     }
 
     public World getWorld() {
@@ -178,44 +172,16 @@ public class LocationData
         return hash;
     }
 
-    public boolean isAvailable() {
-        return world != null && Bukkit.getWorld(world) != null;
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof LocationData)) {
+            return false;
+        }
+        LocationData ld = (LocationData) obj;
+        return (world == null && ld.world == null || world != null && ld.world != null && world.equals(ld.world)) && x == ld.x && y == ld.y && z == ld.z && yaw == ld.yaw && pitch == ld.pitch;
     }
 
-    public LocationData multiple(LocationData ld) {
-        return ld == null ? this : multiple(ld.x, ld.y, ld.z);
-    }
-
-    public LocationData multiple(double num) {
-        x *= num;
-        y *= num;
-        z *= num;
-        return this;
-    }
-
-    public LocationData multiple(double nx, double ny, double nz) {
-        x *= nx;
-        y *= ny;
-        z *= nz;
-        return this;
-    }
-
-    public LocationData subtract(LocationData ld) {
-        return ld == null ? this : subtract(ld.x, ld.y, ld.z);
-    }
-
-    public LocationData subtract(double num) {
-        x -= num;
-        y -= num;
-        z -= num;
-        return this;
-    }
-
-    public LocationData subtract(double nx, double ny, double nz) {
-        x -= nx;
-        y -= ny;
-        z -= nz;
-        return this;
+    public LocationData clone() {
+        return new LocationData(this);
     }
 
     @Override
@@ -225,9 +191,50 @@ public class LocationData
             out.append(' ').append(world);
         }
         out.append(' ').append(x).append(' ').append(y).append(' ').append(z);
-        if (yaw != 0.0f || pitch != 0.0f) {
+        if (yaw != 0.0f || pitch != 0.0f)
             out.append(' ').append(yaw).append(' ').append(pitch);
-        }
+        return out.substring(1);
+    }
+
+    public LocationData multiple(LocationData ld) {
+        return ld == null ? this : multiple(ld.x, ld.y, ld.z);
+    }
+
+    public LocationData multiple(double nx, double ny, double nz) {
+        x *= nx;
+        y *= ny;
+        z *= nz;
+        return this;
+    }
+
+    public LocationData multiple(double num) {
+        x *= num;
+        y *= num;
+        z *= num;
+        return this;
+    }
+
+    public LocationData subtract(LocationData ld) {
+        return ld == null ? this : subtract(ld.x, ld.y, ld.z);
+    }
+
+    public LocationData subtract(double nx, double ny, double nz) {
+        x -= nx;
+        y -= ny;
+        z -= nz;
+        return this;
+    }
+
+    public LocationData subtract(double num) {
+        x -= num;
+        y -= num;
+        z -= num;
+        return this;
+    }
+
+    public String toLongString() {
+        StringBuilder out = new StringBuilder();
+        out.append(world).append(' ').append(x).append(' ').append(y).append(' ').append(z).append(' ').append(yaw).append(' ').append(pitch);
         return out.substring(1);
     }
 

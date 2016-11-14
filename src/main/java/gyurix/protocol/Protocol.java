@@ -105,6 +105,11 @@ public abstract class Protocol implements Listener {
     public abstract Player getPlayer(Channel channel);
 
     /**
+     * Initializes the PacketAPI
+     */
+    public abstract void init() throws Throwable;
+
+    /**
      * Simulates receiving the given vanilla packet from a player
      *
      * @param player - The sender player

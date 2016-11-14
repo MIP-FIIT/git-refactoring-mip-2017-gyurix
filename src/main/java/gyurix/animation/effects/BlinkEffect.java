@@ -6,9 +6,7 @@ import gyurix.configfile.ConfigSerialization.StringSerializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class BlinkEffect
-        implements StringSerializable,
-        CustomEffect {
+public class BlinkEffect implements StringSerializable, CustomEffect {
     private boolean active = true;
     private Iterator<Long> data;
     private long remaining;
@@ -47,6 +45,20 @@ public class BlinkEffect
     }
 
     @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+        out.append("{");
+        if (!active) {
+            out.append("A ");
+        }
+        for (Long r : repeat) {
+            out.append(r).append(' ');
+        }
+        out.setCharAt(out.length() - 1, '}');
+        return out.append(text).toString();
+    }
+
+    @Override
     public String getText() {
         return text;
     }
@@ -67,20 +79,6 @@ public class BlinkEffect
             active = !active;
         }
         return active ? in : in.replaceAll(".", " ");
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder out = new StringBuilder();
-        out.append("{");
-        if (!active) {
-            out.append("A ");
-        }
-        for (Long r : repeat) {
-            out.append(r).append(' ');
-        }
-        out.setCharAt(out.length() - 1, '}');
-        return out.append(text).toString();
     }
 }
 

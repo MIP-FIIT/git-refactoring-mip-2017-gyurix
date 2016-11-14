@@ -1,6 +1,7 @@
 package gyurix.protocol.utils;
 
 import gyurix.protocol.Reflection;
+import gyurix.spigotlib.SU;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 
@@ -13,7 +14,7 @@ import java.lang.reflect.Method;
 public enum WorldType implements WrappedData {
     DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED, DEBUG_ALL_BLOCK_STATES, DEFAULT_1_1;
     public static final Method enumDifficultyVO;
-    public static final Class enumGmCl = Reflection.getNMSClass("WorldSettings$EnumGamemode"),
+    public static final Class enumGmCl = Reflection.getNMSClass("EnumGamemode"),
             enumDifficultyCl = Reflection.getNMSClass("EnumDifficulty"),
             worldTypeCl = Reflection.getNMSClass("WorldType");
     public static final Method enumGmVO = Reflection.getMethod(enumGmCl, "valueOf", String.class);
@@ -37,7 +38,7 @@ public enum WorldType implements WrappedData {
         try {
             return enumDifficultyVO.invoke(null, mode.getValue());
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
@@ -46,7 +47,7 @@ public enum WorldType implements WrappedData {
         try {
             return enumGmVO.invoke(null, mode.name());
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
@@ -55,7 +56,7 @@ public enum WorldType implements WrappedData {
         try {
             return valueOf.invoke(null, name());
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }

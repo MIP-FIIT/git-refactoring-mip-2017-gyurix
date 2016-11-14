@@ -1,6 +1,7 @@
 package gyurix.mojang;
 
 import gyurix.spigotlib.Config;
+import gyurix.spigotlib.SU;
 import org.apache.commons.io.IOUtils;
 
 import java.net.HttpURLConnection;
@@ -17,7 +18,8 @@ public class WebApi {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (Config.debug)
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }
@@ -31,11 +33,10 @@ public class WebApi {
             con.setRequestProperty("Content-Type", "application/json");
             con.setRequestProperty("Content-Length", String.valueOf(req.length()));
             con.getOutputStream().write(req.getBytes(Charset.forName("UTF-8")));
-            if (Config.debug)
-                System.out.println("POST - " + urlString + " - " + req);
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (Config.debug)
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }
@@ -49,11 +50,10 @@ public class WebApi {
             con.setRequestProperty("Content-Length", String.valueOf(req.length()));
             con.setRequestProperty(headerKey, headerValue);
             con.getOutputStream().write(req.getBytes(Charset.forName("UTF-8")));
-            if (Config.debug)
-                System.out.println("POST - " + urlString + " - " + headerKey + ": " + headerValue + " - " + req);
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {
-            e.printStackTrace();
+            if (Config.debug)
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }

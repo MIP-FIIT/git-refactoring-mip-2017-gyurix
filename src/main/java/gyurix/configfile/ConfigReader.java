@@ -8,7 +8,7 @@ public class ConfigReader {
     final int blockLvl;
     final ConfigData key;
     final ConfigData value;
-    private boolean keyRead = false;
+    private boolean keyRead;
 
     ConfigReader(int lvl, ConfigData data) {
         blockLvl = lvl;
@@ -37,8 +37,8 @@ public class ConfigReader {
 
     public void handleInput(ArrayList<ConfigReader> readers, String line, int lvl) {
         ConfigData data = getData();
-        if (line.equals("-") || line.equals(">") || line.indexOf(":") == line.length() - 1)
-            line = line + ' ';
+        if (line.equals("-") || line.equals(">") || line.indexOf(':') == line.length() - 1)
+            line += ' ';
         if (line.startsWith("- ")) {
             if (data.listData == null)
                 data.listData = new ArrayList();
@@ -70,7 +70,7 @@ public class ConfigReader {
             if (s.length == 2) {
                 ConfigData key;
                 if (keyRead) {
-                    this.key.stringData += ConfigData.unescape("\n" + s[0]);
+                    this.key.stringData += ConfigData.unescape('\n' + s[0]);
                     key = this.key;
                 } else {
                     key = new ConfigData(ConfigData.unescape(s[0]));
@@ -81,14 +81,12 @@ public class ConfigReader {
                     int size = readers.size() - 2;
                     readers.remove(size + 1);
                     data = readers.get(size).getData();
-                    if (data.mapData == null) {
+                    if (data.mapData == null)
                         data.mapData = new LinkedHashMap();
-                    }
                     data.mapData.put(key, value);
                 } else {
-                    if (data.mapData == null) {
+                    if (data.mapData == null)
                         data.mapData = new LinkedHashMap();
-                    }
                     data.mapData.put(key, value);
                 }
                 readers.add(reader);
@@ -96,18 +94,8 @@ public class ConfigReader {
             } else if (data.stringData == null) {
                 data.stringData = ConfigData.unescape(line);
             } else {
-                data.stringData += ConfigData.unescape("\n" + line);
+                data.stringData += ConfigData.unescape('\n' + line);
             }
         }
     }
 }
-
-
-
-/* Location:           D:\Szerverek\SpaceCraft\plugins\ConfLangLib.jar
-
- * Qualified Name:     ConfigReader
-
- * JD-Core Version:    0.7.0.1
-
- */

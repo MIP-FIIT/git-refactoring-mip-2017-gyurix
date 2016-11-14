@@ -12,15 +12,13 @@ import sun.reflect.ReflectionFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class Reflection {
-    public static final HashMap<Class, Field[]> allFieldCache = new HashMap<>();
+    public static final Map<Class, Field[]> allFieldCache = (Map) Collections.synchronizedMap(new WeakHashMap<>());
     public static final ConcurrentHashMap<String, String> nmsRenames = new ConcurrentHashMap();
     public static final String ra = "§4[§cReflectionAPI§4] §e";
     public static final ReflectionFactory rf = ReflectionFactory.getReflectionFactory();
@@ -47,7 +45,7 @@ public class Reflection {
         return oa;
     }
 
-    public static Field setFieldAccessible (Field f) {
+    public static Field setFieldAccessible(Field f) {
         try {
             f.setAccessible(true);
             Field modifiersField = Field.class.getDeclaredField("modifiers");
@@ -122,8 +120,10 @@ public class Reflection {
                 }
             }
         } catch (Throwable e) {
-            SU.cs.sendMessage(ra + "§cFailed to handle §f" + StringUtils.join(data, "§f.") + "§c request.");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            if (Config.debug) {
+                SU.cs.sendMessage(ra + "§cFailed to handle §f" + StringUtils.join(data, "§f.") + "§c request.");
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
             return null;
         }
         return obj;
@@ -137,7 +137,7 @@ public class Reflection {
         }
     }
 
-    public static Method getSimiliarMethod (Class ocl, String name, Class[] classes) {
+    public static Method getSimiliarMethod(Class ocl, String name, Class[] classes) {
         Method m = getMethod(ocl, name, classes);
         if (m == null) {
             m = getMethod(ocl, "get" + name, classes);
@@ -162,7 +162,7 @@ public class Reflection {
         return null;
     }
 
-    public static <T> T convert (Object in, Class<T> to) {
+    public static <T> T convert(Object in, Class<T> to) {
         if (in == null)
             return null;
         to = Primitives.wrap(to);
@@ -221,7 +221,7 @@ public class Reflection {
         return null;
     }
 
-    private static Method methodCheckNoArg (Class cl, String name) {
+    private static Method methodCheckNoArg(Class cl, String name) {
         try {
             return cl.getDeclaredMethod(name);
         } catch (Throwable e) {
@@ -233,7 +233,7 @@ public class Reflection {
         }
     }
 
-    private static Method methodCheck (Class cl, String name, Class[] args) {
+    private static Method methodCheck(Class cl, String name, Class[] args) {
         try {
             return cl.getDeclaredMethod(name, args);
         } catch (Throwable e) {
@@ -261,7 +261,7 @@ public class Reflection {
      * @param l2 - The second array of classes
      * @return True if the classes matches in the 2 arrays, false otherwise
      */
-    public static boolean classArrayCompare (Class[] l1, Class[] l2) {
+    public static boolean classArrayCompare(Class[] l1, Class[] l2) {
         if (l1.length != l2.length) {
             return false;
         }
@@ -279,7 +279,7 @@ public class Reflection {
      * @param l2 - The second array of classes
      * @return True if each of the second arrays classes is assignable from the first arrays classes
      */
-    public static boolean classArrayCompareLight (Class[] l1, Class[] l2) {
+    public static boolean classArrayCompareLight(Class[] l1, Class[] l2) {
         if (l1.length != l2.length) {
             return false;
         }
@@ -290,7 +290,7 @@ public class Reflection {
         return true;
     }
 
-    public static Object getEnum (Class enumType, String value) {
+    public static Object getEnum(Class enumType, String value) {
         try {
             return enumType.getMethod("valueOf", String.class).invoke(null, value);
         } catch (Throwable e) {
@@ -298,11 +298,11 @@ public class Reflection {
         }
     }
 
-    public static Object getFieldData (Class clazz, String name) {
+    public static Object getFieldData(Class clazz, String name) {
         return getFieldData(clazz, name, null);
     }
 
-    public static Object getFieldData (Class clazz, String name, Object object) {
+    public static Object getFieldData(Class clazz, String name, Object object) {
         try {
             return setFieldAccessible(clazz.getDeclaredField(name)).get(object);
         } catch (Throwable e) {
@@ -310,7 +310,7 @@ public class Reflection {
         }
     }
 
-    public static Field getFirstFieldOfType (Class clazz, Class type) {
+    public static Field getFirstFieldOfType(Class clazz, Class type) {
         try {
             for (Field f : clazz.getDeclaredFields()) {
                 if (f.getType().equals(type))
@@ -321,7 +321,7 @@ public class Reflection {
         return null;
     }
 
-    public static Field getLastFieldOfType (Class clazz, Class type) {
+    public static Field getLastFieldOfType(Class clazz, Class type) {
         Field field = null;
         for (Field f : clazz.getDeclaredFields()) {
             if (f.getType().equals(type))
@@ -343,7 +343,7 @@ public class Reflection {
      * @param className - The name of the gettable class
      * @return The found class or null if it was not found.
      */
-    public static Class getClass (String className) {
+    public static Class getClass(String className) {
         try {
             String[] classNames = className.split("\\$");
             Class c = Class.forName(classNames[0]);
@@ -357,7 +357,7 @@ public class Reflection {
         return null;
     }
 
-    public static Class getInnerClass (Class cl, String name) {
+    public static Class getInnerClass(Class cl, String name) {
         try {
             name = cl.getName() + "$" + name;
             for (Class c : cl.getDeclaredClasses())
@@ -369,7 +369,7 @@ public class Reflection {
         return null;
     }
 
-    public static Class getOBCClass (String className) {
+    public static Class getOBCClass(String className) {
         return getClass("org.bukkit.craftbukkit." + version + className);
     }
 
@@ -387,12 +387,17 @@ public class Reflection {
         } catch (Throwable e) {
 
         }
-        nmsRenames.put("PacketPlayInPosition", "PacketPlayInFlying$PacketPlayInPosition");
-        nmsRenames.put("PacketPlayInLook", "PacketPlayInFlying$PacketPlayInLook");
-        nmsRenames.put("PacketPlayOutRelEntityMoveLook", "PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook");
-        nmsRenames.put("PacketPlayOutRelEntityMove", "PacketPlayOutEntity$PacketPlayOutRelEntityMove");
-        nmsRenames.put("PacketPlayInRelPositionLook", "PacketPlayInFlying$PacketPlayInPositionLook");
-        nmsRenames.put("PacketPlayOutEntityLook", "PacketPlayOutEntity$PacketPlayOutEntityLook");
+        if (version.equals("v1_8_R1")) {
+
+        } else {
+            nmsRenames.put("PacketPlayInLook", "PacketPlayInFlying$PacketPlayInLook");
+            nmsRenames.put("PacketPlayInPosition", "PacketPlayInFlying$PacketPlayInPosition");
+            nmsRenames.put("PacketPlayInPositionLook", "PacketPlayInFlying$PacketPlayInPositionLook");
+            nmsRenames.put("PacketPlayInRelPositionLook", "PacketPlayInFlying$PacketPlayInPositionLook");
+            nmsRenames.put("PacketPlayOutEntityLook", "PacketPlayOutEntity$PacketPlayOutEntityLook");
+            nmsRenames.put("PacketPlayOutRelEntityMove", "PacketPlayOutEntity$PacketPlayOutRelEntityMove");
+            nmsRenames.put("PacketPlayOutRelEntityMoveLook", "PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook");
+        }
         version += ".";
     }
 
@@ -404,7 +409,7 @@ public class Reflection {
      * @param objs    - The objects, passed to the constructor
      * @return The object constructed, with the found constructor or null if there was an error.
      */
-    public static Object newInstance (Class cl, Class[] classes, Object... objs) {
+    public static Object newInstance(Class cl, Class[] classes, Object... objs) {
         try {
             Constructor c = cl.getDeclaredConstructor(classes);
             c.setAccessible(true);
@@ -428,7 +433,7 @@ public class Reflection {
      *
      * @param cl - The class
      */
-    public static Object newInstance (Class cl) {
+    public static Object newInstance(Class cl) {
         try {
             try {
                 return cl.newInstance();

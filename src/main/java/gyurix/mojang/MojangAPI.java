@@ -45,47 +45,31 @@ public class MojangAPI {
         try {
             return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name), GameProfile.class);
         } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            return new GameProfile(name, SU.getOfflineUUID(name));
         }
-        return null;
     }
 
     public static GameProfile getProfile(String name, long time) {
-        try {
-            return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time), GameProfile.class);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
+        return JsonAPI.deserialize(get("https://api.mojang.com/users/profiles/minecraft/" + name + "?at=" + time), GameProfile.class);
     }
 
-    public static GameProfile getProfileWithSkin(UUID id) throws Throwable {
+    public static GameProfile getProfileWithSkin(UUID id) {
         return JsonAPI.deserialize(get("https://sessionserver.mojang.com/session/minecraft/profile/" + id.toString().replace("-", "") + "?unsigned=false"), GameProfile.class);
     }
 
     public static ArrayList<GameProfile> getProfiles(String... names) {
-        try {
-            return (ArrayList<GameProfile>) JsonAPI.deserialize(post("https://api.mojang.com/profiles/minecraft", JsonAPI.serialize(names)), ArrayList.class, GameProfile.class);
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return null;
+        return (ArrayList<GameProfile>) JsonAPI.deserialize(post("https://api.mojang.com/profiles/minecraft", JsonAPI.serialize(names)), ArrayList.class, GameProfile.class);
     }
 
     public static HashMap<String, MojangServerState> getServerState() {
         HashMap<String, MojangServerState> out = new HashMap<>();
-        try {
-            String[] d = get("https://status.mojang.com/check").split(",");
-            for (String s : d) {
-                String[] s2 = s.split(":");
-                out.put(s2[0].substring(s2[0].indexOf("\"") + 1, s2[0].length() - 1),
-                        MojangServerState.valueOf(s2[1].substring(s2[1].indexOf("\"") + 1, s2[1].lastIndexOf("\"")).toUpperCase()));
-            }
-            return out;
-        } catch (Throwable e) {
-            e.printStackTrace();
+        String[] d = get("https://status.mojang.com/check").split(",");
+        for (String s : d) {
+            String[] s2 = s.split(":");
+            out.put(s2[0].substring(s2[0].indexOf("\"") + 1, s2[0].length() - 1),
+                    MojangServerState.valueOf(s2[1].substring(s2[1].indexOf("\"") + 1, s2[1].lastIndexOf("\"")).toUpperCase()));
         }
-        return null;
+        return out;
     }
 
 

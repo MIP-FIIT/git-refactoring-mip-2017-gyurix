@@ -28,6 +28,10 @@ public class PacketPlayOutSpawnEntityLiving extends WrappedPacket {
     public double x, y, z;
     public float yaw, pitch, headPitch;
 
+    public PacketPlayOutSpawnEntityLiving() {
+
+    }
+
     public PacketPlayOutSpawnEntityLiving(int entityId, UUID entityUUID, int type, LocationData loc, float headPitch, Vector velocity, DataWatcher meta) {
         this.entityId = entityId;
         this.entityUUID = entityUUID;
@@ -57,19 +61,9 @@ public class PacketPlayOutSpawnEntityLiving extends WrappedPacket {
                 (byte) (yaw / 360.0f * 256), (byte) (pitch / 360.0f * 256), (byte) (headPitch / 360.0f * 256), meta.toNMS());
     }
 
-    public Vector getVelocity() {
-        return new Vector(velX / 8000.0, velY / 8000.0, velZ / 8000.0);
-    }
-
-    public void setVelocity(Vector velocity) {
-        velX = (int) (velocity.getX() * 8000);
-        velY = (int) (velocity.getY() * 8000);
-        velZ = (int) (velocity.getZ() * 8000);
-    }
-
     @Override
     public void loadVanillaPacket(Object packet) {
-        Object[] d = PacketOutType.SpawnEntity.getPacketData(packet);
+        Object[] d = PacketOutType.SpawnEntityLiving.getPacketData(packet);
         entityId = (int) d[0];
         entityUUID = (UUID) d[1];
         type = (int) d[2];
@@ -83,5 +77,15 @@ public class PacketPlayOutSpawnEntityLiving extends WrappedPacket {
         pitch = (float) ((byte) d[10] / 256.0 * 360);
         headPitch = (float) ((byte) d[11] / 256.0 * 360);
         meta = new DataWatcher(d[12]);
+    }
+
+    public Vector getVelocity() {
+        return new Vector(velX / 8000.0, velY / 8000.0, velZ / 8000.0);
+    }
+
+    public void setVelocity(Vector velocity) {
+        velX = (int) (velocity.getX() * 8000);
+        velY = (int) (velocity.getY() * 8000);
+        velZ = (int) (velocity.getZ() * 8000);
     }
 }

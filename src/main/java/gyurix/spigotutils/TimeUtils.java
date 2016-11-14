@@ -80,7 +80,7 @@ public class TimeUtils {
         for (char c : in.toCharArray()) {
             if (c > 47 && c < 58) {
                 if (curP.length() > 0) {
-                    out = out + cur * NullUtils.to0(multipliers.get(curP.toString()));
+                    out += cur * NullUtils.to0(multipliers.get(curP.toString()));
                     curP.setLength(0);
                     cur = 0;
                 }
@@ -89,7 +89,7 @@ public class TimeUtils {
                 curP.append(c);
         }
         if (curP.length() > 0) {
-            out = out + cur * NullUtils.to0(multipliers.get(curP.toString()));
+            out += cur * NullUtils.to0(multipliers.get(curP.toString()));
             cur = 0;
         }
         return (out + cur) * 1000L;

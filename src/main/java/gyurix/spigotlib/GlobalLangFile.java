@@ -5,7 +5,6 @@ import gyurix.configfile.ConfigData;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.ChatAPI.ChatMessageType;
 import gyurix.spigotutils.ServerVersion;
-import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -90,13 +89,13 @@ public class GlobalLangFile {
                 adr = adr + "." + d[0];
                 lvl += 2;
             } else if (blockLvl == lvl) {
-                adr = adr.substring(0, adr.lastIndexOf(".") + 1) + d[0];
+                adr = adr.substring(0, adr.lastIndexOf('.') + 1) + d[0];
             } else if (blockLvl < lvl && blockLvl % 2 == 0) {
                 while (blockLvl != lvl) {
                     lvl -= 2;
-                    adr = adr.substring(0, adr.lastIndexOf("."));
+                    adr = adr.substring(0, adr.lastIndexOf('.'));
                 }
-                adr = adr.substring(0, adr.lastIndexOf(".") + 1) + d[0];
+                adr = adr.substring(0, adr.lastIndexOf('.') + 1) + d[0];
             } else {
                 throw new RuntimeException("Block leveling error in line " + line + "!");
             }
@@ -112,8 +111,8 @@ public class GlobalLangFile {
                 map.put(adr, new HashMap());
             }
         } else {
-            HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf(".")));
-            m.put(adr.substring(adr.indexOf(".") + 1), value);
+            HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf('.')));
+            m.put(adr.substring(adr.indexOf('.') + 1), value);
         }
     }
 
@@ -132,43 +131,29 @@ public class GlobalLangFile {
             Iterator<Entry<String, String>> i = m.entrySet().iterator();
             while (i.hasNext()) {
                 Entry<String, String> e = i.next();
-                if (!e.getKey().matches(".*\\." + lng.pln + ".*")) continue;
+                if (!e.getKey().matches(".*\\." + lng.pluginName + ".*")) continue;
                 i.remove();
             }
         }
     }
 
     public static class PluginLang {
-        public final String pln;
-        public final String prefixLink = "prefix";
+        public final String pluginName;
 
         private PluginLang(String plugin) {
-            pln = plugin;
-        }
-
-        public String get(Player plr, String adr, String... repl) {
-            String msg = GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), pln + "." + adr);
-            for (String s : (">" + msg + "<").split(">[^<]*<")) {
-                String r;
-                int spaceID = s.indexOf(" ");
-                String name = spaceID == -1 ? s : s.substring(0, spaceID);
-                String[] pm = spaceID == -1 ? new String[]{} : s.substring(spaceID + 1).split(" ");
-                if (name.startsWith("*")) {
-                    msg = msg.replace("<" + s + ">", get(plr, name.substring(1), pm));
-                    continue;
-                }
-                int replNameId = ArrayUtils.indexOf(repl, name) + 1;
-                if (replNameId == repl.length || replNameId == 0) continue;
-                msg = msg.replace("<" + s + ">", (r = repl[replNameId]).startsWith(".") ? get(plr, r.substring(1), repl) : r);
-            }
-            return msg;
+            pluginName = plugin;
         }
 
         public void msg(CommandSender sender, String msg, String... repl) {
-            msg(get(sender instanceof Player ? (Player) sender : null, "prefix"), sender, msg, repl);
+            msg(sender, msg, (Object[]) repl);
         }
 
-        public void msg(String prefix, CommandSender sender, String msg, String... repl) {
+        public void msg(CommandSender sender, String msg, Object... repl) {
+            Player plr = sender instanceof Player ? (Player) sender : null;
+            msg(get(plr, "prefix"), sender, msg, repl);
+        }
+
+        public void msg(String prefix, CommandSender sender, String msg, Object... repl) {
             Player plr = sender instanceof Player ? (Player) sender : null;
             msg = prefix + get(plr, msg, repl);
             if (plr == null || Reflection.ver.isBellow(ServerVersion.v1_7)) {
@@ -176,6 +161,28 @@ public class GlobalLangFile {
             } else {
                 ChatAPI.sendJsonMsg(ChatMessageType.CHAT, msg, plr);
             }
+        }
+
+        public String get(Player plr, String adr, String... repl) {
+            return get(plr, adr, (Object[]) repl);
+        }
+
+        public String get(Player plr, String adr, Object... repl) {
+            String msg = GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), pluginName + '.' + adr);
+            Object key = null;
+            for (Object o : repl) {
+                if (key == null) {
+                    key = o;
+                    continue;
+                }
+                msg = msg.replace("<" + key + '>', String.valueOf(o));
+                key = null;
+            }
+            return msg;
+        }
+
+        public void msg(String prefix, CommandSender sender, String msg, String... repl) {
+            msg(prefix, sender, msg, (Object[]) repl);
         }
 
     }

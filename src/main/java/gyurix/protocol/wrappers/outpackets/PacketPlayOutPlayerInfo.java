@@ -21,16 +21,19 @@ public class PacketPlayOutPlayerInfo extends WrappedPacket {
     public PlayerInfoAction action = PlayerInfoAction.ADD_PLAYER;
     public ArrayList<PlayerInfoData> players = new ArrayList<>();
 
+    public PacketPlayOutPlayerInfo() {
+
+    }
+
+    public PacketPlayOutPlayerInfo(PlayerInfoAction action, PlayerInfoData... pls) {
+        this.action = action;
+        for (PlayerInfoData pid : pls)
+            players.add(pid);
+    }
+
     @Override
     public Object getVanillaPacket() {
         return PacketOutType.PlayerInfo.newPacket(action.toNMS(), toVanillaDataList());
-    }
-
-    private void loadVanillaDataList(List l) {
-        players = new ArrayList<>();
-        for (Object o : l) {
-            players.add(new PlayerInfoData(o));
-        }
     }
 
     @Override
@@ -38,6 +41,13 @@ public class PacketPlayOutPlayerInfo extends WrappedPacket {
         Object[] d = PacketOutType.PlayerInfo.getPacketData(packet);
         action = PlayerInfoAction.valueOf(d[0].toString());
         loadVanillaDataList((List) d[1]);
+    }
+
+    private void loadVanillaDataList(List l) {
+        players = new ArrayList<>();
+        for (Object o : l) {
+            players.add(new PlayerInfoData(o));
+        }
     }
 
     private List toVanillaDataList() {

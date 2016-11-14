@@ -40,25 +40,25 @@ public class MapData {
     public boolean showIcons = true;
     public World world;
 
-    public void clear (byte color) {
+    public void clear(byte color) {
         if (color < 0 && color > -113)
             color = 0;
         for (int i = 0; i < 16384; i++)
             colors[i] = color;
     }
 
-    public byte[] cloneColors () {
+    public byte[] cloneColors() {
         return colors.clone();
     }
 
-    public void setColor (int x, int y, byte color) {
+    public void setColor(int x, int y, byte color) {
         if (color < 0 && color > -113)
             color = 0;
         if (x > -1 && x < 128 && y > -1 && y < 128)
             colors[x + y * 128] = color;
     }
 
-    public void setColor (int x, int y, int xLen, int yLen, byte color) {
+    public void setColor(int x, int y, int xLen, int yLen, byte color) {
         if (color < 0 && color > -113)
             color = 0;
         for (int cx = 0; cx < xLen; cx++) {
@@ -69,7 +69,7 @@ public class MapData {
         }
     }
 
-    public void setVanillaMapGenData (Player plr) {
+    public void setVanillaMapGenData(Player plr) {
         view.setWorld(world);
         view.setCenterX(centerX);
         view.setCenterZ(centerZ);
@@ -82,7 +82,7 @@ public class MapData {
         }
     }
 
-    public void update (Player plr) {
+    public void update(Player plr) {
         SU.tp.sendPacket(plr, new PacketPlayOutMap(this));
     }
 }

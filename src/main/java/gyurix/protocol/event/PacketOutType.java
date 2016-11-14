@@ -160,39 +160,16 @@ public enum PacketOutType {
                 nowrapper.add(t);
             }
         }
-        if (notfound.size() > 0)
+        if (!notfound.isEmpty())
             sb.append("\n§cNot found OUT packets (please report to the dev):§f ").append(StringUtils.join(notfound, ", "));
         else
             sb.append("\n§aFound every supported packets (no errors)");
-        if (nowrapper.size() > 0)
+        if (!nowrapper.isEmpty())
             sb.append("\n§eMissing OUT packet wrappers (will be coded later):§f ").append(StringUtils.join(nowrapper, ", "));
         else
             sb.append("\n§aFound wrappers for all the IN packet types (that's awesome)");
         sb.append("\n§e-------------------------------------------------------------------------------");
         SU.cs.sendMessage(sb.toString());
-    }
-
-    /**
-     * Fills the given packet with the given data
-     *
-     * @param packet - The fillable packet
-     * @param data   - The filling data
-     */
-    public void fillPacket(Object packet, Object... data) {
-        ArrayList<Field> fields = Lists.newArrayList(fs);
-        for (Object d : data) {
-            for (int f = 0; f < fields.size(); f++) {
-                try {
-                    Field ff = fields.get(f);
-                    ff.set(packet, d);
-                    fields.remove(f--);
-                    break;
-                } catch (Throwable e) {
-                    if (Config.debug)
-                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        }
     }
 
     /**
@@ -237,6 +214,29 @@ public enum PacketOutType {
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    /**
+     * Fills the given packet with the given data
+     *
+     * @param packet - The fillable packet
+     * @param data   - The filling data
+     */
+    public void fillPacket(Object packet, Object... data) {
+        ArrayList<Field> fields = Lists.newArrayList(fs);
+        for (Object d : data) {
+            for (int f = 0; f < fields.size(); f++) {
+                try {
+                    Field ff = fields.get(f);
+                    ff.set(packet, d);
+                    fields.remove(f--);
+                    break;
+                } catch (Throwable e) {
+                    if (Config.debug)
+                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                }
+            }
         }
     }
 

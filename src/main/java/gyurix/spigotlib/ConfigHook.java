@@ -7,6 +7,7 @@ import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.ConfigSerialization.Serializer;
 import gyurix.economy.EconomyAPI;
 import gyurix.protocol.Reflection;
+import gyurix.sign.SignConfig;
 import gyurix.spigotutils.TPSMeter;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
@@ -18,6 +19,7 @@ import org.bukkit.util.Vector;
 import javax.script.ScriptException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,17 +29,38 @@ public class ConfigHook {
     public static HashMap<String, Object> data = new HashMap();
 
     public static void registerSerializers() {
+        ConfigSerialization.serializers.put(SignConfig.class, new Serializer() {
+            @Override
+            public Object fromData(ConfigData cd, Class cl, Type... paramVarArgs) {
+                SignConfig sc = new SignConfig();
+                for (int i = 0; i < 4; i++) {
+                    String s = cd.listData.get(i).stringData;
+                    sc.lines.add(s.equals(" ") ? "" : s);
+                }
+                return sc;
+            }
+
+            @Override
+            public ConfigData toData(Object sco, Type... paramVarArgs) {
+                SignConfig sc = (SignConfig) sco;
+                ConfigData cd = new ConfigData();
+                cd.listData = new ArrayList<>();
+                for (int i = 0; i < 4; i++)
+                    cd.listData.add(new ConfigData(sc.lines.get(i)));
+                return cd;
+            }
+        });
         ConfigSerialization.serializers.put(Vector.class, new Serializer() {
             @Override
             public Object fromData(ConfigData data, Class paramClass, Type... paramVarArgs) {
                 String[] s = data.stringData.split(" ", 3);
-                return new Vector(Double.valueOf(s[0]).doubleValue(), Double.valueOf(s[1]).doubleValue(), Double.valueOf(s[2]).doubleValue());
+                return new Vector(Double.valueOf(s[0]), Double.valueOf(s[1]), Double.valueOf(s[2]));
             }
 
             @Override
             public ConfigData toData(Object obj, Type... paramVarArgs) {
                 Vector v = (Vector) obj;
-                return new ConfigData("" + v.getX() + " " + v.getY() + " " + v.getZ());
+                return new ConfigData(String.valueOf(v.getX()) + ' ' + v.getY() + ' ' + v.getZ());
             }
         });
         ConfigSerialization.serializers.put(Location.class, new Serializer() {
@@ -45,18 +68,18 @@ public class ConfigHook {
             public Object fromData(ConfigData data, Class paramClass, Type... paramVarArgs) {
                 String[] s = data.stringData.split(" ", 6);
                 if (s.length == 4) {
-                    return new Location(Bukkit.getWorld(s[0]), Double.valueOf(s[1]).doubleValue(), Double.valueOf(s[2]).doubleValue(), Double.valueOf(s[3]).doubleValue());
+                    return new Location(Bukkit.getWorld(s[0]), Double.valueOf(s[1]), Double.valueOf(s[2]), Double.valueOf(s[3]));
                 }
-                return new Location(Bukkit.getWorld(s[0]), Double.valueOf(s[1]).doubleValue(), Double.valueOf(s[2]).doubleValue(), Double.valueOf(s[3]).doubleValue(), Float.valueOf(s[4]).floatValue(), Float.valueOf(s[5]).floatValue());
+                return new Location(Bukkit.getWorld(s[0]), Double.valueOf(s[1]), Double.valueOf(s[2]), Double.valueOf(s[3]), Float.valueOf(s[4]), Float.valueOf(s[5]));
             }
 
             @Override
             public ConfigData toData(Object obj, Type... paramVarArgs) {
                 Location loc = (Location) obj;
                 if (loc.getPitch() == 0.0f && loc.getYaw() == 0.0f) {
-                    return new ConfigData(loc.getWorld().getName() + " " + loc.getX() + " " + loc.getY() + " " + loc.getZ());
+                    return new ConfigData(loc.getWorld().getName() + ' ' + loc.getX() + ' ' + loc.getY() + ' ' + loc.getZ());
                 }
-                return new ConfigData(loc.getWorld().getName() + " " + loc.getX() + " " + loc.getY() + " " + loc.getZ() + " " + loc.getYaw() + " " + loc.getPitch());
+                return new ConfigData(loc.getWorld().getName() + ' ' + loc.getX() + ' ' + loc.getY() + ' ' + loc.getZ() + ' ' + loc.getYaw() + ' ' + loc.getPitch());
             }
         });
         ConfigSerialization.serializers.put(ItemStack.class, new ItemSerializer());
@@ -71,7 +94,7 @@ public class ConfigHook {
                 try {
                     return SU.js.eval(s);
                 } catch (ScriptException e) {
-                    return "<eval:" + s + ">";
+                    return "<eval:" + s + '>';
                 }
             }
         });
@@ -284,10 +307,10 @@ public class ConfigHook {
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
                 if (inside == null || inside.isEmpty()) {
-                    return EconomyAPI.balanceTypes.get("default").format(EconomyAPI.getBalance(plr.getUniqueId()));
+                    return EconomyAPI.balanceTypes.get("default").format(EconomyAPI.getBalance(plr.getUniqueId()).setScale(2, BigDecimal.ROUND_HALF_UP));
                 }
                 String str = StringUtils.join(inside, "");
-                return EconomyAPI.balanceTypes.get(str).format(EconomyAPI.getBalance(plr.getUniqueId(), str));
+                return EconomyAPI.balanceTypes.get(str).format(EconomyAPI.getBalance(plr.getUniqueId(), str).setScale(2, BigDecimal.ROUND_HALF_UP));
             }
         });
     }

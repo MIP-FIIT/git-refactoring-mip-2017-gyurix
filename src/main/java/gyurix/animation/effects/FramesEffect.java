@@ -8,19 +8,22 @@ import gyurix.spigotlib.SU;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-@ConfigOptions(serialize = false)
 public class FramesEffect implements CustomEffect {
+    @ConfigOptions(serialize = false)
     public long delay;
+    @ConfigOptions(serialize = false)
     public Iterator<Long> delays;
+    @ConfigOptions(serialize = false)
     public Frame f;
     @ConfigOptions(defaultValue = "9223372036854775807")
     public long frameTime = Long.MAX_VALUE;
-    @ConfigOptions()
     public ArrayList<Frame> frames = new ArrayList();
-    @ConfigOptions()
     public boolean random;
+    @ConfigOptions(serialize = false)
     public long repeat;
+    @ConfigOptions(serialize = false)
     public Iterator<Long> repeats;
+    @ConfigOptions(serialize = false)
     public int state = -1;
 
     @Override

@@ -2,10 +2,12 @@ package gyurix.mysql;
 
 import com.mysql.jdbc.Connection;
 import gyurix.configfile.ConfigSerialization.ConfigOptions;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 
-import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,7 +18,7 @@ import java.util.concurrent.Executors;
  */
 public class MySQLDatabase {
     @ConfigOptions(serialize = false)
-    private static ExecutorService executeThread = Executors.newSingleThreadExecutor(), prepareThread = Executors.newSingleThreadExecutor(), runnableThread = Executors.newSingleThreadExecutor();
+    private static ExecutorService batchThread = Executors.newSingleThreadExecutor();
     public String table;
     @ConfigOptions(serialize = false)
     private Connection con;
@@ -36,6 +38,18 @@ public class MySQLDatabase {
         this.password = password;
         this.database = database;
         openConnection();
+    }
+
+    public boolean openConnection() {
+        try {
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
+            con.setAutoReconnect(true);
+            con.setConnectTimeout(timeout);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            return false;
+        }
+        return true;
     }
 
     public static String escape(String in) {
@@ -71,11 +85,11 @@ public class MySQLDatabase {
     }
 
     public void batch(Iterable<String> commands) {
-        prepareThread.submit(new MySQLPrepare(commands, null));
+        batchThread.submit(new MySQLBatch(commands, null));
     }
 
     public void batch(Iterable<String> commands, Runnable r) {
-        prepareThread.submit(new MySQLPrepare(commands, r));
+        batchThread.submit(new MySQLBatch(commands, r));
     }
 
     public void batchNoAsync(ArrayList<String> list) {
@@ -89,17 +103,6 @@ public class MySQLDatabase {
         }
     }
 
-    public boolean command(String cmd) {
-        PreparedStatement st;
-        try {
-            st = getConnection().prepareStatement(cmd);
-            return st.execute();
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return false;
-    }
-
     private Connection getConnection() {
         try {
             if (con == null || !con.isValid(timeout)) {
@@ -111,16 +114,15 @@ public class MySQLDatabase {
         return con;
     }
 
-    public boolean openConnection() {
+    public boolean command(String cmd) {
+        PreparedStatement st;
         try {
-            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
-            con.setAutoReconnect(true);
-            con.setConnectTimeout(timeout);
+            st = getConnection().prepareStatement(cmd);
+            return st.execute();
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            return false;
         }
-        return true;
+        return false;
     }
 
     public ResultSet querry(String cmd) {
@@ -148,32 +150,12 @@ public class MySQLDatabase {
         }
     }
 
-    public class MySQLExecute implements Runnable {
-        private final Runnable r;
-        private final Statement st;
 
-        public MySQLExecute(Statement st, Runnable r) {
-            this.st = st;
-            this.r = r;
-        }
-
-        @Override
-        public void run() {
-            try {
-                st.executeBatch();
-                if (r != null)
-                    runnableThread.submit(r);
-            } catch (SQLException e) {
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            }
-        }
-    }
-
-    public class MySQLPrepare implements Runnable {
+    public class MySQLBatch implements Runnable {
         private final Iterable<String> ps;
         private final Runnable r;
 
-        public MySQLPrepare(Iterable<String> cmds, Runnable r) {
+        public MySQLBatch(Iterable<String> cmds, Runnable r) {
             ps = cmds;
             this.r = r;
         }
@@ -181,23 +163,13 @@ public class MySQLDatabase {
         @Override
         public void run() {
             try {
-                if (Config.debug) {
-                    for (String s : ps) {
-                        try {
-                            PreparedStatement ps = getConnection().prepareStatement(s);
-                            ps.execute();
-                        } catch (Throwable e) {
-                            SU.cs.sendMessage("§cMySQL ERROR:§e Error on executing command §b" + s + "§c:");
-                            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-                        }
-                    }
-                } else {
-                    Statement st = getConnection().createStatement();
-                    for (String s : ps) {
-                        st.addBatch(s);
-                    }
-                    executeThread.submit(new MySQLExecute(st, r));
+                Statement st = getConnection().createStatement();
+                for (String s : ps) {
+                    st.addBatch(s);
                 }
+                st.executeBatch();
+                if (r != null)
+                    r.run();
 
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");

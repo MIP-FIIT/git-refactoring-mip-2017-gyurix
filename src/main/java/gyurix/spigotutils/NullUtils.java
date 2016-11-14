@@ -1,5 +1,8 @@
 package gyurix.spigotutils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
  * Class for converting null objects to 0 values and vice versa
  */
@@ -66,5 +69,13 @@ public class NullUtils {
 
     public static String to0(String data) {
         return data == null ? "" : data;
+    }
+
+    public static <T> ArrayList<T> to0(ArrayList<T> list) {
+        return list == null ? new ArrayList<T>() : list;
+    }
+
+    public static <K, V> HashMap<K, V> to0(HashMap<K, V> map) {
+        return map == null ? new HashMap<K, V>() : map;
     }
 }

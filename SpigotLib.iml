@@ -14,6 +14,6 @@
     <orderEntry type="library" name="Vault" level="application" />
     <orderEntry type="library" name="PlaceholderAPI" level="application" />
     <orderEntry type="library" name="WorldEdit" level="application" />
-    <orderEntry type="library" name="Spigot-1.9.2" level="application" />
+    <orderEntry type="library" name="spigot-1.10.2" level="application" />
   </component>
 </module>

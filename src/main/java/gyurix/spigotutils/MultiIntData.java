@@ -1,6 +1,7 @@
 package gyurix.spigotutils;
 
 import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.spigotlib.SU;
 
 /**
  * Created by GyuriX.
@@ -31,6 +32,11 @@ public class MultiIntData implements StringSerializable {
                 return true;
         }
         return false;
+    }
+
+    public int random() {
+        int id = SU.rand.nextInt(minValues.length);
+        return minValues[id] + SU.rand.nextInt(maxValues[id] - minValues[id] + 1);
     }
 
     public String toString() {

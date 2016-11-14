@@ -3,6 +3,7 @@ package gyurix.protocol.wrappers.inpackets;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.wrappers.WrappedPacket;
+import gyurix.spigotlib.SU;
 
 import java.lang.reflect.Method;
 
@@ -19,10 +20,10 @@ public class PacketPlayInEntityAction
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        Object[] data = PacketInType.EntityAction.getPacketData(packet);
-        entityId = (Integer) data[0];
-        action = (PlayerAction) data[1];
-        jumpBoost = (Integer) data[2];
+        Object[] d = PacketInType.EntityAction.getPacketData(packet);
+        entityId = (Integer) d[0];
+        action = PlayerAction.valueOf(d[1].toString());
+        jumpBoost = (Integer) d[2];
     }
 
     public enum PlayerAction {
@@ -47,7 +48,7 @@ public class PacketPlayInEntityAction
             try {
                 return valueOf.invoke(null, name());
             } catch (Throwable e) {
-                e.printStackTrace();
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 return null;
             }
         }

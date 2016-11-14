@@ -5,13 +5,13 @@ import gyurix.animation.AnimationAPI;
 import gyurix.api.BungeeAPI;
 import gyurix.api.TitleAPI;
 import gyurix.api.VariableAPI;
+import gyurix.commands.CustomCommandMap;
 import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigFile;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
-import gyurix.economy.EconomyAPI.VaultHookType;
-import gyurix.economy.EconomyVaultHook;
+import gyurix.inventory.CustomGUI;
 import gyurix.map.MapPacketCanceler;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.Reflection;
@@ -39,15 +39,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerEditBookEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.ServiceRegisterEvent;
 import org.bukkit.event.server.ServiceUnregisterEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -57,38 +59,61 @@ import org.bukkit.util.Vector;
 
 import javax.script.ScriptEngineManager;
 import java.io.File;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
+import static gyurix.economy.EconomyAPI.VaultHookType.*;
+import static gyurix.economy.EconomyAPI.vaultHookType;
+import static gyurix.protocol.Reflection.ver;
+import static gyurix.spigotlib.Config.PlayerFile.mysql;
+import static gyurix.spigotlib.Items.enchants;
+import static gyurix.spigotlib.SU.*;
 import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class Main extends JavaPlugin implements Listener {
-    public static final String[] commands = new String[]{"chm", "abm", "sym", "title", "vars",
+    public static final String[] commands = {"chm", "abm", "sym", "title", "vars",
             "perm", "lang", "save", "reload", "velocity", "setamount", "item"};
-    public static final String version = "5.0";
+    public static final String version = "5.4";
     public static File dir;
-    public static boolean fullyEnabled;
-    public static ConfigFile kf;
+    public static boolean fullyEnabled, schedulePacketAPI;
+    public static ConfigFile kf, itemf;
     public static PluginLang lang;
     public static Main pl;
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void editBook (PlayerEditBookEvent e) {
-        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
-        BookMeta old = e.getNewBookMeta();
-        BookMeta meta = (BookMeta) book.getItemMeta();
-        meta.setPages(old.getPages());
-        meta.setAuthor(e.getPlayer().getName());
-        if (old.getTitle() != null) {
-            meta.setTitle(SU.setLength(old.getTitle().replace("§", "&"), 16));
-        }
-        e.setNewBookMeta(meta);
+    @EventHandler
+    public void onClick(InventoryClickEvent e) {
+        Inventory top = e.getView().getTopInventory();
+        if (top == null || top.getHolder() == null || !(top.getHolder() instanceof CustomGUI))
+            return;
+        e.setCancelled(true);
+        if (e.getClickedInventory() == top)
+            try {
+                ((CustomGUI) top.getHolder()).onClick(e.getSlot(), e.isRightClick(), e.isShiftClick());
+            } catch (Throwable err) {
+                Player plr = (Player) e.getWhoClicked();
+                error(plr.hasPermission("spigotlib.debug") ? plr : cs, err, "SpigotLib", "gyurix");
+            }
     }
 
-    public boolean onCommand (final CommandSender sender, Command command, String label, String[] args) {
+    @EventHandler
+    public void onClose(InventoryCloseEvent e) {
+        Inventory top = e.getView().getTopInventory();
+        if (top == null || top.getHolder() == null || !(top.getHolder() instanceof CustomGUI))
+            return;
+        try {
+            ((CustomGUI) top.getHolder()).onClose();
+        } catch (Throwable err) {
+            Player plr = (Player) e.getPlayer();
+            error(plr.hasPermission("spigotlib.debug") ? plr : cs, err, "SpigotLib", "gyurix");
+        }
+
+    }
+
+    public boolean onCommand(final CommandSender sender, Command command, String label, String[] args) {
         try {
             Player plr = sender instanceof Player ? (Player) sender : null;
             String cmd = args.length == 0 ? "help" : args[0].toLowerCase();
@@ -96,7 +121,7 @@ public class Main extends JavaPlugin implements Listener {
                 lang.msg(sender, "noperm");
                 return true;
             }
-            ArrayList<Player> pls = Lists.newArrayList(plr);
+            ArrayList<Player> pls = plr == null ? Lists.<Player>newArrayList() : Lists.newArrayList(plr);
             int stripArg = 1;
             if (args.length > 1) {
                 if (args[1].equals("*")) {
@@ -106,7 +131,7 @@ public class Main extends JavaPlugin implements Listener {
                     stripArg = 2;
                     pls.clear();
                     for (String s : args[1].substring(2).split(",")) {
-                        Player p = SU.getPlayer(s);
+                        Player p = getPlayer(s);
                         if (p == null) {
                             lang.msg(sender, "player.notfound", "player", p.getName());
                             continue;
@@ -118,32 +143,26 @@ public class Main extends JavaPlugin implements Listener {
             args = (String[]) ArrayUtils.subarray(args, stripArg, args.length);
             String fullMsg = VariableAPI.fillVariables(StringUtils.join(args, ' '), plr);
             switch (cmd) {
-                case "help": {
+                case "help":
                     lang.msg(sender, "help");
                     return true;
-                }
-                case "cmd": {
+                case "cmd":
                     for (Player p : pls) {
                         for (String s : fullMsg.split(";")) {
                             new gyurix.commands.Command(s).execute(p);
                         }
                     }
                     return true;
-                }
-                case "vars": {
+                case "vars":
                     if (args.length == 0) {
                         lang.msg(sender, "vars", "vars", StringUtils.join(new TreeSet<>(VariableAPI.handlers.keySet()), ", "));
                     } else {
                         String f = lang.get(plr, "vars.fillformat");
                         StringBuilder filled = new StringBuilder();
-                        for (Player p : pls) {
-                            filled.append('\n').append(SU.fillVariables(f, "player", p.getName(), "value", VariableAPI.fillVariables(fullMsg, p)));
-                        }
-                        lang.msg(sender, "vars.filled", "original", fullMsg, "filled", filled.length() == 0 ? "" : filled.substring(1));
+                        lang.msg(sender, "vars.filled", "result", fullMsg);
                     }
                     return true;
-                }
-                case "perm": {
+                case "perm":
                     if (args.length == 0) {
                         String f = lang.get(plr, "perms.fillformat");
                         String denyperm = lang.get(plr, "perms.denyformat");
@@ -167,13 +186,44 @@ public class Main extends JavaPlugin implements Listener {
                     for (Player p : pls)
                         lang.msg(sender, p.hasPermission(args[0]) ? "perms.yes" : "perms.no", "perm", args[0]);
                     return true;
-                }
-                case "debug": {
+                case "debug":
                     Config.debug = !Config.debug;
                     lang.msg(sender, "debug." + (Config.debug ? "on" : "off"));
                     return true;
-                }
-                case "reload": {
+                case "class":
+                    sender.sendMessage("Classes in package " + args[0] + ": " + StringUtils.join(getClasses(args[0]), '\n'));
+                    return true;
+                case "pf":
+                    int page = 1;
+                    boolean pageChange = false;
+                    try {
+                        page = Integer.valueOf(args[args.length - 1]);
+                        pageChange = true;
+                    } catch (Throwable e) {
+                    }
+                    if (page < 1)
+                        page = 1;
+                    if (args.length > (pageChange ? 1 : 0)) {
+                        if (args[0].equalsIgnoreCase("console")) {
+                            String[] txt = splitPage(getPlayerConfig((UUID) null).toString(), 10);
+                            if (page > txt.length)
+                                page = txt.length;
+                            sender.sendMessage("§6§lPlayerFileViewer - §e§lCONSOLE§6§l - page §e§l" + page + "§6§l of §e§l" + txt.length + "\n§f" + txt[page - 1]);
+                            return true;
+                        }
+                        Player p = getPlayer(args[0]);
+                        String[] txt = splitPage(getPlayerConfig(p.getUniqueId()).toString(), 10);
+                        if (page > txt.length)
+                            page = txt.length;
+                        sender.sendMessage("§6§lPlayerFileViewer - §e§l" + p.getName() + "§6§l - page §e§l" + page + "§6§l of §e§l" + txt.length + "\n§f" + txt[page - 1]);
+                        return true;
+                    }
+                    String[] txt = splitPage(pf.toString(), 10);
+                    if (page > txt.length)
+                        page = txt.length;
+                    sender.sendMessage("§6§lPlayerFileViewer - page " + page + " of " + txt.length + "\n§f" + txt[page - 1]);
+                    return true;
+                case "reload":
                     if (args[0].equals("config")) {
                         kf.reload();
                         kf.data.deserialize(Config.class);
@@ -181,33 +231,32 @@ public class Main extends JavaPlugin implements Listener {
                         return true;
                     } else if (args[0].equals("lf")) {
                         GlobalLangFile.unloadLF(lang);
-                        SU.saveResources(this, "lang.yml");
+                        saveResources(this, "lang.yml");
                         lang = GlobalLangFile.loadLF("spigotlib", getDataFolder() + File.separator + "lang.yml");
                         lang.msg(sender, "reload.lf");
                         return true;
                     } else if (args[0].equals("pf")) {
                         if (PlayerFile.backend == BackendType.FILE) {
-                            SU.pf.reload();
+                            pf.reload();
                         } else {
-                            SU.pf.data.mapData = new LinkedHashMap<>();
+                            pf.data.mapData = new LinkedHashMap<>();
                             for (Player pl : Bukkit.getOnlinePlayers()) {
-                                SU.loadPlayerConfig(pl.getUniqueId());
+                                loadPlayerConfig(pl.getUniqueId());
                             }
-                            SU.loadPlayerConfig(null);
+                            loadPlayerConfig(null);
                         }
                         lang.msg(sender, "reload.pf");
                         return true;
                     }
                     lang.msg(sender, "invalidcmd");
                     return true;
-                }
-                case "save": {
+                case "save":
                     if (args[0].equals("pf")) {
                         if (PlayerFile.backend == BackendType.FILE)
-                            SU.pf.save();
+                            pf.save();
                         else {
-                            for (ConfigData cd : new ArrayList<>(SU.pf.data.mapData.keySet())) {
-                                SU.savePlayerConfig(cd.stringData.length() == 40 ? UUID.fromString(cd.stringData) : null);
+                            for (ConfigData cd : new ArrayList<>(pf.data.mapData.keySet())) {
+                                savePlayerConfig(cd.stringData.length() == 40 ? UUID.fromString(cd.stringData) : null);
                             }
                         }
                         lang.msg(sender, "save.pf");
@@ -215,45 +264,42 @@ public class Main extends JavaPlugin implements Listener {
                     }
                     lang.msg(sender, "invalidcmd");
                     return true;
-                }
-                case "velocity": {
+                case "velocity":
                     Vector v = new Vector(Double.valueOf(args[0]), Double.valueOf(args[1]), Double.valueOf(args[2]));
                     for (Player p : pls) {
                         p.setVelocity(v);
                         lang.msg(sender, "velocity.set");
                     }
                     return true;
-                }
-                case "migratetodb": {
-                    SU.pf.db = PlayerFile.mysql;
-                    SU.pf.dbKey = "key";
-                    SU.pf.dbValue = "value";
-                    SU.pf.dbTable = PlayerFile.mysql.table;
+                case "migratetodb":
+                    pf.db = mysql;
+                    pf.dbKey = "key";
+                    pf.dbValue = "value";
+                    pf.dbTable = mysql.table;
                     lang.msg(sender, "migrate.start");
                     ArrayList<String> l = new ArrayList<>();
-                    l.add("DROP TABLE IF EXISTS " + PlayerFile.mysql.table);
-                    l.add("CREATE TABLE " + PlayerFile.mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
-                    for (Entry<ConfigData, ConfigData> e : SU.pf.data.mapData.entrySet()) {
-                        ConfigFile kf = SU.pf.subConfig("" + e.getKey(), "uuid='" + e.getKey() + "'");
+                    l.add("DROP TABLE IF EXISTS " + mysql.table);
+                    l.add("CREATE TABLE " + mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
+                    for (Entry<ConfigData, ConfigData> e : pf.data.mapData.entrySet()) {
+                        ConfigFile kf = pf.subConfig("" + e.getKey(), "uuid='" + e.getKey() + "'");
                         kf.mysqlUpdate(l, null);
                     }
-                    ConfigFile kff = SU.pf.subConfig("CONSOLE", "uuid='CONSOLE'");
+                    ConfigFile kff = pf.subConfig("CONSOLE", "uuid='CONSOLE'");
                     kff.mysqlUpdate(l, null);
-                    PlayerFile.mysql.batch(l, new Runnable() {
+                    mysql.batch(l, new Runnable() {
                         @Override
-                        public void run () {
+                        public void run() {
                             lang.msg(sender, "migrate.end");
                         }
                     });
                     PlayerFile.backend = BackendType.MYSQL;
                     kf.save();
                     return true;
-                }
-                case "lang": {
+                case "lang":
                     if (args.length == 0) {
                         lang.msg(sender, "lang.list", "langs", StringUtils.join(GlobalLangFile.map.keySet(), ", "));
                         for (Player p : pls) {
-                            String lng = SU.getPlayerConfig(p).getString("lang");
+                            String lng = getPlayerConfig(p).getString("lang");
                             if (lng == null)
                                 lng = Config.defaultLang;
                             lang.msg(sender, "lang." + (p == sender ? "own" : "other"), "player", sender.getName(), "lang", lng);
@@ -262,38 +308,64 @@ public class Main extends JavaPlugin implements Listener {
                     }
                     args[0] = args[0].toLowerCase();
                     for (Player p : pls) {
-                        SU.getPlayerConfig(p).setString("lang", args[0]);
+                        getPlayerConfig(p).setString("lang", args[0]);
                         CommandSender cs = p == null ? SU.cs : p;
                         lang.msg(sender, "lang.set" + (p == sender ? "" : ".other"), "player", cs.getName(), "lang", args[0]);
                     }
                     return true;
-                }
-                case "item": {
+                case "item":
                     if (args.length == 0) {
                         for (Player p : pls)
-                            lang.msg(sender, p == sender ? "item.own" : "item.player", "name", p.getName(), "item", SU.itemToString(p.getItemInHand()));
+                            lang.msg(sender, p == sender ? "item.own" : "item.player", "name", p.getName(), "item", itemToString(p.getItemInHand()));
                         return true;
                     }
-                    ItemStack is = SU.stringToItemStack(fullMsg);
-                    fullMsg = SU.itemToString(is);
-                    for (Player p : pls) {
-                        p.setItemInHand(is);
-                        lang.msg(sender, "item.set", "player", p.getName(), "item", fullMsg);
-                    }
+                    boolean give = fullMsg.startsWith("give ");
+                    if (give)
+                        fullMsg = fullMsg.substring(5);
+                    ItemStack is = stringToItemStack(fullMsg);
+                    fullMsg = itemToString(is);
+                    if (give)
+                        for (Player p : pls) {
+                            addItem(p.getInventory(), is, is.getMaxStackSize());
+                            lang.msg(sender, "item.give", "player", p.getName(), "item", fullMsg);
+                        }
+                    else
+                        for (Player p : pls) {
+                            plr.setItemInHand(is);
+                            lang.msg(sender, "item.set", "player", p.getName(), "item", fullMsg);
+                        }
                     return true;
-                }
                 default:
                     lang.msg(sender, "notdone");
                     return true;
             }
         } catch (Throwable e) {
-            SU.error(sender, e, "SpigotLib", "gyurix");
+            error(sender, e, "SpigotLib", "gyurix");
 
         }
         return true;
     }
 
-    public List<String> onTabComplete (CommandSender sender, Command command, String alias, String[] args) {
+    public static ArrayList<Class> getClasses(String packageName) {
+        ArrayList<Class> classes = new ArrayList();
+        try {
+            String packagePrefix = packageName.replace(".", "/");
+            File f = new File(Material.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6));
+            ZipInputStream zis = new ZipInputStream(new FileInputStream(f));
+            ZipEntry ze = zis.getNextEntry();
+            while (ze != null) {
+                String name = ze.getName();
+                if (name.startsWith(packagePrefix) && name.endsWith(".class") && !name.contains("$"))
+                    classes.add(Class.forName(name.substring(0, name.length() - 6).replace("/", ".")));
+                ze = zis.getNextEntry();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return classes;
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         ArrayList<String> out = new ArrayList<>();
         if (!sender.hasPermission("spigotlib.use")) {
             lang.msg(sender, "noperm");
@@ -307,7 +379,7 @@ public class Main extends JavaPlugin implements Listener {
             }
         } else if (args.length == 2) {
             if (args[0].equals("reload")) {
-                return SU.filterStart(new String[]{"config", "pf", "lf"}, args[1]);
+                return filterStart(new String[]{"config", "pf", "lf"}, args[1]);
             } else {
                 return null;
             }
@@ -315,21 +387,21 @@ public class Main extends JavaPlugin implements Listener {
         return out;
     }
 
-    public void onLoad () {
+    public void onLoad() {
         pl = this;
         try {
-            SU.srv = getServer();
-            SU.pm = SU.srv.getPluginManager();
-            SU.cs = SU.srv.getConsoleSender();
-            SU.msg = SU.srv.getMessenger();
-            SU.sm = SU.srv.getServicesManager();
-            SU.sch = SU.srv.getScheduler();
-            SU.js = new ScriptEngineManager().getEngineByName("JavaScript");
+            srv = getServer();
+            pm = srv.getPluginManager();
+            cs = srv.getConsoleSender();
+            msg = srv.getMessenger();
+            sm = srv.getServicesManager();
+            sch = srv.getScheduler();
+            js = new ScriptEngineManager().getEngineByName("JavaScript");
             dir = getDataFolder();
         } catch (Throwable e) {
-            SU.log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
+            log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
             return;
         }
         try {
@@ -337,73 +409,76 @@ public class Main extends JavaPlugin implements Listener {
             ConfigHook.registerSerializers();
             ConfigHook.registerVariables();
         } catch (Throwable e) {
-            SU.log(this, "§cFailed to load config hook :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
+            log(this, "§cFailed to load config hook :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
             return;
         }
         try {
             load();
         } catch (Throwable e) {
-            SU.log(this, "Failed to load plugin, trying to reset the config...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            log(this, "Failed to load plugin, trying to reset the config...");
+            error(cs, e, "SpigotLib", "gyurix");
             resetConfig();
         }
     }
 
-    public void load () throws Throwable {
-        SU.cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
-        SU.saveResources(this, "lang.yml", "config.yml", "enchants.yml");
+    public void load() throws Throwable {
+        cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
+        saveResources(this, "lang.yml", "config.yml", "items.yml");
         kf = new ConfigFile(getResource("config.yml"));
         kf.load(new File(dir + File.separator + "config.yml"));
         kf.data.deserialize(Config.class);
         kf.save();
         lang = GlobalLangFile.loadLF("spigotlib", dir + File.separator + "lang.yml");
-        SU.cs.sendMessage("§2[§aStartup§2]§e Loading enchants file...");
-        Type[] types = ((ParameterizedType) Config.class.getField("enchants").getGenericType()).getActualTypeArguments();
-        Config.enchants = new ConfigFile(new File(dir + File.separator + "enchants.yml")).data.deserialize(HashMap.class, types);
-        for (Entry<String, ArrayList<String>> e : Config.enchants.entrySet()) {
-            Enchantment ec = Enchantment.getByName(e.getKey());
-            for (String s : e.getValue()) {
-                Config.enchantAliases.put(s, ec);
+
+        cs.sendMessage("§2[§aStartup§2]§e Loading enchants file...");
+        itemf = new ConfigFile(new File(dir + File.separator + "items.yml"));
+        itemf.data.deserialize(Items.class);
+        boolean saveIf = false;
+        for (Enchantment e : Enchantment.values()) {
+            if (!enchants.containsKey(e.getName())) {
+                enchants.put(e.getName(), Lists.newArrayList(e.getName().toLowerCase().replace("_", "")));
+                saveIf = true;
             }
         }
+        if (saveIf)
+            itemf.save();
+
         if (PlayerFile.backend == BackendType.FILE) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e Loading §cFILE§e backend for §cplayer file§e...");
-            SU.pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
+            cs.sendMessage("§2[§aStartup§2]§e Loading §cFILE§e backend for §cplayer file§e...");
+            pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
         } else if (PlayerFile.backend == BackendType.MYSQL) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e Loading §cMySQL§e backend for §cplayer file§e...");
-            SU.pf = new ConfigFile(PlayerFile.mysql, PlayerFile.mysql.table, "key", "value");
-            SU.loadPlayerConfig(null);
+            cs.sendMessage("§2[§aStartup§2]§e Loading §cMySQL§e backend for §cplayer file§e...");
+            mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
+            pf = new ConfigFile(mysql, mysql.table, "key", "value");
+            loadPlayerConfig(null);
         }
-        SU.cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
-        AnimationAPI.init();
-        SU.cs.sendMessage("§2[§aStartup§2]§e Loading ReflectionAPI...");
+        cs.sendMessage("§2[§aStartup§2]§e Loading ReflectionAPI...");
         Reflection.init();
+        cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
+        AnimationAPI.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
-        if (Reflection.ver.isAbove(v1_8)) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + Reflection.ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI...");
+        if (ver.isAbove(v1_8)) {
+            cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI, CommandAPI...");
             WrapperFactory.init();
             PacketInType.init();
             PacketOutType.init();
+            startPacketAPI();
             ChatAPI.init();
             TitleAPI.init();
             NBTApi.init();
             ScoreboardAPI.init();
+            cm = new CustomCommandMap();
         } else {
-            SU.cs.sendMessage("§2[§aStartup§2]§e Found§c INCOMPATIBLE SERVER VERSION: §e" + Reflection.ver + "§c, so the following features was NOT loaded, so they WILL NOT work:" +
+            cs.sendMessage("§2[§aStartup§2]§e Found§c INCOMPATIBLE SERVER VERSION: §e" + ver + "§c, so the following features was NOT loaded, so they WILL NOT work:" +
                     " §ePacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI§c. The other features might work. For additional help contact the plugins developer, §cgyuriX§e!");
         }
-        SU.cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
-        SU.vault = SU.pm.getPlugin("Vault") != null;
-        if (SU.vault && EconomyAPI.vaultHookType == VaultHookType.PROVIDER) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, hooking to it as §cEconomy PROVIDER§e...");
-            EconomyVaultHook.init();
-        }
-        VariableAPI.phaHook = SU.pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
+        cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
+        VariableAPI.phaHook = pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
     }
 
-    public void resetConfig () {
+    public void resetConfig() {
         try {
             File oldConf = new File(dir + File.separator + "config.yml");
             File backupConf = new File(dir + File.separator + "config.yml.bak");
@@ -418,122 +493,174 @@ public class Main extends JavaPlugin implements Listener {
             }
             oldLang.renameTo(backupLang);
         } catch (Throwable e) {
-            SU.log(this, "§cFailed to reset the config :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
+            log(this, "§cFailed to reset the config :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
             return;
         }
         try {
             load();
         } catch (Throwable e) {
-            SU.log(this, "§cFailed to load plugin after config reset :-( The plugin is shutting down...");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            SU.pm.disablePlugin(this);
+            log(this, "§cFailed to load plugin after config reset :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
         }
     }
 
-    public void onDisable () {
-        SU.log(this, "§4[§cShutdown§4]§e Saving players...");
+    public void startPacketAPI() {
+        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
+        tp = new Protocol18_19_110();
+        tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
+        try {
+            tp.init();
+        } catch (Throwable e) {
+            schedulePacketAPI = true;
+            cs.sendMessage("§2[§aStartup§2]§c Scheduled PacketAPI initialization, because you are using late bind.");
+        }
+    }
+
+    public void onDisable() {
+        log(this, "§4[§cShutdown§4]§e Unloading plugins depending on SpigotLib...");
+        for (Plugin p : Lists.newArrayList(pm.getPlugins())) {
+            PluginDescriptionFile pdf = p.getDescription();
+            if (pdf.getDepend() != null && pdf.getDepend().contains("SpigotLib")) {
+                log(this, "§4[§cShutdown§4]§e Unloading plugin §f" + p.getName() + "§e...");
+                unloadPlugin(p);
+            }
+        }
+        log(this, "§4[§cShutdown§4]§e Saving players...");
         if (PlayerFile.backend == BackendType.FILE)
-            SU.pf.save();
+            pf.save();
         else if (PlayerFile.backend == BackendType.MYSQL) {
             ArrayList<String> list = new ArrayList<>();
-            for (String s : SU.pf.getStringKeyList()) {
-                SU.pf.subConfig(s, "uuid='" + s + "'").mysqlUpdate(list, null);
+            for (String s : pf.getStringKeyList()) {
+                pf.subConfig(s, "uuid='" + s + "'").mysqlUpdate(list, null);
             }
-            SU.pf.db.batchNoAsync(list);
+            pf.db.batchNoAsync(list);
         }
-        SU.log(this, "§4[§cShutdown§4]§e Stopping TPSMeter...");
+        pf = null;
+        log(this, "§4[§cShutdown§4]§e Stopping TPSMeter...");
         TPSMeter.meter.cancel(true);
-        if (SU.tp != null) {
-            SU.log(this, "§4[§cShutdown§4]§e Stopping PacketAPI...");
-            SU.tp.close();
+        if (tp != null) {
+            log(this, "§4[§cShutdown§4]§e Stopping PacketAPI...");
+            tp.close();
         }
-        SU.log(this, "§4[§cShutdown§4]§e Stopping AnimationAPI...");
+        log(this, "§4[§cShutdown§4]§e Stopping AnimationAPI...");
         AnimationAPI.sch.shutdownNow();
-        if (Reflection.ver.isAbove(v1_8)) {
-            SU.log(this, "§4[§cShutdown§4]§e Stopping ScoreboardAPI...");
+        if (ver.isAbove(v1_8)) {
+            log(this, "§4[§cShutdown§4]§e Stopping ScoreboardAPI...");
             for (Player p : Bukkit.getOnlinePlayers()) {
                 ScoreboardAPI.setSidebar(p, null);
                 ScoreboardAPI.setTabbar(p, null);
                 ScoreboardAPI.setNametagBar(p, null);
             }
         }
-        SU.log(this, "§4[§cShutdown§4]§e Unloading plugins depending on SpigotLib...");
-        for (Plugin p : Lists.newArrayList(SU.pm.getPlugins())) {
-            PluginDescriptionFile pdf = p.getDescription();
-            if (pdf.getDepend() != null && pdf.getDepend().contains("SpigotLib")) {
-                SU.log(this, "§4[§cShutdown§4]§e Unloading plugin §f" + p.getName() + "§e...");
-                SU.unloadPlugin(p);
-            }
-        }
-        SU.log(this, "§4[§cShutdown§4]§a The SpigotLib has shutted down properly.");
+        log(this, "§4[§cShutdown§4]§e Stopping CommandAPI...");
+        CustomCommandMap.unhook();
+        log(this, "§4[§cShutdown§4]§a The SpigotLib has shutted down properly.");
     }
 
-    public void onEnable () {
-        if (Reflection.ver.isAbove(v1_8)) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-            SU.tp = new Protocol18_19_110();
-            SU.pm.registerEvents(SU.tp, this);
-            SU.tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
+    public void onEnable() {
+        if (ver.isAbove(v1_8)) {
+            pm.registerEvents(tp, this);
+            if (schedulePacketAPI) {
+                sch.scheduleSyncDelayedTask(this, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            tp.init();
+                            cs.sendMessage("§2[§aStartup§2]§a Initialized PacketAPI.");
+                        } catch (Throwable e) {
+                            cs.sendMessage("§cFailed to initialize PacketAPI.");
+                            error(cs, e, "SpigotLib", "gyurix");
+                        }
+                    }
+                });
+            }
         }
-        SU.cs.sendMessage("§2[§aStartup§2]§e Initializing offline player manager...");
-        SU.initOfflinePlayerManager();
-        SU.pm.registerEvents(this, this);
-        SU.cs.sendMessage("§2[§aStartup§2]§e Starting BungeeAPI...");
-        SU.msg.registerOutgoingPluginChannel(this, "BungeeCord");
-        SU.msg.registerIncomingPluginChannel(this, "BungeeCord", new BungeeAPI());
+        cs.sendMessage("§2[§aStartup§2]§e Initializing offline player manager...");
+        initOfflinePlayerManager();
+        pm.registerEvents(this, this);
+        try {
+            BungeeAPI.enabled = srv.spigot().getConfig().getBoolean("settings.bungeecord");
+            if (BungeeAPI.enabled) {
+                cs.sendMessage("§2[§aStartup§2]§e Starting BungeeAPI...");
+                msg.registerOutgoingPluginChannel(this, "BungeeCord");
+                msg.registerIncomingPluginChannel(this, "BungeeCord", new BungeeAPI());
+            } else {
+                cs.sendMessage("§2[§aStartup§2]§c Your server is not connected to a BungeeCord server, so the BungeeAPI will not be enabled.");
+            }
+        } catch (Throwable e) {
+            cs.sendMessage("§2[§aStartup§2]§c BungeeCord related features are not supported by your server core");
+            if (Config.debug)
+                error(cs, e, "SpigotLib", "gyurix");
+        }
         if (PlayerFile.backend == BackendType.MYSQL) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e Loading player data of online players from the MySQL...");
+            cs.sendMessage("§2[§aStartup§2]§e Loading player data of online players from the MySQL...");
             for (Player p : Bukkit.getOnlinePlayers()) {
-                SU.loadPlayerConfig(p.getUniqueId());
+                loadPlayerConfig(p.getUniqueId());
             }
         }
-        if (!SU.vault)
-            SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is not present, skipping hook...");
-        else if (SU.vault && EconomyAPI.vaultHookType == VaultHookType.NONE)
-            SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, but the hook is disabled in config, so skipping hook...");
-        if (SU.vault && EconomyAPI.vaultHookType == VaultHookType.USER) {
-            SU.cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, hooking to it as §cEconomy USER§e...");
-            RegisteredServiceProvider<Economy> rsp = SU.srv.getServicesManager().getRegistration(Economy.class);
-            if (rsp != null)
-                SU.econ = rsp.getProvider();
-            if (EconomyAPI.migrate) {
-                SU.log(this, "§bMigrating economy data from old Economy " + SU.econ.getName() + "... ");
-                EconomyAPI.vaultHookType = VaultHookType.NONE;
-                for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
-                    EconomyAPI.setBalance(op.getUniqueId(), new BigDecimal(SU.econ.getBalance(op)));
-                    System.out.println("Done player " + op.getName());
+        vault = pm.getPlugin("Vault") != null;
+        if (!vault)
+            cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is not present, skipping hook...");
+        else {
+            if (vaultHookType == NONE) {
+                cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, but the hook is disabled in config, so skipping hook...");
+            }
+            if (vaultHookType == USER) {
+                cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, hooking to it as §cEconomy USER§e...");
+                RegisteredServiceProvider<Economy> rspEcon = srv.getServicesManager().getRegistration(Economy.class);
+                if (rspEcon != null)
+                    econ = rspEcon.getProvider();
+                if (EconomyAPI.migrate) {
+                    log(this, "§bMigrating economy data from old Economy " + econ.getName() + "... ");
+                    vaultHookType = NONE;
+                    for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
+                        EconomyAPI.setBalance(op.getUniqueId(), new BigDecimal(econ.getBalance(op)));
+                        System.out.println("Done player " + op.getName());
+                    }
+                    vaultHookType = PROVIDER;
+                    EconomyAPI.migrate = false;
+                    log(this, "§bFinished data migration, please restart the server!");
+                    setEnabled(false);
+                    return;
                 }
-                EconomyAPI.vaultHookType = VaultHookType.PROVIDER;
-                EconomyAPI.migrate = false;
-                SU.log(this, "§bFinished data migration, please restart the server!");
-                setEnabled(false);
-                return;
             }
         }
-        SU.cs.sendMessage("§2[§aStartup§2]§e Scheduling §cTpsMeter§e startup...");
-        SU.sch.scheduleSyncDelayedTask(this, new Runnable() {
+        cs.sendMessage("§2[§aStartup§2]§e Scheduling §cTpsMeter§e startup...");
+        sch.scheduleSyncDelayedTask(this, new Runnable() {
             @Override
-            public void run () {
+            public void run() {
+                if (vault) {
+                    if (vaultHookType == USER) {
+                        RegisteredServiceProvider<Economy> rspEcon = srv.getServicesManager().getRegistration(Economy.class);
+                        if (rspEcon != null)
+                            econ = rspEcon.getProvider();
+                    }
+                    RegisteredServiceProvider rspPerm = srv.getServicesManager().getRegistration(Permission.class);
+                    if (rspPerm != null)
+                        perm = (Permission) rspPerm.getProvider();
+                    RegisteredServiceProvider rspChat = srv.getServicesManager().getRegistration(Chat.class);
+                    if (rspChat != null)
+                        chat = (Chat) rspChat.getProvider();
+                }
                 Config.tpsMeter.start();
-                SU.cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
+                cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
             }
         }, 1);
-        SU.sch.scheduleSyncDelayedTask(this, new Runnable() {
+        sch.scheduleSyncDelayedTask(this, new Runnable() {
             @Override
-            public void run () {
+            public void run() {
                 fullyEnabled = true;
             }
         }, 40);
     }
 
     @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerJoin (PlayerJoinEvent e) {
+    public void onPlayerJoin(PlayerJoinEvent e) {
         Player plr = e.getPlayer();
-        UUID id = plr.getUniqueId();
-        SU.loadPlayerConfig(id);
-        if (Reflection.ver.isAbove(v1_8))
+        if (ver.isAbove(v1_8))
             ScoreboardAPI.playerJoin(plr);
         if (BungeeAPI.running) {
             if (Config.BungeeAPI.ipOnJoin)
@@ -544,61 +671,72 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerLeave (PlayerQuitEvent e) {
+    public void onPlayerLeave(PlayerQuitEvent e) {
         Player plr = e.getPlayer();
         UUID uid = plr.getUniqueId();
-        SU.savePlayerConfig(uid);
-        SU.unloadPlayerConfig(uid);
-        ScoreboardAPI.playerLeave(plr);
+        savePlayerConfig(uid);
+        unloadPlayerConfig(uid);
+        if (ver.isAbove(v1_8))
+            ScoreboardAPI.playerLeave(plr);
     }
 
     @EventHandler
-    public void onPluginUnload (PluginDisableEvent e) {
+    public void onPluginUnload(PluginDisableEvent e) {
         Plugin pl = e.getPlugin();
-        if (SU.tp != null) {
-            SU.tp.unregisterIncomingListener(pl);
-            SU.tp.unregisterOutgoingListener(pl);
+        if (tp != null) {
+            tp.unregisterIncomingListener(pl);
+            tp.unregisterOutgoingListener(pl);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPreLogin(AsyncPlayerPreLoginEvent e) {
+        UUID id = e.getUniqueId();
+        try {
+            Thread.sleep(2000);
+            loadPlayerConfig(id);
+        } catch (InterruptedException err) {
         }
     }
 
     @EventHandler
-    public void onWeatherChange (WeatherChangeEvent e) {
+    public void onWeatherChange(WeatherChangeEvent e) {
         if (Config.disableWeatherChange)
             e.setCancelled(true);
     }
 
     @EventHandler
-    public void registerServiceEvent (ServiceRegisterEvent e) {
+    public void registerServiceEvent(ServiceRegisterEvent e) {
         RegisteredServiceProvider p = e.getProvider();
         String sn = p.getService().getName();
-        SU.log(this, "Register service - " + sn);
+        log(this, "Register service - " + sn);
         switch (sn) {
             case "net.milkbowl.vault.chat.Chat":
-                SU.chat = (Chat) p.getProvider();
+                chat = (Chat) p.getProvider();
                 break;
             case "net.milkbowl.vault.economy.Economy":
-                SU.econ = (Economy) p.getProvider();
+                econ = (Economy) p.getProvider();
                 break;
             case "net.milkbowl.vault.permission.Permission":
-                SU.perm = (Permission) p.getProvider();
+                perm = (Permission) p.getProvider();
                 break;
         }
     }
 
     @EventHandler
-    public void unregisterServiceEvent (ServiceUnregisterEvent e) {
+    public void unregisterServiceEvent(ServiceUnregisterEvent e) {
         RegisteredServiceProvider p = e.getProvider();
         String sn = p.getService().getName();
-        SU.log(this, "Unregister service - " + sn);
+        log(this, "Unregister service - " + sn);
         switch (sn) {
             case "net.milkbowl.vault.chat.Chat":
-                SU.chat = (Chat) p.getProvider();
+                chat = (Chat) p.getProvider();
                 break;
             case "net.milkbowl.vault.economy.Economy":
-                SU.econ = (Economy) p.getProvider();
+                econ = (Economy) p.getProvider();
                 break;
             case "net.milkbowl.vault.permission.Permission":
-                SU.perm = (Permission) p.getProvider();
+                perm = (Permission) p.getProvider();
                 break;
         }
     }

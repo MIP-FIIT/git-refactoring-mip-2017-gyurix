@@ -27,16 +27,6 @@ public class ChatAPI {
     public static Method toICBC;
 
     /**
-     * Converts the given message to raw JSON format
-     *
-     * @param msg - The message
-     * @return The conversion result raw json
-     */
-    public static String TextToJson(String msg) {
-        return ChatTag.fromExtraText(msg).toString();
-    }
-
-    /**
      * Initializes the ChatAPI. Do not use this method.
      */
     public static void init() {
@@ -50,16 +40,6 @@ public class ChatAPI {
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
-    }
-
-    /**
-     * Converts a string to it's json format
-     *
-     * @param value - The convertable String
-     * @return The conversion result
-     */
-    public static String quoteJson(String value) {
-        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
     }
 
     /**
@@ -97,6 +77,26 @@ public class ChatAPI {
     }
 
     /**
+     * Converts a string to it's json format
+     *
+     * @param value - The convertable String
+     * @return The conversion result
+     */
+    public static String quoteJson(String value) {
+        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
+    }
+
+    /**
+     * Converts the given message to raw JSON format
+     *
+     * @param msg - The message
+     * @return The conversion result raw json
+     */
+    public static String TextToJson(String msg) {
+        return ChatTag.fromExtraText(msg).toString();
+    }
+
+    /**
      * Sends a raw Json message to the given players
      *
      * @param type - The type of the sendable JSON message
@@ -105,7 +105,7 @@ public class ChatAPI {
      */
     public static void sendRawJson(ChatMessageType type, String json, Player... pls) {
         if (Reflection.ver.isAbove(v1_8)) {
-            Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
+            Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, (byte) type.ordinal());
             for (Player p : pls)
                 SU.tp.sendPacket(p, packet);
         } else {
@@ -124,7 +124,7 @@ public class ChatAPI {
      * @param pls  - The receiver list
      */
     public static void sendRawJson(ChatMessageType type, String json, Collection<? extends Player> pls) {
-        Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, Byte.valueOf((byte) type.ordinal()));
+        Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, (byte) type.ordinal());
         for (Player p : pls)
             SU.tp.sendPacket(p, packet);
     }

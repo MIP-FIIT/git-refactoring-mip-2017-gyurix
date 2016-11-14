@@ -26,6 +26,7 @@ public class PacketPlayOutEntityMetadata extends WrappedPacket {
     @Override
     public Object getVanillaPacket() {
         return PacketOutType.EntityMetadata.newPacket(entityId, DataWatcher.convertToNmsItems(meta));
+
     }
 
     @Override

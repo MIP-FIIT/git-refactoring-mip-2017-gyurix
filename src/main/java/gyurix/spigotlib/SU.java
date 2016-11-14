@@ -1,35 +1,28 @@
 package gyurix.spigotlib;
 
-import com.google.common.collect.Lists;
+import gyurix.commands.CustomCommandMap;
 import gyurix.configfile.ConfigFile;
+import gyurix.mojang.MojangAPI;
 import gyurix.protocol.Protocol;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.utils.GameProfile;
 import gyurix.spigotlib.Config.PlayerFile;
 import gyurix.spigotutils.BackendType;
+import gyurix.spigotutils.DualMap;
+import gyurix.spigotutils.ItemUtils;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
-import org.bukkit.FireworkEffect.Builder;
-import org.bukkit.FireworkEffect.Type;
-import org.bukkit.block.banner.Pattern;
-import org.bukkit.block.banner.PatternType;
 import org.bukkit.command.*;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import javax.script.ScriptEngine;
@@ -39,21 +32,25 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import static gyurix.spigotutils.ServerVersion.v1_8;
-
 /**
  * SpigotLib utilities class
  */
 public final class SU {
+    public static final Charset utf8 = Charset.forName("UTF-8");
     /**
      * The instance of current Chat provider in Vault
      */
     public static Chat chat;
+    /**
+     * Instance of the CustomCommandMap used by SpigotLibs CommandAPI
+     */
+    public static CustomCommandMap cm;
     /**
      * The main instance of the ConsoleCommandSender object.
      */
@@ -66,6 +63,7 @@ public final class SU {
      * An instance of the Javascript script engine, used for the eval variable
      */
     public static ScriptEngine js;
+    public static HashSet<UUID> loadedPlayers = new HashSet<>();
     /**
      * The main instance of the Messenger object.
      */
@@ -103,6 +101,10 @@ public final class SU {
      */
     public static Protocol tp;
     /**
+     * Name - UUID cache
+     */
+    public static DualMap<String, UUID> uuidCache = new DualMap<>();
+    /**
      * True if Vault is found on the server
      */
     public static boolean vault;
@@ -111,190 +113,9 @@ public final class SU {
     private static Method getBukkitEntityM, loadDataM, saveDataM;
     private static Object worldServer, mcServer;
 
-    /**
-     * Adds the given item to the given inventory
-     * @param inv - The inventory to which the item should be added
-     * @param is - The addable item
-     * @param maxStack - Maximal stack size of the item
-     * @return The remaining items after the addition
-     */
-    public static int addItem (Inventory inv, ItemStack is, int maxStack) {
-        int left = is.getAmount();
-        int size = inv.getSize();
-        for (int i = 0; i < size; i++) {
-            ItemStack is2 = inv.getItem(i);
-            if (itemSimiliar(is2, is)) {
-                int am = is2.getAmount();
-                int canPlace = maxStack - am;
-                if (canPlace >= left) {
-                    is2.setAmount(am + left);
-                    return 0;
-                } else if (canPlace > 0) {
-                    is2.setAmount(am + canPlace);
-                    left -= canPlace;
-                }
-            }
-        }
-        for (int i = 0; i < size; i++) {
-            ItemStack is2 = inv.getItem(i);
-            if (is2 == null || is2.getType() == Material.AIR) {
-                is2 = is.clone();
-                if (maxStack >= left) {
-                    is2.setAmount(left);
-                    return 0;
-                } else {
-                    is2.setAmount(maxStack);
-                    left -= maxStack;
-                }
-            }
-        }
-        return left;
-    }
-
-    /**
-     * A truth check if an iterable contains the given typed item or not
-     *
-     * @param source ItemStack iterable
-     * @param is     checked ItemStack
-     * @return True if the ItemStack iterable contains the checked ItemStack in any amount, false otherwise.
-     */
-    public static boolean containsItem(Iterable<ItemStack> source, ItemStack is) {
-        for (ItemStack i : source) {
-            if (itemSimiliar(i, is))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * A truth check for two items, if they type is actually totally same or not.
-     * The only allowed difference between the stacks could be only their count.
-     *
-     * @param item1 first item of the similiar checking
-     * @param item2 second item of the similiar checking
-     * @return True if the two itemstack contains exactly the same abilities (id, durability, metadata),
-     * the item counts could be different; false otherwise.
-     */
-    public static boolean itemSimiliar (ItemStack item1, ItemStack item2) {
-        if (item1 == item2)
-            return true;
-        if (item1 == null || item2 == null)
-            return false;
-        item1 = item1.clone();
-        item1.setAmount(1);
-        item2 = item2.clone();
-        item2.setAmount(1);
-        return itemToString(item1).equals(itemToString(item2));
-    }
-
-    /**
-     * Converts an ItemStack to it's representing string
-     *
-     * @param in convertable ItemStack
-     * @return the conversion output String or "0:-1 0" if the given ItemStack is null
-     */
-    public static String itemToString (ItemStack in) {
-        if (in == null)
-            return "0:-1 0";
-        StringBuilder out = new StringBuilder();
-        out.append(in.getType().name());
-        if (in.getDurability() != 0)
-            out.append(':').append(in.getDurability());
-        if (in.getAmount() != 1)
-            out.append(' ').append(in.getAmount());
-        ItemMeta meta = in.getItemMeta();
-        if (meta == null)
-            return out.toString();
-        if (Reflection.ver.isAbove(v1_8))
-            for (ItemFlag f : meta.getItemFlags())
-                out.append(" hide:").append(f.name().substring(5));
-        if (meta.hasDisplayName())
-            out.append(" name:").append(escapeText(meta.getDisplayName()));
-        if (meta.hasLore())
-            out.append(" lore:").append(escapeText(StringUtils.join(meta.getLore(), '\n')));
-        for (Entry<Enchantment, Integer> ench : meta.getEnchants().entrySet())
-            out.append(' ').append(Config.enchants.get(ench.getKey().getName()).get(0)).append(':').append(ench.getValue());
-
-        if (meta instanceof BookMeta) {
-            BookMeta bmeta = (BookMeta) meta;
-            if (bmeta.hasAuthor())
-                out.append(" author:").append(bmeta.getAuthor());
-            if (bmeta.hasTitle())
-                out.append(" title:").append(bmeta.getTitle());
-            for (String page : bmeta.getPages())
-                out.append(" page:").append(escapeText(page));
-        }
-        if (Reflection.ver.isAbove(v1_8))
-            if (meta instanceof BannerMeta) {
-                BannerMeta bmeta = (BannerMeta) meta;
-                out.append(" color:").append(bmeta.getBaseColor() == null ? "BLACK" : bmeta.getBaseColor().name());
-                for (Pattern p : bmeta.getPatterns())
-                    out.append(' ').append(p.getPattern().getIdentifier()).append(':').append(p.getColor().name());
-            }
-        if (meta instanceof LeatherArmorMeta) {
-            LeatherArmorMeta bmeta = (LeatherArmorMeta) meta;
-            Color c = bmeta.getColor();
-            if (!c.equals(Bukkit.getItemFactory().getDefaultLeatherColor()))
-                out.append(" color:").append(Integer.toHexString(c.asRGB()));
-        } else if (meta instanceof FireworkMeta) {
-            FireworkMeta bmeta = (FireworkMeta) meta;
-            out.append(" power:").append(bmeta.getPower());
-            for (FireworkEffect e : bmeta.getEffects()) {
-                out.append(' ').append(e.getType().name()).append(':');
-                boolean pref = false;
-                if (!e.getColors().isEmpty()) {
-                    pref = true;
-                    out.append("colors:");
-                    for (Color c : e.getColors()) {
-                        out.append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue()).append(';');
-                    }
-                    out.setLength(out.length() - 1);
-                }
-                if (!e.getFadeColors().isEmpty()) {
-                    if (pref)
-                        out.append('|');
-                    else
-                        pref = true;
-                    out.append("fades:");
-                    for (Color c : e.getFadeColors()) {
-                        out.append(c.getRed()).append(',').append(c.getGreen()).append(',').append(c.getBlue()).append(';');
-                    }
-                    out.setLength(out.length() - 1);
-                }
-                if (e.hasFlicker()) {
-                    if (pref)
-                        out.append('|');
-                    else
-                        pref = true;
-                    out.append("flicker");
-                }
-                if (e.hasTrail()) {
-                    if (pref)
-                        out.append('|');
-                    out.append("trail");
-                }
-            }
-        } else if (meta instanceof PotionMeta) {
-            PotionMeta bmeta = (PotionMeta) meta;
-            for (PotionEffect e : bmeta.getCustomEffects()) {
-                out.append(' ').append(e.getType().getName()).append(':').append(e.getDuration()).append(':').append(e.getAmplifier());
-                if (Reflection.ver.isAbove(v1_8))
-                    if (!e.hasParticles())
-                        out.append(":np");
-                if (!e.isAmbient())
-                    out.append(":na");
-            }
-        } else if (meta instanceof SkullMeta) {
-            SkullMeta bmeta = (SkullMeta) meta;
-            if (bmeta.hasOwner())
-                out.append(" owner:").append(bmeta.getOwner());
-        } else if (meta instanceof EnchantmentStorageMeta) {
-            for (Entry<Enchantment, Integer> e : ((EnchantmentStorageMeta) meta).getStoredEnchants().entrySet()) {
-                out.append(" +").append(e.getKey().getName()).append(':').append(e.getValue());
-            }
-        }
-
-        return out.toString();
+    @Deprecated
+    public static int addItem(Inventory inv, ItemStack is, int maxStack) {
+        return ItemUtils.addItem(inv, is, maxStack);
     }
 
     /**
@@ -312,100 +133,21 @@ public final class SU {
     }
 
     /**
-     * Fill variables in a ItemStack
-     * Available special variables:
-     * #amount: the amount value of the item
-     * #id: the id of the item
-     * #sub: the subid of the item
+     * Fills variables in a String
      *
-     * @param is   - The ItemStack in which the variables should be filled
-     * @param vars - The fillable variables
-     * @return A clone of the original ItemStack with filled variables
+     * @param s    - The String
+     * @param vars - The variables and their values, which should be filled
+     * @return The variable filled String
      */
-    public static ItemStack fillVariables(ItemStack is, Object... vars) {
-        if (is == null || is.getType() == Material.AIR)
-            return is;
-        is = is.clone();
-        String last = null;
-        for (Object v : vars) {
-            if (last == null)
-                last = (String) v;
-            else {
-                if (last.equals("#amount"))
-                    is.setAmount(Integer.valueOf(String.valueOf(v)));
-                else if (last.equals("#id")) {
-                    String vs = String.valueOf(v);
-                    try {
-                        is.setTypeId(Integer.valueOf(vs));
-                    } catch (Throwable e) {
-                        try {
-                            is.setType(Material.valueOf(vs.toUpperCase()));
-                        } catch (Throwable e2) {
-                            error(cs, e2, "SpigotLib", "gyurix");
-                        }
-                    }
-                } else if (last.equals("#sub"))
-                    is.setDurability(Short.valueOf(String.valueOf(v)));
-                last = null;
-            }
-        }
-        if (is.hasItemMeta() && is.getItemMeta() != null) {
-            ItemMeta meta = is.getItemMeta();
-            if (meta.hasDisplayName() && meta.getDisplayName() != null)
-                meta.setDisplayName(fillVariables(meta.getDisplayName(), vars));
-            if (meta.hasLore() && meta.getLore() != null) {
-                List<String> lore = meta.getLore();
-                for (int i = 0; i < lore.size(); i++)
-                    lore.set(i, fillVariables(lore.get(i), vars));
-                ArrayList<String> newLore = new ArrayList<>();
-                for (int i = 0; i < lore.size(); i++) {
-                    for (String s : lore.get(i).split("\n")) {
-                        newLore.add(s);
-                    }
-                }
-                meta.setLore(newLore);
-            }
-            if (meta instanceof SkullMeta) {
-                ((SkullMeta) meta).setOwner(fillVariables(((SkullMeta) meta).getOwner(), vars));
-            }
-            is.setItemMeta(meta);
-        }
-        return is;
+    public static String fillVariables(String s, HashMap<String, Object> vars) {
+        for (Entry<String, Object> v : vars.entrySet())
+            s = s.replace('<' + v.getKey() + '>', String.valueOf(v.getValue()));
+        return s;
     }
 
-    /**
-     * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
-     * contains the authors name
-     *
-     * @param sender - The CommandSender who should receive the error report
-     * @param err    - The error
-     * @param plugin - The plugin where the error appeared
-     * @param author - The author name, which will be searched in the error report
-     */
-    public static void error (CommandSender sender, Throwable err, String plugin, String author) {
-        StringBuilder report = new StringBuilder();
-        report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
-                .append(err.getClass().getSimpleName());
-        if (err.getMessage() != null)
-            report.append('\n').append(err.getMessage());
-        int i = 0;
-        boolean startrep = true;
-        for (StackTraceElement el : err.getStackTrace()) {
-            boolean force = el.getClassName() != null && el.getClassName().contains(author);
-            if (force)
-                startrep = false;
-            if (startrep || force)
-                report.append("\n§c #").append(++i)
-                        .append(": §eLINE §a").append(el.getLineNumber())
-                        .append("§e in FILE §6").append(el.getFileName())
-                        .append("§e (§7").append(el.getClassName())
-                        .append("§e.§b").append(el.getMethodName())
-                        .append("§e)");
-        }
-        String rep = report.toString();
-        cs.sendMessage(rep);
-        if (sender != null && sender != cs)
-            sender.sendMessage(rep);
+    @Deprecated
+    public static ItemStack fillVariables(ItemStack is, Object... vars) {
+        return ItemUtils.fillVariables(is, vars);
     }
 
     /**
@@ -425,19 +167,6 @@ public final class SU {
                 last = null;
             }
         }
-        return s;
-    }
-
-    /**
-     * Fills variables in a String
-     *
-     * @param s    - The String
-     * @param vars - The variables and their values, which should be filled
-     * @return The variable filled String
-     */
-    public static String fillVariables(String s, HashMap<String, Object> vars) {
-        for (Entry<String, Object> v : vars.entrySet())
-            s = s.replace('<' + v.getKey() + '>', String.valueOf(v.getValue()));
         return s;
     }
 
@@ -518,13 +247,13 @@ public final class SU {
      * @param uuid uuid of the loadable offline player
      * @return the loaded Player object, or null if the player was not found.
      */
-    public static Player loadPlayer (UUID uuid) {
+    public static Player loadPlayer(UUID uuid) {
         try {
             if (uuid == null) {
                 return null;
             }
             OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-            if (player == null) {
+            if (player == null || !player.hasPlayedBefore()) {
                 return null;
             }
 
@@ -545,7 +274,7 @@ public final class SU {
      * @param name name of the target player
      * @return The UUID of the requested player, or null if it was not found.
      */
-    public static UUID getUUID (String name) {
+    public static UUID getUUID(String name) {
         Player plr = Bukkit.getPlayer(name);
         if (plr != null)
             return plr.getUniqueId();
@@ -563,15 +292,34 @@ public final class SU {
             if (p.getName() != null && p.getName().toLowerCase().contains(name))
                 return p.getUniqueId();
         }
-        return null;
+        return getOnlineUUID(name);
+    }
+
+    public static UUID getOnlineUUID(String name) {
+        name = name.toLowerCase();
+        UUID uid = uuidCache.get(name);
+        if (uid == null) {
+            GameProfile prof = MojangAPI.getProfile(name);
+            if (prof == null) {
+                cs.sendMessage("§cInvalid online player name: §e" + name + "§c. Using offline UUID.");
+                return getOfflineUUID(name);
+            }
+            uid = prof.id;
+            uuidCache.put(name, uid);
+        }
+        return uid;
+    }
+
+    public static UUID getOfflineUUID(String name) {
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(utf8));
     }
 
     /**
      * Get the configuration part of a player or the CONSOLE
      *
      * @param plr the player, whos configuration part will be returned
-     * @return the configuration part of the given player, or the configuration part of the CONSOLE,
-     * if the given player is null.
+     * @return the configuration part of the given player, or the configuration part of the CONSOLE, if the given player
+     * is null.
      */
     public static ConfigFile getPlayerConfig(Player plr) {
         return getPlayerConfig(plr == null ? null : plr.getUniqueId());
@@ -582,14 +330,64 @@ public final class SU {
      * configuration part of the CONSOLE, if the given UUID is null.
      *
      * @param plr the UUID of the online/offline player
-     * @return the configuration part of the given player, or the configuration part of the CONSOLE,
-     * if the given player UUID is null.
+     * @return the configuration part of the given player, or the configuration part of the CONSOLE, if the given player
+     * UUID is null.
      */
-    public static ConfigFile getPlayerConfig(UUID plr) {
+    public static ConfigFile getPlayerConfig(final UUID plr) {
         String pln = plr == null ? "CONSOLE" : plr.toString();
         if (pf.data.mapData == null)
             pf.data.mapData = new LinkedHashMap();
+        if (PlayerFile.backend == BackendType.MYSQL && !loadedPlayers.contains(plr)) {
+            loadPlayerConfig(plr);
+            sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
+                @Override
+                public void run() {
+                    savePlayerConfig(plr);
+                    unloadPlayerConfig(plr);
+                }
+            }, 10);
+        }
         return pf.subConfig(pln);
+    }
+
+    public static void loadPlayerConfig(UUID uid) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
+            String key = uid == null ? "CONSOLE" : uid.toString();
+            pf.mysqlLoad(key, "uuid='" + key + '\'');
+            loadedPlayers.add(uid);
+        }
+    }
+
+    public static void savePlayerConfig(UUID uid) {
+        String key = uid == null ? "CONSOLE" : uid.toString();
+        switch (PlayerFile.backend) {
+            case FILE:
+                pf.data.unWrapAll();
+                pf.save();
+                return;
+            case MYSQL:
+                ArrayList<String> list = new ArrayList<>();
+                ConfigFile kf = pf.subConfig(key, "uuid='" + key + '\'');
+                kf.data.unWrapAll();
+                kf.mysqlUpdate(list, null);
+                pf.db.batch(list, null);
+        }
+    }
+
+    /**
+     * Unloads the configuration of the given player or of the console if
+     * uid = null
+     *
+     * @param uid - The UUID of the player, or null for console
+     * @return True if the unload was successful, false otherwise
+     */
+    public static boolean unloadPlayerConfig(UUID uid) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
+            String key = uid == null ? "CONSOLE" : uid.toString();
+            loadedPlayers.remove(uid);
+            return pf.removeData(key);
+        }
+        return false;
     }
 
     /**
@@ -605,6 +403,24 @@ public final class SU {
             e.printStackTrace();
             return null;
         }
+    }
+
+    /**
+     * Get the UUID of an offline player based on his name.
+     *
+     * @param name name of the target player
+     * @return The UUID of the requested player, or null if it was not found.
+     */
+    public static UUID getUUIDExact(String name) {
+        Player plr = Bukkit.getPlayer(name);
+        if (plr != null)
+            return plr.getUniqueId();
+        OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().equals(name))
+                return p.getUniqueId();
+        }
+        return MojangAPI.getProfile(name).id;
     }
 
     static void initOfflinePlayerManager() {
@@ -626,7 +442,8 @@ public final class SU {
             saveDataM = craftPlayerClass.getMethod("saveData");
         } catch (Throwable e) {
             log(Main.pl, "§cError in initializing offline player manager.");
-            error(cs, e, "SpigotLib", "gyurix");
+            if (Config.debug)
+                error(cs, e, "SpigotLib", "gyurix");
         }
     }
 
@@ -636,26 +453,58 @@ public final class SU {
      * @param pl  - The plugin who wants to log the message
      * @param msg - The message which should be logged
      */
-    public static void log (Plugin pl, Object... msg) {
+    public static void log(Plugin pl, Object... msg) {
         cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
     }
 
     /**
-     * A truth check for two items, if they are actually totally same or not
+     * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
+     * contains the authors name
      *
-     * @param item1 first item of the equal checking
-     * @param item2 second item of the equal checking
-     * @return True if the two itemstack contains exactly the same abilities (id, count, durability, metadata), false otherwise
+     * @param sender - The CommandSender who should receive the error report
+     * @param err    - The error
+     * @param plugin - The plugin where the error appeared
+     * @param author - The author name, which will be searched in the error report
      */
-    public static boolean itemEqual(ItemStack item1, ItemStack item2) {
-        return itemToString(item1).equals(itemToString(item2));
+    public static void error(CommandSender sender, Throwable err, String plugin, String author) {
+        StringBuilder report = new StringBuilder();
+        report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
+                .append(err.getClass().getSimpleName());
+        if (err.getMessage() != null)
+            report.append('\n').append(err.getMessage());
+        int i = 0;
+        boolean startrep = true;
+        for (StackTraceElement el : err.getStackTrace()) {
+            boolean force = el.getClassName() != null && el.getClassName().contains(author);
+            if (force)
+                startrep = false;
+            if (startrep || force)
+                report.append("\n§c #").append(++i)
+                        .append(": §eLINE §a").append(el.getLineNumber())
+                        .append("§e in FILE §6").append(el.getFileName())
+                        .append("§e (§7").append(el.getClassName())
+                        .append("§e.§b").append(el.getMethodName())
+                        .append("§e)");
+        }
+        String rep = report.toString();
+        cs.sendMessage(rep);
+        if (sender != null && sender != cs)
+            sender.sendMessage(rep);
     }
 
-    public static void loadPlayerConfig(UUID uid) {
-        if (PlayerFile.backend == BackendType.MYSQL) {
-            String key = uid == null ? "CONSOLE" : uid.toString();
-            pf.mysqlLoad(key, "uuid='" + key + '\'');
-        }
+    @Deprecated
+    public static boolean itemEqual(ItemStack item1, ItemStack item2) {
+        return ItemUtils.itemEqual(item1, item2);
+    }
+
+    @Deprecated
+    public static boolean itemSimiliar(ItemStack item1, ItemStack item2) {
+        return ItemUtils.itemSimilar(item1, item2);
+    }
+
+    @Deprecated
+    public static String itemToString(ItemStack in) {
+        return ItemUtils.itemToString(in);
     }
 
     /**
@@ -668,22 +517,14 @@ public final class SU {
         cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
     }
 
+    @Deprecated
     public static ItemStack makeItem(Material type, String name, String... lore) {
-        ItemStack is = new ItemStack(type, 1, (short) 0);
-        ItemMeta im = is.getItemMeta();
-        im.setDisplayName(name);
-        im.setLore(Arrays.asList(lore));
-        is.setItemMeta(im);
-        return is;
+        return ItemUtils.makeItem(type, name, lore);
     }
 
-    public static ItemStack makeItem(Material type, int amount, short sub, String name, String... lore) {
-        ItemStack is = new ItemStack(type, amount, sub);
-        ItemMeta im = is.getItemMeta();
-        im.setDisplayName(name);
-        im.setLore(Arrays.asList(lore));
-        is.setItemMeta(im);
-        return is;
+    @Deprecated
+    public static ItemStack makeItem(Material type, int amount, short sub, String name, ArrayList<String> lore, Object... vars) {
+        return ItemUtils.makeItem(type, amount, sub, name, lore, vars);
     }
 
     /**
@@ -706,7 +547,7 @@ public final class SU {
      * @param id UUID of the target player
      * @return The name of the requested player or null if the name was not found.
      */
-    public static String getName (UUID id) {
+    public static String getName(UUID id) {
         Player plr = Bukkit.getPlayer(id);
         if (plr != null)
             return plr.getName();
@@ -737,37 +578,79 @@ public final class SU {
      * @return The color and formatting code optimized string
      */
     public static String optimizeColorCodes(String in) {
-        StringBuilder formats = new StringBuilder();
-        StringBuilder newformats = new StringBuilder();
         StringBuilder out = new StringBuilder();
+        StringBuilder oldFormat = new StringBuilder("§r");
+        StringBuilder newFormat = new StringBuilder("§r");
+        StringBuilder formatChange = new StringBuilder();
         char prev = ' ';
+        boolean color = false;
         for (char c : in.toCharArray()) {
-            if (prev == '§') {
+            if (color) {
+                color = false;
                 if (c >= 'k' && c <= 'o') {
-                    if (formats.indexOf("" + c) == -1) {
-                        formats.append('§').append(c);
-                        newformats.append('§').append(c);
+                    int max = newFormat.length();
+                    boolean add = true;
+                    for (int i = 1; i < max; i += 2) {
+                        if (newFormat.charAt(i) == c) {
+                            add = false;
+                            break;
+                        }
                     }
-                } else {
-                    if (!(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')) {
-                        c = 'f';
+                    if (add) {
+                        newFormat.append('§').append(c);
+                        formatChange.append('§').append(c);
                     }
-                    if (!(formats.length() == 2 && formats.charAt(1) == c)) {
-                        formats.setLength(0);
-                        formats.append('§').append(c);
-                        newformats.setLength(0);
-                        newformats.append('§').append(c);
-                    }
+                    continue;
                 }
-            } else if (c != '§') {
-                out.append(newformats);
+                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+                    c = 'f';
+                newFormat.setLength(0);
+                newFormat.append('§').append(c);
+                formatChange.setLength(0);
+                formatChange.append('§').append(c);
+            } else if (c == '§')
+                color = true;
+            else {
+                if (!newFormat.toString().equals(oldFormat.toString())) {
+                    out.append(formatChange);
+                    formatChange.setLength(0);
+                    oldFormat.setLength(0);
+                    oldFormat.append(newFormat);
+                }
                 out.append(c);
-                newformats.setLength(0);
             }
-            prev = c;
         }
         return out.toString();
     }
+
+    /**
+     * Generate a configurable random color
+     *
+     * @param minSaturation - Minimal saturation (0-1)
+     * @param maxSaturation - Maximal saturation (0-1)
+     * @param minLuminance  - Minimal luminance (0-1)
+     * @param maxLuminance  - Maximal luminance (0-1)
+     * @return The generated random color
+     */
+    public static Color randColor(double minSaturation, double maxSaturation, double minLuminance, double maxLuminance) {
+        float hue = rand.nextFloat();
+        float saturation = (float) rand(minSaturation, maxSaturation);
+        float luminance = (float) rand(minLuminance, maxLuminance);
+        java.awt.Color color = java.awt.Color.getHSBColor(hue, saturation, luminance);
+        return Color.fromRGB(color.getRed(), color.getGreen(), color.getBlue());
+    }
+
+    /**
+     * Generates a random number between min (inclusive) and max (exclusive)
+     *
+     * @param min - Minimal value of the random number
+     * @param max - Maximal value of the random number
+     * @return A random double between min and max
+     */
+    public static double rand(double min, double max) {
+        return rand.nextDouble() * Math.abs(max - min) + min;
+    }
+
 
     /**
      * Save a loaded offline player. You should use this method when you have loaded an offline player
@@ -780,19 +663,6 @@ public final class SU {
             saveDataM.invoke(plr);
         } catch (Throwable e) {
             e.printStackTrace();
-        }
-    }
-
-    public static void savePlayerConfig(UUID uid) {
-        String key = uid == null ? "CONSOLE" : uid.toString();
-        switch (PlayerFile.backend) {
-            case FILE:
-                pf.save();
-                return;
-            case MYSQL:
-                ArrayList<String> list = new ArrayList<>();
-                pf.subConfig(key, "uuid='" + key + '\'').mysqlUpdate(list, null);
-                pf.db.batch(list, null);
         }
     }
 
@@ -839,221 +709,21 @@ public final class SU {
         return in.length() > len ? in.substring(0, len) : in;
     }
 
-    /**
-     * Converts an ItemStack representing string back to the ItemStack
-     *
-     * @param in string represantation of an ItemStack
-     * @return The conversion output ItemStack, or null if the given string is null
-     */
-    public static ItemStack stringToItemStack(String in) {
-        if (in == null)
-            return null;
-        String[] parts = in.split(" ");
-        String[] idParts = parts[0].split(":");
-        int id = getId(idParts[0]);
-        short dataValue = 0;
-        int amount = 1;
-        int st = 1;
-        try {
-            dataValue = Short.valueOf(idParts[1]);
-        } catch (Throwable e) {
+    public static String[] splitPage(String text, int lines) {
+        String[] d = text.split("\n");
+        String[] out = new String[(d.length + (lines - 1)) / lines];
+        for (int i = 0; i < d.length % lines; i++) {
+            if (i % lines == 0)
+                out[i / lines] = d[i];
+            else
+                out[i / lines] += "\n" + d[i];
         }
-
-        try {
-            amount = Short.valueOf(parts[1]);
-            st = 2;
-        } catch (Throwable e) {
-        }
-
-        int l = parts.length;
-        ItemStack out = new ItemStack(id, amount, dataValue);
-        ItemMeta meta = out.getItemMeta();
-        ArrayList<String[]> remaining = new ArrayList<>();
-        for (int i = st; i < l; i++) {
-            String[] s = parts[i].split(":", 2);
-            s[0] = s[0].toUpperCase();
-            try {
-                Enchantment enc = Config.enchantAliases.get(s[0]);
-                if (enc == null)
-                    enc = Enchantment.getByName(s[0].toUpperCase());
-                if (enc == null) {
-                    if (Reflection.ver.isAbove(v1_8)) {
-                        if (s[0].equals("HIDE"))
-                            meta.addItemFlags(ItemFlag.valueOf("HIDE_" + s[1].toUpperCase()));
-                    }
-                    if (s[0].equals("NAME")) {
-                        meta.setDisplayName(unescapeText(s[1]));
-                    } else if (s[0].equals("LORE")) {
-                        meta.setLore(Lists.newArrayList(unescapeText(s[1]).split("\n")));
-                    } else {
-                        remaining.add(s);
-                    }
-                } else {
-                    meta.addEnchant(enc, Integer.valueOf(s[1]), true);
-                }
-            } catch (Throwable e) {
-                log(Main.pl, "§cError on deserializing §eItemMeta§c data of item \"§f" + in + "§c\"");
-                error(cs, e, "SpigotLib", "gyurix");
-            }
-        }
-        if (meta instanceof BookMeta) {
-            BookMeta bmeta = (BookMeta) meta;
-            for (String[] s : remaining) {
-                try {
-                    String text = unescapeText(s[1]);
-                    if (s[0].equals("AUTHOR")) {
-                        bmeta.setAuthor(text);
-                    } else if (s[0].equals("TITLE")) {
-                        bmeta.setTitle(text);
-                    } else if (s[0].equals("PAGE")) {
-                        bmeta.addPage(text);
-                    }
-                } catch (Throwable e) {
-                    log(Main.pl, "§cError on deserializing §eBookMeta§c data of item \"§f" + in + "§c\"");
-                    error(cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        }
-        if (Reflection.ver.isAbove(v1_8))
-            if (meta instanceof BannerMeta) {
-                BannerMeta bmeta = (BannerMeta) meta;
-                for (String[] s : remaining) {
-                    try {
-                        PatternType type = PatternType.getByIdentifier(s[0].toLowerCase());
-                        if (type == null) {
-                            if (s[0].equals("COLOR")) {
-                                bmeta.setBaseColor(DyeColor.valueOf(s[1].toUpperCase()));
-                            } else {
-                                PatternType pt = PatternType.getByIdentifier(s[0].toLowerCase());
-                                if (pt != null) {
-                                    bmeta.addPattern(new Pattern(DyeColor.valueOf(s[1].toUpperCase()), pt));
-                                }
-                            }
-                        } else {
-                            bmeta.addPattern(new Pattern(DyeColor.valueOf(s[1].toUpperCase()), type));
-                        }
-                    } catch (Throwable e) {
-                        log(Main.pl, "§cError on deserializing §eBannerMeta§c data of item \"§f" + in + "§c\"");
-                        error(cs, e, "SpigotLib", "gyurix");
-                    }
-                }
-            }
-        if (meta instanceof LeatherArmorMeta) {
-            LeatherArmorMeta bmeta = (LeatherArmorMeta) meta;
-            for (String[] s : remaining) {
-                try {
-                    if (s[0].equals("COLOR")) {
-                        String[] color = s[1].split(",", 3);
-                        if (color.length == 3)
-                            bmeta.setColor(Color.fromRGB(Integer.valueOf(color[0]), Integer.valueOf(color[1]), Integer.valueOf(color[2])));
-                        else
-                            bmeta.setColor(Color.fromRGB(Integer.parseInt(color[0], 16)));
-                    }
-                } catch (Throwable e) {
-                    log(Main.pl, "§cError on deserializing §eLeatherArmorMeta§c data of item \"§f" + in + "§c\"");
-                    error(cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        } else if (meta instanceof FireworkMeta) {
-            FireworkMeta bmeta = (FireworkMeta) meta;
-            for (String[] s : remaining) {
-                try {
-                    if (s[0].equals("POWER")) {
-                        bmeta.setPower(Integer.valueOf(s[1]));
-                    } else {
-                        Type type = Type.valueOf(s[0]);
-                        Builder build = FireworkEffect.builder().with(type);
-                        for (String d : s[1].toUpperCase().split("\\|")) {
-                            String[] d2 = d.split(":", 2);
-                            if (d2[0].equals("COLORS")) {
-                                for (String colors : d2[1].split(";")) {
-                                    String[] color = colors.split(",", 3);
-                                    build.withColor(Color.fromRGB(Integer.valueOf(color[0]), Integer.valueOf(color[1]), Integer.valueOf(color[2])));
-                                }
-                            } else if (d2[0].equals("FADES")) {
-                                for (String fades : d2[1].split(";")) {
-                                    String[] fade = fades.split(",", 3);
-                                    build.withFade(Color.fromRGB(Integer.valueOf(fade[0]), Integer.valueOf(fade[1]), Integer.valueOf(fade[2])));
-                                }
-                            } else if (d2[0].equals("FLICKER")) {
-                                build.withFlicker();
-                            } else if (d2[0].equals("TRAIL")) {
-                                build.withTrail();
-                            }
-                        }
-                        bmeta.addEffect(build.build());
-
-                    }
-                } catch (Throwable e) {
-                    log(Main.pl, "§cError on deserializing §eFireworkMeta§c data of item \"§f" + in + "§c\"");
-                    error(cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        } else if (meta instanceof PotionMeta) {
-            PotionMeta bmeta = (PotionMeta) meta;
-            for (String[] s : remaining) {
-                try {
-                    PotionEffectType type = PotionEffectType.getByName(s[0]);
-                    if (type != null) {
-                        String[] s2 = s[1].split(":");
-                        if (Reflection.ver.isAbove(v1_8)) {
-                            bmeta.addCustomEffect(new PotionEffect(type, Integer.valueOf(s2[0]), Integer.valueOf(s2[1]),
-                                    !ArrayUtils.contains(s2, "na"), !ArrayUtils.contains(s2, "np")), false);
-                        } else {
-                            bmeta.addCustomEffect(new PotionEffect(type, Integer.valueOf(s2[0]), Integer.valueOf(s2[1]),
-                                    !ArrayUtils.contains(s2, "na")), false);
-                        }
-                    }
-                } catch (Throwable e) {
-                    log(Main.pl, "§cError on deserializing §ePotionMeta§c data of item \"§f" + in + "§c\"");
-                    error(cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        } else if (meta instanceof SkullMeta) {
-            SkullMeta bmeta = (SkullMeta) meta;
-            for (String[] s : remaining) {
-                try {
-                    if (s[0].equals("OWNER")) {
-                        bmeta.setOwner(s[1]);
-                    }
-                } catch (Throwable e) {
-                    log(Main.pl, "§cError on deserializing §eSkullMeta§c data of item \"§f" + in + "§c\"");
-                    error(cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        } else if (meta instanceof EnchantmentStorageMeta) {
-            EnchantmentStorageMeta bmeta = (EnchantmentStorageMeta) meta;
-            for (String[] s : remaining) {
-                try {
-                    Enchantment enc = Enchantment.getByName(s[0].substring(1));
-                    if (enc != null)
-                        bmeta.addStoredEnchant(enc, Integer.valueOf(s[1]), true);
-                } catch (Throwable e) {
-                    log(Main.pl, "§cError on deserializing §eEnchantmentStorageMeta§c data of item \"§f" + in + "§c\"");
-                    error(cs, e, "SpigotLib", "gyurix");
-                }
-            }
-        }
-        out.setItemMeta(meta);
         return out;
     }
 
-    /**
-     * Get the numeric id of the given itemname, it works for both numeric and text ids.
-     *
-     * @param name the case insensitive material name of the item or the numeric id of the item.
-     * @return the numeric id of the requested item or 1, if the given name is incorrect or null
-     */
-    public static int getId (String name) {
-        try {
-            return Material.valueOf(name.toUpperCase()).getId();
-        } catch (Throwable e) {
-            try {
-                return Integer.valueOf(name);
-            } catch (Throwable e2) {
-                return 1;
-            }
-        }
+    @Deprecated
+    public static ItemStack stringToItemStack(String in) {
+        return ItemUtils.stringToItemStack(in);
     }
 
     /**
@@ -1068,21 +738,6 @@ public final class SU {
                 .replaceAll("([^\\\\])\\|", "$1\n")
                 .replaceAll("([^\\\\])\\\\([_\\|])", "$1$2")
                 .replace("\\\\", "\\").substring(1);
-    }
-
-    /**
-     * Unloads the configuration of the given player or of the console if
-     * uid = null
-     *
-     * @param uid - The UUID of the player, or null for console
-     * @return True if the unload was successful, false otherwise
-     */
-    public static boolean unloadPlayerConfig(UUID uid) {
-        if (PlayerFile.backend == BackendType.MYSQL) {
-            String key = uid == null ? "CONSOLE" : uid.toString();
-            return pf.removeData(key);
-        }
-        return false;
     }
 
     /**

@@ -4,8 +4,7 @@ import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.utils.ItemStackWrapper;
 import gyurix.protocol.wrappers.WrappedPacket;
 
-public class PacketPlayInSetCreativeSlot
-        extends WrappedPacket {
+public class PacketPlayInSetCreativeSlot extends WrappedPacket {
     public ItemStackWrapper itemStack;
     public int slot;
 

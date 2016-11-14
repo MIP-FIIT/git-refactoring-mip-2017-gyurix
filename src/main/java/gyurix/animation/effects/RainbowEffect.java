@@ -3,8 +3,7 @@ package gyurix.animation.effects;
 import gyurix.animation.CustomEffect;
 import gyurix.spigotlib.SU;
 
-public class RainbowEffect
-        implements CustomEffect {
+public class RainbowEffect implements CustomEffect {
     public boolean random;
     public int state = -1;
 

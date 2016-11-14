@@ -1,5 +1,6 @@
 package gyurix.protocol.utils;
 
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.nbt.NBTCompound;
 import gyurix.nbt.NBTPrimitive;
 import gyurix.protocol.Reflection;
@@ -10,12 +11,12 @@ import org.bukkit.inventory.ItemStack;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-public class ItemStackWrapper implements WrappedData {
-    private static final Constructor bukkitStack;
-    private static final Method createStack;
-    private static final Method getType;
-    private static final Method nmsCopy;
-    private static final Method saveStack;
+public class ItemStackWrapper implements WrappedData, StringSerializable {
+    public static final Constructor bukkitStack;
+    public static final Method createStack;
+    public static final Method getType;
+    public static final Method nmsCopy;
+    public static final Method saveStack;
 
     static {
         Class nms = Reflection.getNMSClass("ItemStack");
@@ -38,8 +39,31 @@ public class ItemStackWrapper implements WrappedData {
         loadFromBukkitStack(is);
     }
 
+    public void loadFromBukkitStack(ItemStack is) {
+        nbtData = new NBTCompound();
+        try {
+            if (is != null) {
+                Object nms = nmsCopy.invoke(null, is);
+                if (nms != null)
+                    nbtData.loadFromNMS(saveStack.invoke(nms, new NBTCompound().saveToNMS()));
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
     public ItemStackWrapper(Object vanillaStack) {
         loadFromVanillaStack(vanillaStack);
+    }
+
+    public void loadFromVanillaStack(Object is) {
+        nbtData = new NBTCompound();
+        try {
+            if (is != null)
+                nbtData.loadFromNMS(saveStack.invoke(is, new NBTCompound().saveToNMS()));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     public byte getCount() {
@@ -58,18 +82,6 @@ public class ItemStackWrapper implements WrappedData {
         ((NBTPrimitive) nbtData.map.get("Damage")).data = damage;
     }
 
-    public String getId() {
-        return (String) ((NBTPrimitive) nbtData.map.get("id")).data;
-    }
-
-    public void setId(String newId) {
-        ((NBTPrimitive) nbtData.map.get("id")).data = newId;
-    }
-
-    public NBTCompound getMetaData() {
-        return nbtData.getCompound("tag");
-    }
-
     public Material getType() {
         try {
             return (Material) getType.invoke(null, getId());
@@ -77,6 +89,14 @@ public class ItemStackWrapper implements WrappedData {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public String getId() {
+        return (String) ((NBTPrimitive) nbtData.map.get("id")).data;
+    }
+
+    public void setId(String newId) {
+        ((NBTPrimitive) nbtData.map.get("id")).data = newId;
     }
 
     public boolean hasMetaData() {
@@ -87,34 +107,15 @@ public class ItemStackWrapper implements WrappedData {
         return getMetaData().getBoolean("Unbreakable");
     }
 
+    public NBTCompound getMetaData() {
+        return nbtData.getCompound("tag");
+    }
+
     public void setUnbreakable(boolean unbreakable) {
         if (unbreakable) {
             getMetaData().map.put("Unbreakable", new NBTPrimitive(Byte.valueOf((byte) 1)));
         } else {
             getMetaData().map.remove("Unbreakable");
-        }
-    }
-
-    public void loadFromBukkitStack(ItemStack is) {
-        nbtData = new NBTCompound();
-        try {
-            if (is != null) {
-                Object nms = nmsCopy.invoke(null, is);
-                if (nms != null)
-                    nbtData.loadFromNMS(saveStack.invoke(nms, new NBTCompound().saveToNMS()));
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void loadFromVanillaStack(Object is) {
-        nbtData = new NBTCompound();
-        try {
-            if (is != null)
-                nbtData.loadFromNMS(saveStack.invoke(is, new NBTCompound().saveToNMS()));
-        } catch (Throwable e) {
-            e.printStackTrace();
         }
     }
 
@@ -139,6 +140,11 @@ public class ItemStackWrapper implements WrappedData {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
+    }
+
+    @Override
+    public String toString() {
+        return nbtData.toString();
     }
 }
 

@@ -26,7 +26,7 @@ public class ConfigSerialization {
             Class c = interfaceBasedClasses.get(type);
             c = c == null ? type : c;
             if (c != objectClass) {
-                return "-" + getAlias(objectClass);
+                return '-' + getAlias(objectClass);
             }
         }
         return "";
@@ -91,6 +91,8 @@ public class ConfigSerialization {
     @Retention(RetentionPolicy.RUNTIME)
     public @interface ConfigOptions {
         String comment() default "";
+
+        boolean compress() default false;
         String defaultValue() default "null";
         boolean serialize() default true;
     }

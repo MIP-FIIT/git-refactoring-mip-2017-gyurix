@@ -25,6 +25,7 @@ public class WrapperFactory {
             wrap.put(Reflection.getClass("com.mojang.authlib.properties.Property"), Property.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("ItemStack"), ItemStackWrapper.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("Vec3D"), Vector.class.getConstructor(Object.class));
+            wrap.put(Reflection.getNMSClass("Vector3f"), Rotation.class.getConstructor(Object.class));
             enumWrap.put(Reflection.getNMSClass("WorldType"), WorldType.class.getMethod("valueOf", String.class));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -34,7 +35,7 @@ public class WrapperFactory {
     public static Object unwrap(Object o) {
         if (o == null)
             return null;
-        if (o.getClass().isAssignableFrom(WrappedData.class))
+        if (o instanceof WrappedData)
             return ((WrappedData) o).toNMS();
         return o;
     }

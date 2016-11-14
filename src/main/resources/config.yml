@@ -1,51 +1,38 @@
-start: §eStarting server...
-#Debug mode, if disabled, then some of the stack traces won't be visible in console.
-debug: -
-#Servers default language.
-defaultLang: en
-disableWeatherChange: -
-#EconomyAPI settings
-economy:
-  balanceTypes:
-    default:
-      name: default
-      suffix: $
-      defaultValue: 100
-#Migrate all the Economy data through Vault from an other Economy plugin, i.e. Essentials.
-  migrate: -
-#The type of SpigotLibs vault hook, available options:
-#NONE - do NOT hook to Vault at all (not suggested)
-#USER - hook to Vault as an Economy user (suggested if you don't want to use SpigotLibs Economy management)
-#PROVIDER - hook to Vault as an Economy provider (override other Economy plugins, like Essentials)
-  vaultHookType: USER
-#Enable / disable packet events which costs some performance, but gives
-#ability for developers to catch packets and code awesome plugin features :)
-packetAPI: -
-#Hook to the clips PlaceholderAPI in order to obtain more variables.
-phaHook: +
-#PlayerFile settings
-playerFile:
-  backend: FILE
-  file: players.yml
-  mysql:
-    table: SpigotLib
-    host: 127.0.0.1
-    username: root
-    password: root
-    database: SpigotLib
-    timeout: 10000
-#BungeeAPI
 bungee:
+  fullyDisabled: +
+  currentServerName: 1000000
+  ipOnJoin: -
   playerCount: 100
   playerList: -1
-  servers: 1000000
-  currentServerName: 1000000
-  uuidAll: -1
   serverIP: -1
-  ipOnJoin: -
+  servers: 1000000
+  uuidAll: -1
   uuidOnJoin: -
-#Allows sync and async metrics of the truth server tps, for the <tps>
-#variable, it also helps to detect informations about possible server crashes.
-tpsMeter:
+debug: -
+defaultLang: en
+disableWeatherChange: -
+economy: 
+  balanceTypes: 
+    default: 
+      defaultValue: 100
+      name: default
+      suffix: $
+  migrate: -
+  vaultHookType: USER
+packetAPI: -
+phaHook: +
+playerFile: 
+  backend: FILE
+  file: players.yml
+  mysql: 
+    database: SpigotLib
+    host: 127.0.0.1
+    password: root
+    table: PlayerData
+    timeout: 10000
+    username: root
+skinAPI: -
+start: §eStarting server...
+tpsMeter: 
   checkTime: 10000
   limit: 15

@@ -3,8 +3,7 @@ package gyurix.protocol.wrappers.inpackets;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.wrappers.WrappedPacket;
 
-public class PacketPlayInFlying
-        extends WrappedPacket {
+public class PacketPlayInFlying extends WrappedPacket {
     public boolean hasLook;
     public boolean hasPos;
     public boolean onGround;
@@ -16,7 +15,7 @@ public class PacketPlayInFlying
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Flying.newPacket(x, y, z, Float.valueOf(yaw), Float.valueOf(pitch), onGround, hasPos, hasLook);
+        return PacketInType.Flying.newPacket(x, y, z, yaw, pitch, onGround, hasPos, hasLook);
     }
 
     @Override
@@ -25,8 +24,8 @@ public class PacketPlayInFlying
         x = (Double) data[0];
         y = (Double) data[1];
         z = (Double) data[2];
-        yaw = ((Float) data[3]).floatValue();
-        pitch = ((Float) data[4]).floatValue();
+        yaw = (Float) data[3];
+        pitch = (Float) data[4];
         onGround = (Boolean) data[5];
         hasPos = (Boolean) data[6];
         hasLook = (Boolean) data[7];

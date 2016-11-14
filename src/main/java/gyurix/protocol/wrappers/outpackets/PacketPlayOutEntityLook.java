@@ -12,6 +12,17 @@ public class PacketPlayOutEntityLook extends WrappedPacket {
     public byte pitch;
     public byte yaw;
 
+    public PacketPlayOutEntityLook() {
+
+    }
+
+    public PacketPlayOutEntityLook(int eid, float yaw, float pitch, boolean onGround) {
+        entityId = eid;
+        this.yaw = (byte) (yaw * 256.0 / 360.0);
+        this.pitch = (byte) (pitch * 256.0 / 360.0);
+        this.onGround = onGround;
+    }
+
     @Override
     public Object getVanillaPacket() {
         return PacketOutType.EntityLook.newPacket(entityId, yaw, pitch, onGround);

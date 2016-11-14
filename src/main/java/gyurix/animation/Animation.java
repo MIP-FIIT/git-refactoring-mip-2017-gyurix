@@ -16,9 +16,8 @@ public class Animation {
 
     public static class AnimationSerializer
             implements Serializer {
-        @SuppressWarnings("TailRecursion")
         @Override
-        public Object fromData (ConfigData data, Class cl, Type... args) {
+        public Object fromData(ConfigData data, Class cl, Type... args) {
             Animation anim = new Animation();
             long ft = 0;
             if (data.mapData != null) {
@@ -125,7 +124,7 @@ public class Animation {
         }
 
         @Override
-        public ConfigData toData (Object obj, Type... types) {
+        public ConfigData toData(Object obj, Type... types) {
             Animation anim = (Animation) obj;
             ConfigData out = new ConfigData();
             out.mapData = new LinkedHashMap();

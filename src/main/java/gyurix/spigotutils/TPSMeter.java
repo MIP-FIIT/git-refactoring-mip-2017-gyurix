@@ -27,7 +27,7 @@ public class TPSMeter implements Runnable {
      * Ticks elapsed from the last tps metrics result update
      */
     @ConfigOptions(serialize = false)
-    public static int ticks = 0;
+    public static int ticks;
     /**
      * The current tps value of the server
      */
@@ -36,9 +36,9 @@ public class TPSMeter implements Runnable {
 
     @Override
     public void run() {
-        tps = (double) ticks * 1000.0 / (double) checkTime;
+        tps = ticks * 1000.0 / checkTime;
         ticks = 0;
-        if (tps < (double) limit)
+        if (tps < limit)
             SU.cs.sendMessage("§9[§b TPS Meter §9]§e The servers TPS is bellow §c" + tps + "§e, is it lagging or crashed?");
     }
 

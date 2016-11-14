@@ -15,14 +15,25 @@ public class Vector implements WrappedData {
 
     static {
         Field[] f = cl.getFields();
-        xf = f[0];
-        yf = f[1];
-        zf = f[2];
+        int i = f[0].getType() == double.class ? 0 : 1;
+        xf = f[i++];
+        yf = f[i++];
+        zf = f[i];
     }
 
     public double x;
     public double y;
     public double z;
+
+    public Vector() {
+
+    }
+
+    public Vector(double x, double y, double z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
 
     public Vector(Object vanillaVector) {
         try {
