@@ -1,21 +1,21 @@
 package gyurix.scoreboard;
 
 import gyurix.protocol.event.PacketOutType;
-import gyurix.scoreboard.ScoreboardAPI.ScoreboardDisplayMode;
 import gyurix.spigotlib.SU;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
+
+import static gyurix.scoreboard.ScoreboardDisplayMode.INTEGER;
 
 public abstract class ScoreboardBar {
-    public final String barname;
-    public final Object hidePacket;
-    public final Object showPacket;
+    public final HashMap<String, BarData> active = new HashMap<>();
+    public final BarData currentData;
+    public final HashMap<String, BarData> loaded = new HashMap<>();
+    public final Object showPacket, hidePacket;
     public final String teamNamePrefix;
-    public final HashSet<Player> viewers = new HashSet<>();
-    protected boolean visible = true;
-    private ScoreboardDisplayMode displayMode = ScoreboardDisplayMode.INTEGER;
-    private String title;
 
     /**
      * Construct new ScoreboardBar
@@ -24,20 +24,63 @@ public abstract class ScoreboardBar {
      * @param teamNamePrefix - The prefix of the Scoreboard team packets
      * @param displaySlot    - The slot of this ScoreboardBar (0: list, 1: sidebar, 2: below name)
      */
-    public ScoreboardBar (String barname, String teamNamePrefix, int displaySlot) {
-        this.barname = barname;
-        title = barname;
+    public ScoreboardBar(String barname, String teamNamePrefix, int displaySlot) {
+        this.currentData = new BarData(barname, barname, INTEGER, true);
         this.teamNamePrefix = teamNamePrefix;
         showPacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, barname);
         hidePacket = PacketOutType.ScoreboardDisplayObjective.newPacket(displaySlot, "");
     }
 
-    protected abstract void addViewer (Player var1);
+    /**
+     * Reactivates this ScoreboardBar for the given player, if it is loaded, but deactivated currently
+     *
+     * @param plr - Target Player
+     * @return True if this ScoreboardBar was not active for the given player before
+     */
+    public boolean activate(Player plr) {
+        if (active.containsKey(plr.getName()))
+            return false;
+        BarData bd = loaded.get(plr.getName());
+        if (bd == null)
+            return false;
+        BarData newBd = currentData.clone();
+        newBd.update(plr, bd);
+        loaded.put(plr.getName(), newBd);
+        active.put(plr.getName(), newBd);
+        SU.tp.sendPacket(plr, showPacket);
+        return true;
+    }
 
-    protected abstract void addViewerFirstBar (Player var1);
+    /**
+     * Deactivates this ScoreboardBar for the given player, but keeps it loaded and ready to fast switch back
+     *
+     * @param plr - Target Player
+     * @return True if this ScoreboardBar was active for the given player before
+     */
+    public boolean deActivate(Player plr) {
+        return active.remove(plr.getName()) != null;
+    }
 
-    public ScoreboardDisplayMode getDisplayMode () {
-        return displayMode;
+    /**
+     * Removes the data stored about the given players loaded state (useful for handling player quits)
+     *
+     * @param plr - Target player
+     * @return True if this ScoreboardBar was loaded for the player before
+     */
+    public boolean drop(Player plr) {
+        if (loaded.remove(plr.getName()) == null)
+            return false;
+        active.remove(plr.getName());
+        return true;
+    }
+
+    /**
+     * Get the display mode of the Scoreboard
+     *
+     * @return The scoreboards display mode
+     */
+    public ScoreboardDisplayMode getDisplayMode() {
+        return currentData.displayMode;
     }
 
     /**
@@ -45,27 +88,52 @@ public abstract class ScoreboardBar {
      *
      * @param mode - The new displaymode
      */
-    public void setDisplayMode (ScoreboardDisplayMode mode) {
-        if (displayMode == mode)
+    public void setDisplayMode(ScoreboardDisplayMode mode) {
+        if (currentData.displayMode == mode)
             return;
-        displayMode = mode;
-        sendPackets(getObjectivePacket(2));
-    }
-
-    public void sendPackets (Object... packets) {
-        for (Object p : packets)
-            for (Player plr : viewers)
-                SU.tp.sendPacket(plr, p);
+        currentData.displayMode = mode;
     }
 
     /**
-     * Creates a ScoreboardObjective packet.
+     * Gets the title of this scoreboard bar
      *
-     * @param id - the type of the objectivePacket: 0 - create 1 - remove 2 - update
-     * @return The packet.
+     * @return - The title of this scoreboard bar
      */
-    protected Object getObjectivePacket (int id) {
-        return PacketOutType.ScoreboardObjective.newPacket(barname, title, displayMode.nmsEnum, id);
+    public String getTitle() {
+        return currentData.title;
+    }
+
+    /**
+     * Sets the title of this scoreboard bar.
+     *
+     * @param newtitle - The new title
+     */
+    public void setTitle(String newtitle) {
+        newtitle = SU.setLength(newtitle, 32);
+        if (currentData.title.equals(newtitle))
+            return;
+        currentData.title = newtitle;
+        update();
+    }
+
+    /**
+     * Checks if this ScoreboardBar is active for the given player or not
+     *
+     * @param plr - Target Player
+     * @return True if this ScoreboardBar is active for the given player
+     */
+    public boolean isActive(Player plr) {
+        return active.containsKey(plr.getName());
+    }
+
+    /**
+     * Checks if this ScoreboardBar is already loaded for the given player or not
+     *
+     * @param plr - Target Player
+     * @return True if this ScoreboardBar is already loaded for the given player
+     */
+    public boolean isLoaded(Player plr) {
+        return loaded.containsKey(plr.getName());
     }
 
     /**
@@ -74,7 +142,7 @@ public abstract class ScoreboardBar {
      * @return The scoreboard bars visibility
      */
     public boolean isVisible() {
-        return visible;
+        return currentData.visible;
     }
 
     /**
@@ -83,27 +151,49 @@ public abstract class ScoreboardBar {
      * @param visible - The new visibility state
      */
     public void setVisible(boolean visible) {
-        if (visible != this.visible) {
-            sendPackets(visible ? showPacket : hidePacket);
-            this.visible = visible;
-        }
+        if (visible != currentData.visible)
+            currentData.visible = visible;
     }
 
-    protected abstract void moveViewer(ScoreboardBar oldBar, Player plr);
-
-    protected abstract void removeViewer(Player plr);
+    /**
+     * Attempts to load this ScoreboardBar for the given player
+     *
+     * @param plr - Target Player
+     * @return True if this ScoreboardBar hasn't been loaded for the player before
+     */
+    public boolean load(Player plr) {
+        if (loaded.containsKey(plr.getName()))
+            return false;
+        BarData bd = currentData.clone();
+        bd.load(plr);
+        loaded.put(plr.getName(), bd);
+        SU.tp.sendPacket(plr, showPacket);
+        active.put(plr.getName(), bd);
+        return true;
+    }
 
     /**
-     * Sets the title of this scoreboard bar.
+     * Attempts to unload this ScoreboardBar for the given player
      *
-     * @param newtitle - The new title
+     * @param plr - Target Player
+     * @return True if this ScoreboardBar has been loaded for the player before
      */
-    public void setTitle (String newtitle) {
-        newtitle = SU.setLength(newtitle, 32);
-        if (title.equals(newtitle))
-            return;
-        title = newtitle;
-        sendPackets(getObjectivePacket(2));
+    public boolean unload(Player plr) {
+        BarData bd = loaded.remove(plr.getName());
+        if (bd == null)
+            return false;
+        active.remove(plr.getName());
+        bd.unload(plr);
+        return true;
+    }
+
+    public void update() {
+        for (Map.Entry<String, BarData> e : active.entrySet()) {
+            BarData newBd = currentData.clone();
+            Player plr = Bukkit.getPlayer(e.getKey());
+            newBd.update(plr, e.getValue());
+            e.setValue(newBd);
+        }
     }
 }
 

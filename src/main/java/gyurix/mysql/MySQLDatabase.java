@@ -8,7 +8,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,18 +37,6 @@ public class MySQLDatabase {
         this.password = password;
         this.database = database;
         openConnection();
-    }
-
-    public boolean openConnection() {
-        try {
-            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
-            con.setAutoReconnect(true);
-            con.setConnectTimeout(timeout);
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            return false;
-        }
-        return true;
     }
 
     public static String escape(String in) {
@@ -92,15 +79,26 @@ public class MySQLDatabase {
         batchThread.submit(new MySQLBatch(commands, r));
     }
 
-    public void batchNoAsync(ArrayList<String> list) {
+    public void batchNoAsync(Iterable<String> commands) {
         try {
             Statement st = getConnection().createStatement();
-            for (String s : list)
+            for (String s : commands)
                 st.addBatch(s);
             st.executeBatch();
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
+    }
+
+    public boolean command(String cmd) {
+        PreparedStatement st;
+        try {
+            st = getConnection().prepareStatement(cmd);
+            return st.execute();
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return false;
     }
 
     private Connection getConnection() {
@@ -114,15 +112,16 @@ public class MySQLDatabase {
         return con;
     }
 
-    public boolean command(String cmd) {
-        PreparedStatement st;
+    public boolean openConnection() {
         try {
-            st = getConnection().prepareStatement(cmd);
-            return st.execute();
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
+            con.setAutoReconnect(true);
+            con.setConnectTimeout(timeout);
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            return false;
         }
-        return false;
+        return true;
     }
 
     public ResultSet querry(String cmd) {

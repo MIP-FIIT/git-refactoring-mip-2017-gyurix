@@ -4,7 +4,6 @@ import com.google.common.primitives.Primitives;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.ServerVersion;
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import sun.reflect.ReflectionFactory;
@@ -16,6 +15,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static gyurix.spigotutils.ServerVersion.v1_8;
+import static org.apache.commons.lang.ArrayUtils.EMPTY_CLASS_ARRAY;
+import static org.apache.commons.lang.ArrayUtils.EMPTY_OBJECT_ARRAY;
 
 public class Reflection {
     public static final Map<Class, Field[]> allFieldCache = (Map) Collections.synchronizedMap(new WeakHashMap<>());
@@ -27,232 +28,6 @@ public class Reflection {
      */
     public static ServerVersion ver = ServerVersion.UNKNOWN;
     public static String version;
-
-    public static Field[] getAllFields(Class c) {
-        Field[] fs = allFieldCache.get(c);
-        if (fs != null)
-            return fs;
-        ArrayList<Field> out = new ArrayList<>();
-        while (c != null) {
-            for (Field f : c.getDeclaredFields()) {
-                out.add(setFieldAccessible(f));
-            }
-            c = c.getSuperclass();
-        }
-        Field[] oa = new Field[out.size()];
-        out.toArray(oa);
-        allFieldCache.put(c, oa);
-        return oa;
-    }
-
-    public static Field setFieldAccessible(Field f) {
-        try {
-            f.setAccessible(true);
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            int modifiers = modifiersField.getInt(f);
-            modifiersField.setInt(f, modifiers & -17);
-            return f;
-        } catch (Throwable e) {
-        }
-        return null;
-    }
-
-    /**
-     * Gets the constructor of the given class
-     *
-     * @param cl      - The class
-     * @param classes - The parameters of the constructor
-     * @return The found constructor or null if it was not found.
-     */
-    public static Constructor getConstructor(Class cl, Class... classes) {
-        try {
-            Constructor c = cl.getDeclaredConstructor(classes);
-            c.setAccessible(true);
-            return c;
-        } catch (Throwable e) {
-        }
-        if (Config.debug) {
-            StringBuilder sb = new StringBuilder();
-            for (Class c : classes)
-                sb.append(", ").append(c.getName());
-            SU.cs.sendMessage(ra + "§eConstructor §f" + cl.getName() + "§e( §f" + sb + "§e ) was not found.");
-        }
-        return null;
-    }
-
-    public static Object getData(Object obj, List<Object> data) {
-        try {
-            Class ocl = obj.getClass();
-            Object[] input = ArrayUtils.EMPTY_OBJECT_ARRAY;
-            Class[] classes = ArrayUtils.EMPTY_CLASS_ARRAY;
-            for (Object o : data) {
-                Class cl = o.getClass();
-                if (cl.isArray()) {
-                    input = (Object[]) o;
-                    classes = new Class[input.length];
-                    for (int i = 0; i < input.length; i++)
-                        classes[i] = input[i].getClass();
-                    continue;
-                }
-                for (String name : String.valueOf(o).split("\\.")) {
-                    if (input == ArrayUtils.EMPTY_OBJECT_ARRAY) {
-                        Field f = getField(ocl, name);
-                        if (f != null) {
-                            obj = f.get(obj);
-                            ocl = obj.getClass();
-                            continue;
-                        }
-                    }
-                    Method m = getSimiliarMethod(ocl, name, classes);
-                    Class[] parCls = m.getParameterTypes();
-                    Object[] pars = new Object[parCls.length];
-                    for (int i = 0; i < parCls.length; i++) {
-                        pars[i] = convert(input[i], parCls[i]);
-                    }
-                    obj = m.invoke(obj, pars);
-                    if (obj == null) {
-                        throw new RuntimeException("Null return value of method call (method " + m.getName() + ", entered parameters: " + StringUtils.join(pars, ", ") + ".");
-                    }
-                    ocl = obj.getClass();
-                    input = ArrayUtils.EMPTY_OBJECT_ARRAY;
-                    classes = ArrayUtils.EMPTY_CLASS_ARRAY;
-                }
-            }
-        } catch (Throwable e) {
-            if (Config.debug) {
-                SU.cs.sendMessage(ra + "§cFailed to handle §f" + StringUtils.join(data, "§f.") + "§c request.");
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            }
-            return null;
-        }
-        return obj;
-    }
-
-    public static Field getField(Class clazz, String name) {
-        try {
-            return setFieldAccessible(clazz.getDeclaredField(name));
-        } catch (Throwable e) {
-            return null;
-        }
-    }
-
-    public static Method getSimiliarMethod(Class ocl, String name, Class[] classes) {
-        Method m = getMethod(ocl, name, classes);
-        if (m == null) {
-            m = getMethod(ocl, "get" + name, classes);
-            if (m == null)
-                m = getMethod(ocl, "is" + name, classes);
-        }
-        if (m != null)
-            return m;
-        name = name.toLowerCase();
-        Class origCl = ocl;
-        while (ocl != null) {
-            for (Method m2 : ocl.getDeclaredMethods()) {
-                if (m2.getParameterTypes().length != classes.length)
-                    continue;
-                String mn = m2.getName().toLowerCase();
-                if (mn.endsWith(name) && (mn.startsWith(name) || mn.startsWith("get") || mn.startsWith("is")))
-                    return m2;
-            }
-            ocl = ocl.getSuperclass();
-        }
-        SU.cs.sendMessage(ra + "§cFailed to get similiar method to §e" + name + "§c in class §e" + origCl.getName() + "§c.");
-        return null;
-    }
-
-    public static <T> T convert(Object in, Class<T> to) {
-        if (in == null)
-            return null;
-        to = Primitives.wrap(to);
-        String inS = in.getClass().isEnum() ? ((Enum) in).name() : in.toString();
-        try {
-            Constructor<T> con = to.getConstructor(String.class);
-            con.setAccessible(true);
-            return con.newInstance(inS);
-        } catch (Throwable e) {
-        }
-        try {
-            Method m = to.getMethod("valueOf", String.class);
-            m.setAccessible(true);
-            return (T) m.invoke(null, inS);
-        } catch (Throwable e) {
-        }
-        try {
-            Method m = to.getMethod("fromString", String.class);
-            m.setAccessible(true);
-            return (T) m.invoke(null, inS);
-        } catch (Throwable e) {
-        }
-        if (Config.debug)
-            SU.cs.sendMessage(ra + "§cFailed to convert §f" + in + "§e(§f" + in.getClass().getName() + "§e)§c to class §f" + to.getName() + "§c.");
-        return null;
-    }
-
-    public static Method getMethod(Class cl, String name, Class... args) {
-        if (args.length == 0) {
-            while (cl != null) {
-                Method m = methodCheckNoArg(cl, name);
-                if (m != null) {
-                    m.setAccessible(true);
-                    return m;
-                }
-                cl = cl.getSuperclass();
-            }
-            if (Config.debug)
-                SU.cs.sendMessage(ra + "Method §f" + name + "§e with no parameters was not found in class §f" + cl.getName() + "§e.");
-        } else {
-            while (cl != null) {
-                Method m = methodCheck(cl, name, args);
-                if (m != null) {
-                    m.setAccessible(true);
-                    return m;
-                }
-                cl = cl.getSuperclass();
-            }
-            StringBuilder sb = new StringBuilder();
-            for (Class c : args) {
-                sb.append(", ").append(c.getName());
-            }
-            if (Config.debug)
-                SU.cs.sendMessage(ra + "Method §f" + name + "§e with parameters §f" + sb.substring(2) + "§e was not found in class §f" + cl.getName() + "§e.");
-        }
-        return null;
-    }
-
-    private static Method methodCheckNoArg(Class cl, String name) {
-        try {
-            return cl.getDeclaredMethod(name);
-        } catch (Throwable e) {
-            Method[] mtds = cl.getDeclaredMethods();
-            for (Method met : mtds)
-                if (met.getParameterTypes().length == 0 && met.getName().equalsIgnoreCase(name))
-                    return met;
-            return null;
-        }
-    }
-
-    private static Method methodCheck(Class cl, String name, Class[] args) {
-        try {
-            return cl.getDeclaredMethod(name, args);
-        } catch (Throwable e) {
-            Method[] mtds = cl.getDeclaredMethods();
-            for (Method met : mtds)
-                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equals(name))
-                    return met;
-            for (Method met : mtds)
-                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equals(name))
-                    return met;
-            for (Method met : mtds)
-                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
-                    return met;
-            for (Method met : mtds)
-                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
-                    return met;
-            return null;
-        }
-    }
 
     /**
      * Compares two arrays of classes
@@ -290,9 +65,153 @@ public class Reflection {
         return true;
     }
 
+    public static <T> T convert(Object in, Class<T> to) {
+        if (in == null)
+            return null;
+        to = Primitives.wrap(to);
+        String inS = in.getClass().isEnum() ? ((Enum) in).name() : in.toString();
+        try {
+            Constructor<T> con = to.getConstructor(String.class);
+            con.setAccessible(true);
+            return con.newInstance(inS);
+        } catch (Throwable e) {
+        }
+        try {
+            Method m = to.getMethod("valueOf", String.class);
+            m.setAccessible(true);
+            return (T) m.invoke(null, inS);
+        } catch (Throwable e) {
+        }
+        try {
+            Method m = to.getMethod("fromString", String.class);
+            m.setAccessible(true);
+            return (T) m.invoke(null, inS);
+        } catch (Throwable e) {
+        }
+        if (Config.debug)
+            SU.cs.sendMessage(ra + "§cFailed to convert §f" + in + "§e(§f" + in.getClass().getName() + "§e)§c to class §f" + to.getName() + "§c.");
+        return null;
+    }
+
+    public static Field[] getAllFields(Class c) {
+        Field[] fs = allFieldCache.get(c);
+        if (fs != null)
+            return fs;
+        ArrayList<Field> out = new ArrayList<>();
+        while (c != null) {
+            for (Field f : c.getDeclaredFields()) {
+                out.add(setFieldAccessible(f));
+            }
+            c = c.getSuperclass();
+        }
+        Field[] oa = new Field[out.size()];
+        out.toArray(oa);
+        allFieldCache.put(c, oa);
+        return oa;
+    }
+
+    /**
+     * Gets a class or an inner class
+     *
+     * @param className - The name of the gettable class
+     * @return The found class or null if it was not found.
+     */
+    public static Class getClass(String className) {
+        try {
+            String[] classNames = className.split("\\$");
+            Class c = Class.forName(classNames[0]);
+            for (int i = 1; i < classNames.length; i++)
+                c = getInnerClass(c, classNames[i]);
+            return c;
+        } catch (Throwable e) {
+        }
+        if (Config.debug)
+            SU.cs.sendMessage(ra + "Class §f" + className + "§e was not found.");
+        return null;
+    }
+
+    /**
+     * Gets the constructor of the given class
+     *
+     * @param cl      - The class
+     * @param classes - The parameters of the constructor
+     * @return The found constructor or null if it was not found.
+     */
+    public static Constructor getConstructor(Class cl, Class... classes) {
+        try {
+            Constructor c = cl.getDeclaredConstructor(classes);
+            c.setAccessible(true);
+            return c;
+        } catch (Throwable e) {
+        }
+        if (Config.debug) {
+            StringBuilder sb = new StringBuilder();
+            for (Class c : classes)
+                sb.append(", ").append(c.getName());
+            SU.cs.sendMessage(ra + "§eConstructor §f" + cl.getName() + "§e( §f" + sb + "§e ) was not found.");
+        }
+        return null;
+    }
+
+    public static Object getData(Object obj, List<Object> data) {
+        try {
+            Class ocl = obj.getClass();
+            Object[] input = EMPTY_OBJECT_ARRAY;
+            Class[] classes = EMPTY_CLASS_ARRAY;
+            for (Object o : data) {
+                Class cl = o.getClass();
+                if (cl.isArray()) {
+                    input = (Object[]) o;
+                    classes = new Class[input.length];
+                    for (int i = 0; i < input.length; i++)
+                        classes[i] = input[i].getClass();
+                    continue;
+                }
+                for (String name : String.valueOf(o).split("\\.")) {
+                    if (input == EMPTY_OBJECT_ARRAY) {
+                        Field f = getField(ocl, name);
+                        if (f != null) {
+                            obj = f.get(obj);
+                            ocl = obj.getClass();
+                            continue;
+                        }
+                    }
+                    Method m = getSimiliarMethod(ocl, name, classes);
+                    Class[] parCls = m.getParameterTypes();
+                    Object[] pars = new Object[parCls.length];
+                    for (int i = 0; i < parCls.length; i++) {
+                        pars[i] = convert(input[i], parCls[i]);
+                    }
+                    obj = m.invoke(obj, pars);
+                    if (obj == null) {
+                        throw new RuntimeException("Null return value of method call (method " + m.getName() + ", entered parameters: " + StringUtils.join(pars, ", ") + ".");
+                    }
+                    ocl = obj.getClass();
+                    input = EMPTY_OBJECT_ARRAY;
+                    classes = EMPTY_CLASS_ARRAY;
+                }
+            }
+        } catch (Throwable e) {
+            if (Config.debug) {
+                SU.cs.sendMessage(ra + "§cFailed to handle §f" + StringUtils.join(data, "§f.") + "§c request.");
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+            return null;
+        }
+        return obj;
+    }
+
     public static Object getEnum(Class enumType, String value) {
         try {
             return enumType.getMethod("valueOf", String.class).invoke(null, value);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    public static Field getField(Class clazz, String name) {
+        try {
+            return setFieldAccessible(clazz.getDeclaredField(name));
         } catch (Throwable e) {
             return null;
         }
@@ -321,42 +240,6 @@ public class Reflection {
         return null;
     }
 
-    public static Field getLastFieldOfType(Class clazz, Class type) {
-        Field field = null;
-        for (Field f : clazz.getDeclaredFields()) {
-            if (f.getType().equals(type))
-                field = f;
-        }
-        return setFieldAccessible(field);
-    }
-
-    public static Class getNMSClass(String className) {
-        String newName = nmsRenames.get(className);
-        if (newName != null)
-            className = newName;
-        return getClass("net.minecraft.server." + version + className);
-    }
-
-    /**
-     * Gets a class or an inner class
-     *
-     * @param className - The name of the gettable class
-     * @return The found class or null if it was not found.
-     */
-    public static Class getClass(String className) {
-        try {
-            String[] classNames = className.split("\\$");
-            Class c = Class.forName(classNames[0]);
-            for (int i = 1; i < classNames.length; i++)
-                c = getInnerClass(c, classNames[i]);
-            return c;
-        } catch (Throwable e) {
-        }
-        if (Config.debug)
-            SU.cs.sendMessage(ra + "Class §f" + className + "§e was not found.");
-        return null;
-    }
-
     public static Class getInnerClass(Class cl, String name) {
         try {
             name = cl.getName() + "$" + name;
@@ -369,8 +252,81 @@ public class Reflection {
         return null;
     }
 
+    public static Field getLastFieldOfType(Class clazz, Class type) {
+        Field field = null;
+        for (Field f : clazz.getDeclaredFields()) {
+            if (f.getType().equals(type))
+                field = f;
+        }
+        return setFieldAccessible(field);
+    }
+
+    public static Method getMethod(Class cl, String name, Class... args) {
+        String originalClassName = cl.getName();
+        if (args.length == 0) {
+            while (cl != null) {
+                Method m = methodCheckNoArg(cl, name);
+                if (m != null) {
+                    m.setAccessible(true);
+                    return m;
+                }
+                cl = cl.getSuperclass();
+            }
+            if (Config.debug)
+                SU.cs.sendMessage(ra + "Method §f" + name + "§e with no parameters was not found in class §f" + originalClassName + "§e.");
+        } else {
+            while (cl != null) {
+                Method m = methodCheck(cl, name, args);
+                if (m != null) {
+                    m.setAccessible(true);
+                    return m;
+                }
+                cl = cl.getSuperclass();
+            }
+            StringBuilder sb = new StringBuilder();
+            for (Class c : args) {
+                sb.append(", ").append(c.getName());
+            }
+            if (Config.debug)
+                SU.cs.sendMessage(ra + "Method §f" + name + "§e with parameters §f" + sb.substring(2) + "§e was not found in class §f" + originalClassName + "§e.");
+        }
+        return null;
+    }
+
+    public static Class getNMSClass(String className) {
+        String newName = nmsRenames.get(className);
+        if (newName != null)
+            className = newName;
+        return getClass("net.minecraft.server." + version + className);
+    }
+
     public static Class getOBCClass(String className) {
         return getClass("org.bukkit.craftbukkit." + version + className);
+    }
+
+    public static Method getSimiliarMethod(Class ocl, String name, Class[] classes) {
+        Method m = getMethod(ocl, name, classes);
+        if (m == null) {
+            m = getMethod(ocl, "get" + name, classes);
+            if (m == null)
+                m = getMethod(ocl, "is" + name, classes);
+        }
+        if (m != null)
+            return m;
+        name = name.toLowerCase();
+        Class origCl = ocl;
+        while (ocl != null) {
+            for (Method m2 : ocl.getDeclaredMethods()) {
+                if (m2.getParameterTypes().length != classes.length)
+                    continue;
+                String mn = m2.getName().toLowerCase();
+                if (mn.endsWith(name) && (mn.startsWith(name) || mn.startsWith("get") || mn.startsWith("is")))
+                    return m2;
+            }
+            ocl = ocl.getSuperclass();
+        }
+        SU.cs.sendMessage(ra + "§cFailed to get similiar method to §e" + name + "§c in class §e" + origCl.getName() + "§c.");
+        return null;
     }
 
     public static Class getUtilClass(String className) {
@@ -399,6 +355,39 @@ public class Reflection {
             nmsRenames.put("PacketPlayOutRelEntityMoveLook", "PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook");
         }
         version += ".";
+    }
+
+    private static Method methodCheck(Class cl, String name, Class[] args) {
+        try {
+            return cl.getDeclaredMethod(name, args);
+        } catch (Throwable e) {
+            Method[] mtds = cl.getDeclaredMethods();
+            for (Method met : mtds)
+                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equals(name))
+                    return met;
+            for (Method met : mtds)
+                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equals(name))
+                    return met;
+            for (Method met : mtds)
+                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
+                    return met;
+            for (Method met : mtds)
+                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
+                    return met;
+            return null;
+        }
+    }
+
+    private static Method methodCheckNoArg(Class cl, String name) {
+        try {
+            return cl.getDeclaredMethod(name);
+        } catch (Throwable e) {
+            Method[] mtds = cl.getDeclaredMethods();
+            for (Method met : mtds)
+                if (met.getParameterTypes().length == 0 && met.getName().equalsIgnoreCase(name))
+                    return met;
+            return null;
+        }
     }
 
     /**
@@ -442,6 +431,19 @@ public class Reflection {
             }
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
+    }
+
+    public static Field setFieldAccessible(Field f) {
+        try {
+            f.setAccessible(true);
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            int modifiers = modifiersField.getInt(f);
+            modifiersField.setInt(f, modifiers & -17);
+            return f;
+        } catch (Throwable e) {
         }
         return null;
     }

@@ -29,7 +29,7 @@ public class Animation {
                             anim.effects.put(key, e.getValue().deserialize(HashMap.class, String.class, AnimationAPI.effects.get(key)));
                             continue;
                         }
-                        SU.cs.sendMessage("§e[AnimationAPI] §cUnregistered effect type §e" + key + "§c can't be loaded.");
+                        SU.cs.sendMessage("§e[AnimationAPI] §cUnregistered effect type §e" + key + "§c can't be active.");
                         continue;
                     }
                     if (key.equals("frameTime"))

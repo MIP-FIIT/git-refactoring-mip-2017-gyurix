@@ -110,15 +110,23 @@ public class LocationData implements StringSerializable {
         return this;
     }
 
+    public LocationData clone() {
+        return new LocationData(this);
+    }
+
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof LocationData)) {
+            return false;
+        }
+        LocationData ld = (LocationData) obj;
+        return (world == null && ld.world == null || world != null && ld.world != null && world.equals(ld.world)) && x == ld.x && y == ld.y && z == ld.z && yaw == ld.yaw && pitch == ld.pitch;
+    }
+
     public Block getBlock() {
         if (!isAvailable()) {
             return null;
         }
-        return Bukkit.getWorld(world).getBlockAt((int) x, (int) y, (int) z);
-    }
-
-    public boolean isAvailable() {
-        return world != null && Bukkit.getWorld(world) != null;
+        return Bukkit.getWorld(world).getBlockAt((int) (x < 0 ? x - 0.999 : x), (int) y, (int) (z < 0 ? z - 0.999 : z));
     }
 
     public BlockLocation getBlockLocation() {
@@ -172,28 +180,8 @@ public class LocationData implements StringSerializable {
         return hash;
     }
 
-    public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof LocationData)) {
-            return false;
-        }
-        LocationData ld = (LocationData) obj;
-        return (world == null && ld.world == null || world != null && ld.world != null && world.equals(ld.world)) && x == ld.x && y == ld.y && z == ld.z && yaw == ld.yaw && pitch == ld.pitch;
-    }
-
-    public LocationData clone() {
-        return new LocationData(this);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder out = new StringBuilder();
-        if (world != null) {
-            out.append(' ').append(world);
-        }
-        out.append(' ').append(x).append(' ').append(y).append(' ').append(z);
-        if (yaw != 0.0f || pitch != 0.0f)
-            out.append(' ').append(yaw).append(' ').append(pitch);
-        return out.substring(1);
+    public boolean isAvailable() {
+        return world != null && Bukkit.getWorld(world) != null;
     }
 
     public LocationData multiple(LocationData ld) {
@@ -235,6 +223,18 @@ public class LocationData implements StringSerializable {
     public String toLongString() {
         StringBuilder out = new StringBuilder();
         out.append(world).append(' ').append(x).append(' ').append(y).append(' ').append(z).append(' ').append(yaw).append(' ').append(pitch);
+        return out.substring(1);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+        if (world != null) {
+            out.append(' ').append(world);
+        }
+        out.append(' ').append(x).append(' ').append(y).append(' ').append(z);
+        if (yaw != 0.0f || pitch != 0.0f)
+            out.append(' ').append(yaw).append(' ').append(pitch);
         return out.substring(1);
     }
 

@@ -10,16 +10,31 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 /**
- * Created by GyuriX on 2016. 09. 16..
+ * Class representing the custom item names stored in the config, used in the ItemAPI
  */
 public class Items implements PostLoadable {
+    /**
+     * The map containing all the enchant alias (in keys) and their corresponding enchants (in values)
+     */
     @ConfigOptions(serialize = false)
     public static HashMap<String, Enchantment> enchantAliases = new HashMap<>();
+    /**
+     * The in config editable enchant name (key), enchant aliases (value) map.
+     */
     public static HashMap<String, ArrayList<String>> enchants = new HashMap<>();
+    /**
+     * The map containing all the item names (in keys) and their corresponding item types (values)
+     */
     @ConfigOptions(serialize = false)
     public static HashMap<String, BlockData> nameAliases = new HashMap<>();
+    /**
+     * The in config editable item type (key), item name aliases (value) map.
+     */
     public static HashMap<BlockData, ArrayList<String>> names = new HashMap<>();
 
+    /**
+     * Makes the enchantAliases and nameAliases caches.
+     */
     @Override
     public void postLoad() {
         enchantAliases.clear();

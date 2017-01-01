@@ -9,7 +9,7 @@ import org.bukkit.util.Vector;
 import java.lang.reflect.Method;
 
 public enum Direction implements WrappedData {
-    DOWN(new Vector(0, -1, 0)), UP(new Vector(0, 1, 0)), NORTH(new Vector(0, 0, -1)), SOUTH(new Vector(0, 0, 1)), WEST(new Vector(-1, 0, 0)), EAST(new Vector(1, 0, 0));
+    DOWN(new Vector(0, -1, 0)), UP(new Vector(0, 1, 0)), SOUTH(new Vector(0, 0, 1)), WEST(new Vector(-1, 0, 0)), NORTH(new Vector(0, 0, -1)), EAST(new Vector(1, 0, 0));
     private static final Method valueOf = Reflection.getMethod(Reflection.getNMSClass("EnumDirection"), "valueOf", String.class);
     private Vector v;
     private float yaw, pitch;

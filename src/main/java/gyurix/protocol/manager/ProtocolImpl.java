@@ -23,31 +23,26 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-public class Protocol18_19_110 extends Protocol {
-    private static final Field getChannel = Reflection.getFirstFieldOfType(Reflection.getNMSClass("NetworkManager"), Channel.class);
-    private static final Field getConnection = Reflection.getField(Reflection.getNMSClass("EntityPlayer"), "playerConnection");
-    private static final Field getGameProfile = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PacketLoginInStart"), GameProfile.class);
-    private static final Method getPlayerHandle = Reflection.getMethod(Reflection.getOBCClass("entity.CraftPlayer"), "getHandle");
-    private static final Class minecraftServerClass = Reflection.getNMSClass("MinecraftServer");
-    private static final Class networkManagerClass = Reflection.getNMSClass("NetworkManager");
-    private static final Field getManager = Reflection.getFirstFieldOfType(Reflection.getNMSClass("PlayerConnection"), networkManagerClass);
-    private static final Class serverConnectionClass = Reflection.getNMSClass("ServerConnection");
+import static gyurix.protocol.Reflection.getFirstFieldOfType;
+import static gyurix.protocol.Reflection.getNMSClass;
+import static gyurix.spigotlib.Main.pl;
+
+public class ProtocolImpl extends Protocol {
+    private static final Field getGameProfile = getFirstFieldOfType(getNMSClass("PacketLoginInStart"), GameProfile.class);
+    private static final Class minecraftServerClass = getNMSClass("MinecraftServer");
+    private static final Class serverConnectionClass = getNMSClass("ServerConnection");
     private final Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
     private final List<Channel> serverChannels = Lists.newArrayList();
-    List<ChannelFuture> channelFutures;
-    Object minecraftServer;
-    List networkManagers;
-    Object serverConnection;
     private ChannelInitializer<Channel> beginInit;
+    private List<ChannelFuture> channelFutures;
     private boolean closed;
     private ChannelInitializer<Channel> endInit;
     private ChannelInboundHandlerAdapter serverChannel;
 
-    public Protocol18_19_110() {
+    public ProtocolImpl() {
     }
 
     public final void close() {
@@ -93,22 +88,8 @@ public class Protocol18_19_110 extends Protocol {
         return getChannel(plr).pipeline().get(NewChannelHandler.class).pc;
     }
 
-    public Channel getChannel(Player player) {
-        if (player == null) {
-            System.err.println("Getting channel of ");
-        }
-        Channel channel = channelLookup.get(player.getName());
-        if (channel == null) {
-            try {
-                Object connection = getConnection.get(getPlayerHandle.invoke(player));
-                Object manager = getManager.get(connection);
-                channel = (Channel) getChannel.get(manager);
-                channelLookup.put(player.getName(), channel);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
-        return channel;
+    public Channel getChannel(Player plr) {
+        return channelLookup.get(plr.getName());
     }
 
     @Override
@@ -128,10 +109,9 @@ public class Protocol18_19_110 extends Protocol {
     }
 
     public final void init() throws Throwable {
-        minecraftServer = Reflection.getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
-        serverConnection = Reflection.getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(minecraftServer);
-        channelFutures = (List) Reflection.getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection);
-        networkManagers = (List) Reflection.getLastFieldOfType(serverConnectionClass, List.class).get(serverConnection);
+        Object minecraftServer = getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
+        Object serverConnection = getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(minecraftServer);
+        channelFutures = (List) getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection);
         registerChannelHandler();
         registerPlayers();
     }
@@ -144,7 +124,7 @@ public class Protocol18_19_110 extends Protocol {
                 channel.pipeline().addBefore("packet_handler", "SpigotLib", newInterceptor);
             } catch (Throwable e) {
                 System.err.println("Scheduled interception");
-                SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
+                SU.sch.scheduleSyncDelayedTask(pl, new Runnable() {
 
                     @Override
                     public void run() {
@@ -160,8 +140,8 @@ public class Protocol18_19_110 extends Protocol {
         return interceptor;
     }
 
-    public void injectPlayer(Player player) {
-        injectChannelInternal(getChannel(player)).player = player;
+    public void injectPlayer(final Player plr) {
+        injectChannelInternal(getChannel(plr)).player = plr;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -179,9 +159,17 @@ public class Protocol18_19_110 extends Protocol {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerQuit(PlayerQuitEvent e) {
-        channelLookup.remove(e.getPlayer().getName());
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerQuit(final PlayerQuitEvent e) {
+        final String pln = e.getPlayer().getName();
+        SU.sch.scheduleSyncDelayedTask(pl, new Runnable() {
+            @Override
+            public void run() {
+                Player p = Bukkit.getPlayer(pln);
+                if (p == null)
+                    channelLookup.remove(pln);
+            }
+        });
     }
 
     public void receivePacket(Player player, Object packet) {
@@ -214,6 +202,8 @@ public class Protocol18_19_110 extends Protocol {
     }
 
     public void sendPacket(Channel channel, Object packet) {
+        if (channel == null || packet == null)
+            return;
         if (packet instanceof WrappedPacket)
             packet = ((WrappedPacket) packet).getVanillaPacket();
         channel.pipeline().writeAndFlush(packet);
@@ -229,6 +219,8 @@ public class Protocol18_19_110 extends Protocol {
     }
 
     public void uninjectChannel(final Channel channel) {
+        if (channel == null)
+            return;
         channel.eventLoop().execute(new Runnable() {
             @Override
             public void run() {
@@ -260,8 +252,7 @@ public class Protocol18_19_110 extends Protocol {
         }
     }
 
-    public final class NewChannelHandler
-            extends ChannelDuplexHandler {
+    public final class NewChannelHandler extends ChannelDuplexHandler {
         public PacketCapture pc;
         public Player player;
 
@@ -282,7 +273,7 @@ public class Protocol18_19_110 extends Protocol {
                     super.channelRead(ctx, packet);
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
         }
 

@@ -23,6 +23,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static gyurix.api.BungeeAPI.executeBungeeCommands;
+import static gyurix.api.BungeeAPI.executeServerCommands;
+
 public class Command implements StringSerializable {
     public static HashMap<String, CustomCommandHandler> customCommands = new HashMap();
 
@@ -35,6 +38,16 @@ public class Command implements StringSerializable {
                     ChatAPI.sendJsonMsg(ChatMessageType.ACTION_BAR, text, plr);
                 } else {
                     cs.sendMessage("§cABM:§f " + text);
+                }
+                return true;
+            }
+        });
+        customCommands.put("BUNGEE", new CustomCommandHandler() {
+            @Override
+            public boolean handle(CommandSender cs, String text, Object... args) {
+                if (cs instanceof Player) {
+                    Player plr = (Player) cs;
+                    executeBungeeCommands(new String[]{text}, plr.getName());
                 }
                 return true;
             }
@@ -325,6 +338,18 @@ public class Command implements StringSerializable {
                 return false;
             }
         });
+        customCommands.put("SERVER", new CustomCommandHandler() {
+            @Override
+            public boolean handle(CommandSender cs, String text, Object... args) {
+                if (cs instanceof Player) {
+                    Player plr = (Player) cs;
+                    String[] d = text.split(" ", 2);
+                    String[] servers = d[0].split("[,;]");
+                    executeServerCommands(d[1].split(";"), servers);
+                }
+                return true;
+            }
+        });
         customCommands.put("SETITEM", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
@@ -443,6 +468,17 @@ public class Command implements StringSerializable {
         return true;
     }
 
+    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
+        if (list == null || pls == null)
+            return false;
+        for (Player p : pls) {
+            if (p != plr)
+                for (Command c : list)
+                    c.execute(p, args);
+        }
+        return true;
+    }
+
     public boolean execute(CommandSender sender, Object... args) {
         if (delay < 0)
             return executeNow(sender, args);
@@ -466,17 +502,6 @@ public class Command implements StringSerializable {
                 SU.error(sender, e, "SpigotLib", "gyurix");
             return false;
         }
-    }
-
-    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
-        if (list == null || pls == null)
-            return false;
-        for (Player p : pls) {
-            if (p != plr)
-                for (Command c : list)
-                    c.execute(p, args);
-        }
-        return true;
     }
 
     @Override

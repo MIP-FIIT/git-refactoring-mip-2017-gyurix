@@ -119,6 +119,41 @@ public final class SU {
     }
 
     /**
+     * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
+     * contains the authors name
+     *
+     * @param sender - The CommandSender who should receive the error report
+     * @param err    - The error
+     * @param plugin - The plugin where the error appeared
+     * @param author - The author name, which will be searched in the error report
+     */
+    public static void error(CommandSender sender, Throwable err, String plugin, String author) {
+        StringBuilder report = new StringBuilder();
+        report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
+                .append(err.getClass().getSimpleName());
+        if (err.getMessage() != null)
+            report.append('\n').append(err.getMessage());
+        int i = 0;
+        boolean startrep = true;
+        for (StackTraceElement el : err.getStackTrace()) {
+            boolean force = el.getClassName() != null && el.getClassName().contains(author);
+            if (force)
+                startrep = false;
+            if (startrep || force)
+                report.append("\n§c #").append(++i)
+                        .append(": §eLINE §a").append(el.getLineNumber())
+                        .append("§e in FILE §6").append(el.getFileName())
+                        .append("§e (§7").append(el.getClassName())
+                        .append("§e.§b").append(el.getMethodName())
+                        .append("§e)");
+        }
+        String rep = report.toString();
+        cs.sendMessage(rep);
+        if (sender != null && sender != cs)
+            sender.sendMessage(rep);
+    }
+
+    /**
      * Escape multi line text to a single line one
      *
      * @param text multi line escapeable text input
@@ -207,92 +242,23 @@ public final class SU {
     }
 
     /**
-     * Get the ping of a player in milliseconds
+     * Get the name of an offline player based on it's UUID.
      *
-     * @param plr target player
-     * @return The ping of the given player in milliseconds.
+     * @param id UUID of the target player
+     * @return The name of the requested player or null if the name was not found.
      */
-    public static int getPing(Player plr) {
-        try {
-            return pingF.getInt(entityF.get(plr));
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return -1;
-    }
-
-    /**
-     * Get an online player or optionally load an offline player based on its name
-     *
-     * @param name name of the player, which should be got / loaded.
-     * @return The online player / loaded offline player who has the given name, or null if no such player have found.
-     */
-    public static Player getPlayer(String name) {
-        if (name.length() > 16) {
-            UUID uuid = UUID.fromString(name);
-            Player p = Bukkit.getPlayer(uuid);
-            if (p == null)
-                p = loadPlayer(uuid);
-            return p;
-        }
-        Player p = Bukkit.getPlayer(name);
-        if (p == null)
-            p = loadPlayer(getUUID(name));
-        return p;
-    }
-
-    /**
-     * Load an offline player to be handleable like an online one.
-     *
-     * @param uuid uuid of the loadable offline player
-     * @return the loaded Player object, or null if the player was not found.
-     */
-    public static Player loadPlayer(UUID uuid) {
-        try {
-            if (uuid == null) {
-                return null;
-            }
-            OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
-            if (player == null || !player.hasPlayedBefore()) {
-                return null;
-            }
-
-            Player plr = (Player) getBukkitEntityM.invoke(entityPlayerC.newInstance(mcServer, worldServer, new GameProfile(player.getName(), uuid).toNMS(), playerInterractManagerC.newInstance(worldServer)));
-            if (plr != null) {
-                loadDataM.invoke(plr);
-                return plr;
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * Get the UUID of an offline player based on his name.
-     *
-     * @param name name of the target player
-     * @return The UUID of the requested player, or null if it was not found.
-     */
-    public static UUID getUUID(String name) {
-        Player plr = Bukkit.getPlayer(name);
+    public static String getName(UUID id) {
+        Player plr = Bukkit.getPlayer(id);
         if (plr != null)
-            return plr.getUniqueId();
-        OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
-        for (OfflinePlayer p : offlinePls) {
-            if (p.getName() != null && p.getName().equals(name))
-                return p.getUniqueId();
-        }
-        name = name.toLowerCase();
-        for (OfflinePlayer p : offlinePls) {
-            if (p.getName() != null && p.getName().toLowerCase().equals(name))
-                return p.getUniqueId();
-        }
-        for (OfflinePlayer p : offlinePls) {
-            if (p.getName() != null && p.getName().toLowerCase().contains(name))
-                return p.getUniqueId();
-        }
-        return getOnlineUUID(name);
+            return plr.getName();
+        OfflinePlayer op = Bukkit.getOfflinePlayer(id);
+        if (op == null)
+            return MojangAPI.getProfile(id.toString()).name;
+        return op.getName();
+    }
+
+    public static UUID getOfflineUUID(String name) {
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(utf8));
     }
 
     public static UUID getOnlineUUID(String name) {
@@ -310,8 +276,39 @@ public final class SU {
         return uid;
     }
 
-    public static UUID getOfflineUUID(String name) {
-        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(utf8));
+    /**
+     * Get the ping of a player in milliseconds
+     *
+     * @param plr target player
+     * @return The ping of the given player in milliseconds.
+     */
+    public static int getPing(Player plr) {
+        try {
+            return pingF.getInt(entityF.get(plr));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * Get an online player or optionally load an offline player based on its name
+     *
+     * @param name name of the player, which should be got / active.
+     * @return The online player / active offline player who has the given name, or null if no such player have found.
+     */
+    public static Player getPlayer(String name) {
+        if (name.length() > 16) {
+            UUID uuid = UUID.fromString(name);
+            Player p = Bukkit.getPlayer(uuid);
+            if (p == null)
+                p = loadPlayer(uuid);
+            return p;
+        }
+        Player p = Bukkit.getPlayer(name);
+        if (p == null)
+            p = loadPlayer(getUUID(name));
+        return p;
     }
 
     /**
@@ -350,46 +347,6 @@ public final class SU {
         return pf.subConfig(pln);
     }
 
-    public static void loadPlayerConfig(UUID uid) {
-        if (PlayerFile.backend == BackendType.MYSQL) {
-            String key = uid == null ? "CONSOLE" : uid.toString();
-            pf.mysqlLoad(key, "uuid='" + key + '\'');
-            loadedPlayers.add(uid);
-        }
-    }
-
-    public static void savePlayerConfig(UUID uid) {
-        String key = uid == null ? "CONSOLE" : uid.toString();
-        switch (PlayerFile.backend) {
-            case FILE:
-                pf.data.unWrapAll();
-                pf.save();
-                return;
-            case MYSQL:
-                ArrayList<String> list = new ArrayList<>();
-                ConfigFile kf = pf.subConfig(key, "uuid='" + key + '\'');
-                kf.data.unWrapAll();
-                kf.mysqlUpdate(list, null);
-                pf.db.batch(list, null);
-        }
-    }
-
-    /**
-     * Unloads the configuration of the given player or of the console if
-     * uid = null
-     *
-     * @param uid - The UUID of the player, or null for console
-     * @return True if the unload was successful, false otherwise
-     */
-    public static boolean unloadPlayerConfig(UUID uid) {
-        if (PlayerFile.backend == BackendType.MYSQL) {
-            String key = uid == null ? "CONSOLE" : uid.toString();
-            loadedPlayers.remove(uid);
-            return pf.removeData(key);
-        }
-        return false;
-    }
-
     /**
      * Get GameProfile of the given player. The GameProfile contains the players name, UUID and skin.
      *
@@ -403,6 +360,33 @@ public final class SU {
             e.printStackTrace();
             return null;
         }
+    }
+
+    /**
+     * Get the UUID of an offline player based on his name.
+     *
+     * @param name name of the target player
+     * @return The UUID of the requested player, or null if it was not found.
+     */
+    public static UUID getUUID(String name) {
+        Player plr = Bukkit.getPlayer(name);
+        if (plr != null)
+            return plr.getUniqueId();
+        OfflinePlayer[] offlinePls = Bukkit.getOfflinePlayers();
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().equals(name))
+                return p.getUniqueId();
+        }
+        name = name.toLowerCase();
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().toLowerCase().equals(name))
+                return p.getUniqueId();
+        }
+        for (OfflinePlayer p : offlinePls) {
+            if (p.getName() != null && p.getName().toLowerCase().contains(name))
+                return p.getUniqueId();
+        }
+        return getOnlineUUID(name);
     }
 
     /**
@@ -447,51 +431,6 @@ public final class SU {
         }
     }
 
-    /**
-     * Logs messages from the given plugin. You can use color codes in the msg.
-     *
-     * @param pl  - The plugin who wants to log the message
-     * @param msg - The message which should be logged
-     */
-    public static void log(Plugin pl, Object... msg) {
-        cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
-    }
-
-    /**
-     * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
-     * contains the authors name
-     *
-     * @param sender - The CommandSender who should receive the error report
-     * @param err    - The error
-     * @param plugin - The plugin where the error appeared
-     * @param author - The author name, which will be searched in the error report
-     */
-    public static void error(CommandSender sender, Throwable err, String plugin, String author) {
-        StringBuilder report = new StringBuilder();
-        report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
-                .append(err.getClass().getSimpleName());
-        if (err.getMessage() != null)
-            report.append('\n').append(err.getMessage());
-        int i = 0;
-        boolean startrep = true;
-        for (StackTraceElement el : err.getStackTrace()) {
-            boolean force = el.getClassName() != null && el.getClassName().contains(author);
-            if (force)
-                startrep = false;
-            if (startrep || force)
-                report.append("\n§c #").append(++i)
-                        .append(": §eLINE §a").append(el.getLineNumber())
-                        .append("§e in FILE §6").append(el.getFileName())
-                        .append("§e (§7").append(el.getClassName())
-                        .append("§e.§b").append(el.getMethodName())
-                        .append("§e)");
-        }
-        String rep = report.toString();
-        cs.sendMessage(rep);
-        if (sender != null && sender != cs)
-            sender.sendMessage(rep);
-    }
-
     @Deprecated
     public static boolean itemEqual(ItemStack item1, ItemStack item2) {
         return ItemUtils.itemEqual(item1, item2);
@@ -505,6 +444,51 @@ public final class SU {
     @Deprecated
     public static String itemToString(ItemStack in) {
         return ItemUtils.itemToString(in);
+    }
+
+    /**
+     * Load an offline player to be handleable like an online one.
+     *
+     * @param uuid uuid of the loadable offline player
+     * @return the active Player object, or null if the player was not found.
+     */
+    public static Player loadPlayer(UUID uuid) {
+        try {
+            if (uuid == null) {
+                return null;
+            }
+            OfflinePlayer player = Bukkit.getOfflinePlayer(uuid);
+            if (player == null || !player.hasPlayedBefore()) {
+                return null;
+            }
+
+            Player plr = (Player) getBukkitEntityM.invoke(entityPlayerC.newInstance(mcServer, worldServer, new GameProfile(player.getName(), uuid).toNMS(), playerInterractManagerC.newInstance(worldServer)));
+            if (plr != null) {
+                loadDataM.invoke(plr);
+                return plr;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void loadPlayerConfig(UUID uid) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
+            String key = uid == null ? "CONSOLE" : uid.toString();
+            pf.mysqlLoad(key, "uuid='" + key + '\'');
+            loadedPlayers.add(uid);
+        }
+    }
+
+    /**
+     * Logs messages from the given plugin. You can use color codes in the msg.
+     *
+     * @param pl  - The plugin who wants to log the message
+     * @param msg - The message which should be logged
+     */
+    public static void log(Plugin pl, Object... msg) {
+        cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
     }
 
     /**
@@ -539,22 +523,6 @@ public final class SU {
             out.add(getName(id));
         }
         return out;
-    }
-
-    /**
-     * Get the name of an offline player based on it's UUID.
-     *
-     * @param id UUID of the target player
-     * @return The name of the requested player or null if the name was not found.
-     */
-    public static String getName(UUID id) {
-        Player plr = Bukkit.getPlayer(id);
-        if (plr != null)
-            return plr.getName();
-        OfflinePlayer op = Bukkit.getOfflinePlayer(id);
-        if (op == null)
-            return null;
-        return op.getName();
     }
 
     /**
@@ -624,6 +592,17 @@ public final class SU {
     }
 
     /**
+     * Generates a random number between min (inclusive) and max (exclusive)
+     *
+     * @param min - Minimal value of the random number
+     * @param max - Maximal value of the random number
+     * @return A random double between min and max
+     */
+    public static double rand(double min, double max) {
+        return rand.nextDouble() * Math.abs(max - min) + min;
+    }
+
+    /**
      * Generate a configurable random color
      *
      * @param minSaturation - Minimal saturation (0-1)
@@ -641,19 +620,7 @@ public final class SU {
     }
 
     /**
-     * Generates a random number between min (inclusive) and max (exclusive)
-     *
-     * @param min - Minimal value of the random number
-     * @param max - Maximal value of the random number
-     * @return A random double between min and max
-     */
-    public static double rand(double min, double max) {
-        return rand.nextDouble() * Math.abs(max - min) + min;
-    }
-
-
-    /**
-     * Save a loaded offline player. You should use this method when you have loaded an offline player
+     * Save a active offline player. You should use this method when you have active an offline player
      * and you have changed some of it's data
      *
      * @param plr Loaded offline players Player object
@@ -663,6 +630,22 @@ public final class SU {
             saveDataM.invoke(plr);
         } catch (Throwable e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void savePlayerConfig(UUID uid) {
+        String key = uid == null ? "CONSOLE" : uid.toString();
+        switch (PlayerFile.backend) {
+            case FILE:
+                pf.data.unWrapAll();
+                pf.save();
+                return;
+            case MYSQL:
+                ArrayList<String> list = new ArrayList<>();
+                ConfigFile kf = pf.subConfig(key, "uuid='" + key + '\'');
+                kf.data.unWrapAll();
+                kf.mysqlUpdate(list, null);
+                pf.db.batch(list, null);
         }
     }
 
@@ -738,6 +721,22 @@ public final class SU {
                 .replaceAll("([^\\\\])\\|", "$1\n")
                 .replaceAll("([^\\\\])\\\\([_\\|])", "$1$2")
                 .replace("\\\\", "\\").substring(1);
+    }
+
+    /**
+     * Unloads the configuration of the given player or of the console if
+     * uid = null
+     *
+     * @param uid - The UUID of the player, or null for console
+     * @return True if the unload was successful, false otherwise
+     */
+    public static boolean unloadPlayerConfig(UUID uid) {
+        if (PlayerFile.backend == BackendType.MYSQL) {
+            String key = uid == null ? "CONSOLE" : uid.toString();
+            loadedPlayers.remove(uid);
+            return pf.removeData(key);
+        }
+        return false;
     }
 
     /**

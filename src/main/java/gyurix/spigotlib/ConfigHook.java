@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class ConfigHook {
-    public static HashMap<String, Object> data = new HashMap();
+    public static HashMap<String, Object> data = new HashMap<>();
 
     public static void registerSerializers() {
         ConfigSerialization.serializers.put(SignConfig.class, new Serializer() {
@@ -203,7 +203,8 @@ public class ConfigHook {
             @Override
             public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
                 String s = StringUtils.join(inside, "");
-                return GlobalLangFile.get(SU.getPlayerConfig(plr).getString("lang"), s);
+                String lang = SU.getPlayerConfig(plr).getString("lang");
+                return s.isEmpty() ? lang : GlobalLangFile.get(lang, s);
             }
         });
         VariableAPI.handlers.put("booltest", new VariableHandler() {

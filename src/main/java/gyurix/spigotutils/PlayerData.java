@@ -59,9 +59,9 @@ public class PlayerData {
         isFlying = plr.isFlying();
         displayName = plr.getDisplayName();
         playerListName = plr.getPlayerListName();
-        board = ScoreboardAPI.sidebars.get(plr);
-        nametagBar = ScoreboardAPI.nametags.get(plr);
-        tabBar = ScoreboardAPI.tabbars.get(plr);
+        board = (Sidebar) ScoreboardAPI.sidebars.get(plr.getName()).active;
+        nametagBar = (NametagBar) ScoreboardAPI.nametags.get(plr.getName()).active;
+        tabBar = (Tabbar) ScoreboardAPI.tabbars.get(plr.getName()).active;
         walkSpeed = plr.getWalkSpeed();
         flySpeed = plr.getFlySpeed();
         compassTarget = plr.getCompassTarget();

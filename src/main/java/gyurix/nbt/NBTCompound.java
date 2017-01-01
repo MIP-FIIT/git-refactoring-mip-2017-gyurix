@@ -5,8 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class NBTCompound
-        extends NBTTag {
+public class NBTCompound extends NBTTag {
     static Field mapField;
     static Class nmsClass;
     public HashMap<String, NBTTag> map = new HashMap<>();

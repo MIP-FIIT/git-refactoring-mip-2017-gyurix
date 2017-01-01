@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import static gyurix.configfile.ConfigData.serializeObject;
 import static gyurix.protocol.Reflection.newInstance;
 
 public class DefaultSerializers {
@@ -109,7 +110,7 @@ public class DefaultSerializers {
             d.listData = new ArrayList<>();
             for (Object o : Arrays.asList((Object[]) input)) {
                 if (o != null) {
-                    d.listData.add(ConfigData.serializeObject(o, o.getClass() != cl));
+                    d.listData.add(serializeObject(o, o.getClass() != cl));
                 }
             }
             return d;
@@ -205,9 +206,8 @@ public class DefaultSerializers {
                 return new ConfigData("");
             ConfigData d = new ConfigData();
             d.listData = new ArrayList<>();
-            for (Object o : (Collection) input) {
-                d.listData.add(ConfigData.serializeObject(o, o.getClass() != cl, types));
-            }
+            for (Object o : (Collection) input)
+                d.listData.add(serializeObject(o, o.getClass() != cl, types));
             return d;
         }
     }
@@ -247,7 +247,7 @@ public class DefaultSerializers {
                             keyClass = (Class) parameterTypes[0];
                         }
                     }
-                    boolean dynamicValueCl = keyClass.isAssignableFrom(ValueClassSelector.class);
+                    boolean dynamicValueCl = ValueClassSelector.class.isAssignableFrom(keyClass);
                     valueClass = Object.class;
                     valueTypes = emptyTypeArray;
                     if (!dynamicValueCl && parameterTypes.length >= 2) {
@@ -323,8 +323,8 @@ public class DefaultSerializers {
                     Object key = e.getKey();
                     Object value = e.getValue();
                     if (key != null && value != null)
-                        d.mapData.put(ConfigData.serializeObject(key, key.getClass() != keyClass, keyTypes),
-                                ConfigData.serializeObject(value, !valueClassSelector && value.getClass() != valueClass, valueTypes));
+                        d.mapData.put(serializeObject(key, key.getClass() != keyClass, keyTypes),
+                                serializeObject(value, !valueClassSelector && value.getClass() != valueClass, valueTypes));
                 }
                 return d;
             } catch (Throwable e) {
@@ -473,7 +473,7 @@ public class DefaultSerializers {
                         String fn = f.getName();
                         String cn = ConfigSerialization.calculateClassName(Primitives.wrap(f.getType()), o.getClass());
                         Type t = f.getGenericType();
-                        ConfigData value = ConfigData.serializeObject(o, !cn.isEmpty(),
+                        ConfigData value = serializeObject(o, !cn.isEmpty(),
                                 t instanceof ParameterizedType ?
                                         ((ParameterizedType) t).getActualTypeArguments() :
                                         ((Class) t).isArray() ?

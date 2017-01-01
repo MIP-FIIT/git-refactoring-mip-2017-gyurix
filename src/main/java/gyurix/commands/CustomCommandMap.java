@@ -1,12 +1,10 @@
 package gyurix.commands;
 
 import gyurix.commands.event.*;
-import gyurix.spigotlib.SU;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.SimpleCommandMap;
-import org.bukkit.plugin.SimplePluginManager;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -15,56 +13,43 @@ import java.util.List;
 import java.util.Map;
 
 import static gyurix.protocol.Reflection.getField;
-import static gyurix.spigotlib.SU.pm;
+import static gyurix.spigotlib.SU.*;
 
 /**
  * Created by GyuriX on 2016.08.23..
  */
 public class CustomCommandMap extends SimpleCommandMap {
-    private static final Field cmdMapF = getField(SimplePluginManager.class, "commandMap");
+    private static final Field cmdMapF1 = getField(srv.getClass(), "commandMap");
+    private static final Field cmdMapF2 = getField(pm.getClass(), "commandMap");
     private static final Field knownCmdsF = getField(SimpleCommandMap.class, "knownCommands");
     public static SimpleCommandMap backend;
     public static Map<String, Command> knownCommands;
 
     public CustomCommandMap() {
-        super(SU.srv);
+        super(srv);
         try {
-            backend = (SimpleCommandMap) cmdMapF.get(pm);
-            cmdMapF.set(pm, this);
+            backend = (SimpleCommandMap) cmdMapF1.get(srv);
+            cmdMapF1.set(srv, this);
+            cmdMapF2.set(pm, this);
             knownCommands = (Map<String, Command>) knownCmdsF.get(backend);
             knownCmdsF.set(this, knownCommands);
         } catch (Throwable e) {
-            SU.cs.sendMessage("§2[§aStartup§2]§c Failed to initialize CustomCommandMap :(");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            cs.sendMessage("§2[§aStartup§2]§c Failed to initialize CustomCommandMap :(");
+            error(cs, e, "SpigotLib", "gyurix");
         }
     }
 
     public static void unhook() {
         try {
-            cmdMapF.set(pm, backend);
+            cmdMapF1.set(pm, backend);
+            cmdMapF2.set(srv, backend);
         } catch (Throwable e) {
         }
     }
 
-    public void setFallbackCommands() {
-        backend.setFallbackCommands();
-    }
-
     @Override
-    public void registerAll(String fallbackPrefix, List<Command> commands) {
-        backend.registerAll(fallbackPrefix, commands);
-    }
-
-    @Override
-    public boolean register(String fallbackPrefix, Command command) {
-        if (backend == null)
-            return false;
-        return backend.register(fallbackPrefix, command);
-    }
-
-    @Override
-    public boolean register(String label, String fallbackPrefix, Command command) {
-        return backend.register(label, fallbackPrefix, command);
+    public void clearCommands() {
+        backend.clearCommands();
     }
 
     @Override
@@ -92,19 +77,43 @@ public class CustomCommandMap extends SimpleCommandMap {
             if (e.isCancelled())
                 return true;
             sender.sendMessage("§c[CommandAPI] §cError on executing command§e " + cmd);
-            SU.error(sender, err.getCause(), "SpigotLib", "gyurix");
+            error(sender, err.getCause(), "SpigotLib", "gyurix");
             return true;
         }
     }
 
     @Override
-    public void clearCommands() {
-        backend.clearCommands();
+    public Command getCommand(String name) {
+        return backend.getCommand(name);
+    }
+
+    public Collection<Command> getCommands() {
+        return Collections.unmodifiableCollection(knownCommands.values());
     }
 
     @Override
-    public Command getCommand(String name) {
-        return backend.getCommand(name);
+    public boolean register(String fallbackPrefix, Command command) {
+        if (backend == null)
+            return false;
+        return backend.register(fallbackPrefix, command);
+    }
+
+    @Override
+    public boolean register(String label, String fallbackPrefix, Command command) {
+        return backend.register(label, fallbackPrefix, command);
+    }
+
+    @Override
+    public void registerAll(String fallbackPrefix, List<Command> commands) {
+        backend.registerAll(fallbackPrefix, commands);
+    }
+
+    public void registerServerAliases() {
+        backend.registerServerAliases();
+    }
+
+    public void setFallbackCommands() {
+        backend.setFallbackCommands();
     }
 
     @Override
@@ -121,13 +130,5 @@ public class CustomCommandMap extends SimpleCommandMap {
         if (e.isCancelled())
             return e.getResult();
         return list;
-    }
-
-    public Collection<Command> getCommands() {
-        return Collections.unmodifiableCollection(knownCommands.values());
-    }
-
-    public void registerServerAliases() {
-        backend.registerServerAliases();
     }
 }

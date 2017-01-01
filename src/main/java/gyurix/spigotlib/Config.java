@@ -18,13 +18,15 @@ public class Config {
     @ConfigOptions(comment = "Servers default language.")
     public static String defaultLang = "en";
     public static boolean disableWeatherChange;
+    public static String earlyJoinKickMsg = "§eStarting server...";
+    public static int earlyJoinProtection = 30;
     @ConfigOptions(comment = "EconomyAPI settings")
     public static EconomyAPI economy = new EconomyAPI();
     @ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")
     public static boolean phaHook;
+    public static boolean playerEval, allowAllPermsForAuthor;
     @ConfigOptions(comment = "PlayerFile settings")
     public static PlayerFile playerFile;
-    public static String start = "§eSzerver indítása...";
     @ConfigOptions(comment = "Allows sync and async metrics of the truth server tps, for the <tps>\n" +
             "variable, it also helps to detect informations about possible server crashes.")
     public static TPSMeter tpsMeter;
@@ -33,7 +35,7 @@ public class Config {
     }
 
     public static class BungeeAPI {
-        public static boolean ipOnJoin, uuidOnJoin;
+        public static boolean ipOnJoin, uuidOnJoin, forceEnable;
         public static int playerCount, playerList, servers, currentServerName, uuidAll, serverIP;
     }
 

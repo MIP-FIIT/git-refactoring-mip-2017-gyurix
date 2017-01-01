@@ -8,9 +8,6 @@ import org.bukkit.inventory.ItemStack;
 
 import static gyurix.spigotutils.ItemUtils.fillVariables;
 
-/**
- * Created by GyuriX on 2016. 09. 17..
- */
 public class GUIConfig {
     public ItemStack separator;
     public int size;

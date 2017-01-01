@@ -31,10 +31,10 @@ public class TimeUtils {
      * @return The language based time string
      */
     public static String getTime(Player plr, Long time) {
-        if (time == null || time <= 0 || time == Long.MAX_VALUE) {
+        time /= 1000;
+        if (time == null || time < 0 || time == Long.MAX_VALUE / 1000) {
             return Main.lang.get(plr, "time.never");
         }
-        time /= 1000;
         int w = (int) (time / 604800);
         int d = (int) (time % 604800 / 86400);
         int h = (int) (time % 86400 / 3600);
@@ -43,15 +43,15 @@ public class TimeUtils {
         StringBuilder sb = new StringBuilder();
         String sep = ", ";
         if (w > 0)
-            sb.append(Main.lang.get(null, "time." + (w > 1 ? "wp" : "w"), "w", "" + w)).append(sep);
+            sb.append(Main.lang.get(plr, "time." + (w > 1 ? "wp" : "w"), "w", "" + w)).append(sep);
         if (d > 0)
-            sb.append(Main.lang.get(null, "time." + (d > 1 ? "dp" : "d"), "d", "" + d)).append(sep);
+            sb.append(Main.lang.get(plr, "time." + (d > 1 ? "dp" : "d"), "d", "" + d)).append(sep);
         if (h > 0)
-            sb.append(Main.lang.get(null, "time." + (h > 1 ? "hp" : "h"), "h", "" + h)).append(sep);
+            sb.append(Main.lang.get(plr, "time." + (h > 1 ? "hp" : "h"), "h", "" + h)).append(sep);
         if (m > 0)
-            sb.append(Main.lang.get(null, "time." + (m > 1 ? "mp" : "m"), "m", "" + m)).append(sep);
+            sb.append(Main.lang.get(plr, "time." + (m > 1 ? "mp" : "m"), "m", "" + m)).append(sep);
         if (s > 0)
-            sb.append(Main.lang.get(null, "time." + (s > 1 ? "sp" : "s"), "s", "" + s)).append(sep);
+            sb.append(Main.lang.get(plr, "time." + (s > 1 ? "sp" : "s"), "s", "" + s)).append(sep);
         return sb.substring(0, sb.length() - sep.length());
     }
 

@@ -33,9 +33,10 @@ public class BlockUtils {
     }
 
     public static Direction getSimpleDirection(float yaw, float pitch) {
-        if (yaw < 0)
+        while (yaw < 45)
             yaw += 360;
-        return null;
+        yaw -= 45;
+        return pitch > 45 ? Direction.DOWN : pitch < -45 ? Direction.UP : Direction.values()[(int) (yaw / 90 + 2)];
     }
 
     public static Location getYMax(World world, int minx, int minz) {

@@ -1,87 +1,61 @@
 package gyurix.scoreboard;
 
-import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
-import java.util.UUID;
 
 public class ScoreboardAPI {
-    public static NametagBar defaultNB;
-    public static Tabbar defaultTB;
-    public static int id = 1;
-    public static HashMap<Player, NametagBar> nametags = new HashMap<>();
-    public static Object removeScore;
-    public static Object setScore;
-    public static HashMap<Player, Sidebar> sidebars = new HashMap<>();
-    public static HashMap<Player, Tabbar> tabbars = new HashMap<>();
-    public static Object updateTabName;
+    public static long id = 1;
+    public static HashMap<String, PlayerBars> nametags = new HashMap<>();
+    public static HashMap<String, PlayerBars> sidebars = new HashMap<>();
+    public static HashMap<String, PlayerBars> tabbars = new HashMap<>();
 
-    public static void init () {
-        Class cl = Reflection.getNMSClass("IScoreboardCriteria$EnumScoreboardHealthDisplay");
-        ScoreboardDisplayMode.INTEGER.nmsEnum = Reflection.getEnum(cl, "INTEGER");
-        ScoreboardDisplayMode.HEARTS.nmsEnum = Reflection.getEnum(cl, "HEARTS");
-        cl = Reflection.getNMSClass("PacketPlayOutScoreboardScore$EnumScoreboardAction");
-        setScore = Reflection.getEnum(cl, "CHANGE");
-        removeScore = Reflection.getEnum(cl, "REMOVE");
-        cl = Reflection.getNMSClass("PacketPlayOutPlayerInfo$EnumPlayerInfoAction");
-        updateTabName = Reflection.getEnum(cl, "UPDATE_DISPLAY_NAME");
-        defaultTB = new Tabbar();
-        defaultNB = new NametagBar();
+    public static void playerJoin(Player plr) {
+        String pln = plr.getName();
+        nametags.put(pln, new PlayerBars());
+        sidebars.put(pln, new PlayerBars());
+        tabbars.put(pln, new PlayerBars());
     }
 
-    public static void playerJoin (Player plr) {
-        defaultTB.addPlayer(plr.getUniqueId(), new TabPlayer(plr));
-        defaultNB.addNametag(new Nametag(plr));
+    public static void playerLeave(Player plr) {
+        String pln = plr.getName();
+        for (ScoreboardBar sb : nametags.remove(pln).loaded)
+            sb.drop(plr);
+        for (ScoreboardBar sb : sidebars.remove(pln).loaded)
+            sb.drop(plr);
+        for (ScoreboardBar sb : tabbars.remove(pln).loaded)
+            sb.drop(plr);
     }
 
-    public static void playerLeave (Player plr) {
-        UUID id = plr.getUniqueId();
-        ScoreboardBar sb = tabbars.remove(plr);
-        if (sb != null)
-            sb.viewers.remove(plr);
-        sb = sidebars.remove(plr);
-        if (sb != null)
-            sb.viewers.remove(plr);
-        sb = nametags.remove(plr);
-        if (sb != null)
-            sb.viewers.remove(plr);
-        defaultNB.removeNametag(plr.getName());
-        defaultTB.removePlayer(id);
-    }
-
-    public static void setNametagBar (Player plr, NametagBar bar) {
-        if (set(plr, nametags.get(plr), bar, !nametags.containsKey(plr)))
-            nametags.put(plr, bar);
-    }
-
-    private static boolean set (Player plr, ScoreboardBar from, ScoreboardBar to, boolean first) {
+    private static boolean set(Player plr, PlayerBars info, ScoreboardBar to) {
+        ScoreboardBar from = info.active;
+        info.active = to;
         if (from == to)
             return false;
-        if (first)
-            to.addViewerFirstBar(plr);
-        else if (to == null) {
-            if (from != null)
-                from.removeViewer(plr);
-        } else if (from == null)
-            to.addViewer(plr);
-        else
-            to.moveViewer(from, plr);
+        if (to == null) {
+            from.deActivate(plr);
+            SU.tp.sendPacket(plr, from.hidePacket);
+            return true;
+        }
+        if (!to.load(plr))
+            to.activate(plr);
         return true;
     }
 
-    public static void setSidebar (Player plr, Sidebar bar) {
-        if (set(plr, sidebars.get(plr), bar, !sidebars.containsKey(plr)))
-            sidebars.put(plr, bar);
+    public static void setNametagBar(Player plr, NametagBar bar) {
+        set(plr, nametags.get(plr.getName()), bar);
     }
 
-    public static void setTabbar (Player plr, Tabbar bar) {
-        if (set(plr, tabbars.get(plr), bar, !tabbars.containsKey(plr)))
-            tabbars.put(plr, bar);
+    public static void setSidebar(Player plr, Sidebar bar) {
+        set(plr, sidebars.get(plr.getName()), bar);
     }
 
-    public static String[] specialSplit (String in, char uniqueChar) {
+    public static void setTabbar(Player plr, Tabbar bar) {
+        set(plr, tabbars.get(plr.getName()), bar);
+    }
+
+    public static String[] specialSplit(String in, char uniqueChar) {
         if ((in = SU.optimizeColorCodes(in)).length() < 17)
             return new String[]{in, "§" + uniqueChar, ""};
         String[] out = new String[3];
@@ -112,15 +86,5 @@ public class ScoreboardAPI {
         }
         return out;
     }
-
-    public enum ScoreboardDisplayMode {
-        INTEGER,
-        HEARTS;
-        public Object nmsEnum;
-
-        ScoreboardDisplayMode () {
-        }
-    }
-
 }
 

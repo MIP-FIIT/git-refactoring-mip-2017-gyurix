@@ -12,12 +12,9 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class AnimationAPI {
     public static HashMap<String, Class> effects = new HashMap();
-    public static ScheduledExecutorService sch = Executors.newScheduledThreadPool(1);
     private static HashMap<Integer, AnimationRunnable> animationsRunnables = new HashMap();
     private static HashMap<Animation, ArrayList<AnimationRunnable>> runningAnimations = new HashMap();
 
@@ -42,8 +39,8 @@ public class AnimationAPI {
             return false;
         }
         for (AnimationRunnable ar : runningAnimations.remove(a)) {
-            if (ar.running == null) continue;
-            ar.running.cancel(true);
+            if (ar.running == 0) continue;
+            SU.sch.cancelTask(ar.running);
         }
         return true;
     }
@@ -52,9 +49,7 @@ public class AnimationAPI {
         if (ar == null) {
             return;
         }
-        if (ar.running != null) {
-            ar.running.cancel(false);
-        }
+        SU.sch.cancelTask(ar.running);
         runningAnimations.get(ar.a).remove(ar);
     }
 

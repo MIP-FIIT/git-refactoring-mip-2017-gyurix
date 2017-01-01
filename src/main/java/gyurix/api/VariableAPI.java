@@ -14,6 +14,7 @@ import java.util.List;
 public class VariableAPI {
     public static final ArrayList<Object> emptyList = new ArrayList<>();
     public static final HashMap<String, VariableHandler> handlers = new HashMap();
+    private static final HashMap<String, Long> missingNotifications = new HashMap<>();
     public static boolean phaHook;
 
     public static ArrayList<Object> fill(String msg, int from, Player plr, Object[] oArgs) {

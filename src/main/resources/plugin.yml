@@ -6,5 +6,5 @@ commands:
 loadbefore: [ProtocolLib]
 main: gyurix.spigotlib.Main
 name: SpigotLib
-softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI,WorldEdit ]
-version: 5.4
+softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI,WorldEdit]
+version: 5.8

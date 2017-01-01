@@ -1,11 +1,11 @@
 package gyurix.spigotutils;
 
-import gyurix.animation.AnimationAPI;
 import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +43,7 @@ public class TPSMeter implements Runnable {
     }
 
     public void start() {
-        meter = AnimationAPI.sch.scheduleAtFixedRate(this, checkTime, checkTime, TimeUnit.MILLISECONDS);
+        meter = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(this, checkTime, checkTime, TimeUnit.MILLISECONDS);
         Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.pl, new Runnable() {
             @Override
             public void run() {

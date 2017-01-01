@@ -7,12 +7,21 @@ import gyurix.protocol.wrappers.WrappedPacket;
 
 import java.lang.reflect.Method;
 
-public class PacketPlayOutScoreboardScore
-        extends WrappedPacket {
+public class PacketPlayOutScoreboardScore extends WrappedPacket {
     public ScoreAction action;
     public String board;
     public String player;
     public int score;
+
+    public PacketPlayOutScoreboardScore() {
+    }
+
+    public PacketPlayOutScoreboardScore(ScoreAction action, String board, String player, int score) {
+        this.action = action;
+        this.board = board;
+        this.player = player;
+        this.score = score;
+    }
 
     @Override
     public Object getVanillaPacket() {

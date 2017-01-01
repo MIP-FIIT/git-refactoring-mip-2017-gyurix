@@ -36,25 +36,6 @@ public class CuboidArea implements StringSerializable, Cloneable {
         }
     }
 
-    public void fix() {
-        int tmp;
-        if (pos1.x > pos2.x) {
-            tmp = pos1.x;
-            pos1.x = pos2.x;
-            pos2.x = tmp;
-        }
-        if (pos1.y > pos2.y) {
-            tmp = pos1.y;
-            pos1.y = pos2.y;
-            pos2.y = tmp;
-        }
-        if (pos1.z > pos2.z) {
-            tmp = pos1.z;
-            pos1.z = pos2.z;
-            pos2.z = tmp;
-        }
-    }
-
     public CuboidArea() {
     }
 
@@ -76,15 +57,23 @@ public class CuboidArea implements StringSerializable, Cloneable {
         this.pos2 = pos2;
     }
 
-
     public CuboidArea(LocationData pos1, LocationData pos2) {
         this.pos1 = pos1.getBlockLocation();
         this.pos2 = pos2.getBlockLocation();
     }
 
+
     public CuboidArea(BlockLocation pos1, BlockLocation pos2) {
         this.pos1 = pos1;
         this.pos2 = pos2;
+    }
+
+    public static void resetOutlineBlock(Block block, Player plr) {
+        plr.sendBlockChange(block.getLocation(), block.getTypeId(), block.getData());
+    }
+
+    public CuboidArea clone() {
+        return new CuboidArea(world, pos1.clone(), pos2.clone());
     }
 
     public CuboidArea cloneFixed() {
@@ -93,17 +82,8 @@ public class CuboidArea implements StringSerializable, Cloneable {
         return area;
     }
 
-    public CuboidArea clone() {
-        return new CuboidArea(world, pos1.clone(), pos2.clone());
-    }
-
-    @Override
-    public String toString() {
-        return world == null ? pos1 + " " + pos2 : world + ' ' + pos1 + ' ' + pos2;
-    }
-
     public boolean contains(Location loc) {
-        return loc.getX() >= pos1.x && loc.getY() >= pos1.y && loc.getZ() >= pos1.z && loc.getX() <= pos2.x && loc.getY() <= pos2.y && loc.getZ() <= pos2.z;
+        return loc.getX() + 0.5 >= pos1.x && loc.getY() >= pos1.y && loc.getZ() + 0.5 >= pos1.z && loc.getX() - 1.5 <= pos2.x && loc.getY() <= pos2.y && loc.getZ() - 1.5 <= pos2.z;
     }
 
     public boolean contains(Block loc) {
@@ -112,7 +92,7 @@ public class CuboidArea implements StringSerializable, Cloneable {
     }
 
     public boolean contains(LocationData loc) {
-        return !(world != null && loc.world != null && !world.equals(loc.world)) && loc.x >= pos1.x && loc.y >= pos1.y && loc.z >= pos1.z && loc.x <= pos2.x && loc.y <= pos2.y && loc.z <= pos2.z;
+        return !(world != null && loc.world != null && !world.equals(loc.world)) && loc.x + 0.5 >= pos1.x && loc.y >= pos1.y && loc.z + 0.5 >= pos1.z && loc.x - 1.5 <= pos2.x && loc.y <= pos2.y && loc.z - 1.5 <= pos2.z;
     }
 
     public boolean contains(BlockLocation loc) {
@@ -120,12 +100,31 @@ public class CuboidArea implements StringSerializable, Cloneable {
                 && loc.x <= pos2.x && loc.y <= pos2.y && loc.z <= pos2.z;
     }
 
-    public boolean isBorder(int x, int z) {
-        return (x == pos1.x || z == pos1.z || x == pos2.x || z == pos2.z) && contains(x, z);
-    }
-
     public boolean contains(int x, int z) {
         return pos1.x <= x && pos2.x >= x && pos1.z <= z && pos2.z >= z;
+    }
+
+    public void fix() {
+        int tmp;
+        if (pos1.x > pos2.x) {
+            tmp = pos1.x;
+            pos1.x = pos2.x;
+            pos2.x = tmp;
+        }
+        if (pos1.y > pos2.y) {
+            tmp = pos1.y;
+            pos1.y = pos2.y;
+            pos2.y = tmp;
+        }
+        if (pos1.z > pos2.z) {
+            tmp = pos1.z;
+            pos1.z = pos2.z;
+            pos2.z = tmp;
+        }
+    }
+
+    public boolean isBorder(int x, int z) {
+        return (x == pos1.x || z == pos1.z || x == pos2.x || z == pos2.z) && contains(x, z);
     }
 
     public boolean isDefined() {
@@ -164,10 +163,6 @@ public class CuboidArea implements StringSerializable, Cloneable {
         }
     }
 
-    public static void resetOutlineBlock(Block block, Player plr) {
-        plr.sendBlockChange(block.getLocation(), block.getTypeId(), block.getData());
-    }
-
     public void showOutlineWithBlock(Player plr, BlockData bd) {
         if (world != null && !plr.getWorld().getName().equals(world))
             return;
@@ -194,6 +189,11 @@ public class CuboidArea implements StringSerializable, Cloneable {
 
     public int size() {
         return (pos2.x - pos1.x + 1) * (pos2.y - pos1.y + 1) * (pos2.z - pos1.z + 1);
+    }
+
+    @Override
+    public String toString() {
+        return world == null ? pos1 + " " + pos2 : world + ' ' + pos1 + ' ' + pos2;
     }
 
     public UnlimitedYArea toUnlimitedYArea() {

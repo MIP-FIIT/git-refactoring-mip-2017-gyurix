@@ -15,7 +15,7 @@ public class MultiIntData implements StringSerializable {
         maxValues = new int[ss.length];
         int i = 0;
         for (String s : ss) {
-            String[] d = s.split(":", 2);
+            String[] d = s.split("=", 2);
             int first = Integer.valueOf(d[0]);
             minValues[i] = first;
             if (d.length == 2) {
@@ -45,7 +45,7 @@ public class MultiIntData implements StringSerializable {
             sb.append(',');
             sb.append(minValues[i]);
             if (minValues[i] != maxValues[i]) {
-                sb.append(':');
+                sb.append('=');
                 sb.append(maxValues[i]);
             }
         }
