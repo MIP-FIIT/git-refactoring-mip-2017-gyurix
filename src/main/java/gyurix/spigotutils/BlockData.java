@@ -57,8 +57,8 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
     }
 
     /**
-     * Makes a new Block data from a String, which should have format <itemId|itemName>[:<subType>]
-     * @param in
+     * Makes a new Block data from a String, which should have format [itemId|itemName][:subType]
+     * @param in - The convertable String
      */
     public BlockData(String in) {
         String[] s = in.split(":", 2);
