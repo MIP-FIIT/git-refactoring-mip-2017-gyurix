@@ -8,7 +8,7 @@ public class Sidebar extends ScoreboardBar {
     /**
      * The lines of the Sidebar (0-14)
      */
-    public final ArrayList<SidebarLine> lines = new ArrayList<>();
+    private final ArrayList<SidebarLine> lines = new ArrayList<>();
 
     /**
      * Default sidebar constructor
@@ -41,6 +41,12 @@ public class Sidebar extends ScoreboardBar {
         if (line < 1 || line > 15)
             return;
         lines.get(line - 1).show();
+    }
+
+    public boolean isShown(int line) {
+        if (line < 1 || line > 15)
+            return false;
+        return !lines.get(line - 1).hidden;
     }
 }
 

@@ -119,7 +119,6 @@ public class Animation {
                     }
                 }
             }
-            AnimationAPI.addAnimation(anim);
             return anim;
         }
 

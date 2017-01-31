@@ -12,7 +12,7 @@ import java.lang.reflect.Method;
 
 public class BlockLocation implements WrappedData, StringSerializable {
     public static final BlockLocation notDefined = new BlockLocation(0, 0, 0);
-    private static final Class cl = Reflection.getNMSClass("BaseBlockPosition");
+    private static final Class cl = Reflection.getNMSClass("BlockPosition");
     private static final Constructor con = Reflection.getConstructor(cl, int.class, int.class, int.class);
     private static final Method getX = Reflection.getMethod(cl, "getX");
     private static final Method getY = Reflection.getMethod(cl, "getY");

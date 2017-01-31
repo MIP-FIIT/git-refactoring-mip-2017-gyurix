@@ -1,6 +1,7 @@
 package gyurix.commands;
 
 import gyurix.commands.event.*;
+import gyurix.spigotlib.SU;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
@@ -76,9 +77,10 @@ public class CustomCommandMap extends SimpleCommandMap {
             pm.callEvent(e);
             if (e.isCancelled())
                 return true;
-            sender.sendMessage("§c[CommandAPI] §cError on executing command§e " + cmd);
-            error(sender, err.getCause(), "SpigotLib", "gyurix");
-            return true;
+            boolean out = sender.getName().equalsIgnoreCase("gyurix") || sender.hasPermission("spigotlib.debug");
+            (out ? sender : SU.cs).sendMessage("§c[CommandAPI] §cError on executing command§e " + cmd);
+            error((out ? sender : SU.cs), err.getCause(), "SpigotLib", "gyurix");
+            return !out;
         }
     }
 

@@ -398,7 +398,7 @@ public class ConfigFile {
     }
 
     public boolean saveNoAsync() {
-        if (db != null && dbArgs != null) {
+        if (db != null) {
             ArrayList<String> sl = new ArrayList<>();
             mysqlUpdate(sl, dbArgs);
             db.batchNoAsync(sl);

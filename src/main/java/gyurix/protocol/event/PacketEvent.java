@@ -1,22 +1,19 @@
 package gyurix.protocol.event;
 
 import gyurix.protocol.wrappers.WrappedPacket;
-import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public abstract class PacketEvent
-        extends Event
-        implements Cancellable {
+public abstract class PacketEvent extends Event implements Cancellable {
     private static final HandlerList hl = new HandlerList();
-    private final Channel channel;
+    private final Object channel;
     private final Player player;
     protected Object packet;
     private boolean cancelled;
 
-    public PacketEvent(Channel channel, Player plr, Object packet) {
+    public PacketEvent(Object channel, Player plr, Object packet) {
         this.channel = channel;
         this.packet = packet;
         player = plr;
@@ -26,7 +23,7 @@ public abstract class PacketEvent
         return hl;
     }
 
-    public Channel getChannel() {
+    public Object getChannel() {
         return channel;
     }
 
@@ -36,6 +33,10 @@ public abstract class PacketEvent
 
     public Object getPacket() {
         return packet;
+    }
+
+    public void setPacket(Object packet) {
+        this.packet = packet;
     }
 
     public void setPacket(WrappedPacket packet) {
@@ -56,10 +57,6 @@ public abstract class PacketEvent
 
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
-    }
-
-    public void setPacket(Object packet) {
-        this.packet = packet;
     }
 
     public abstract boolean setPacketData(int var1, Object var2);

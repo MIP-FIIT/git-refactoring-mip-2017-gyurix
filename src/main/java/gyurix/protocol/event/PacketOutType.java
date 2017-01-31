@@ -106,7 +106,7 @@ public enum PacketOutType {
     ArrayList<Field> fs;
     private Constructor emptyConst;
     private boolean supported;
-    
+
     /**
      * Get the type of an outgoing packet
      *
@@ -115,16 +115,22 @@ public enum PacketOutType {
      */
     public static PacketOutType getType(Object packet) {
         Class cl = packet.getClass();
-        String cn = cl.getName();
-        while (cn.contains("$")) {
-            try {
-                cl = Class.forName(cn.substring(0, cn.indexOf("$")));
-                cn = cl.getName();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+        while (cl != null && cl != Object.class) {
+            String cn = cl.getName();
+            while (cn.contains("$")) {
+                try {
+                    cl = Class.forName(cn.substring(0, cn.indexOf("$")));
+                    cn = cl.getName();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
+            PacketOutType type = packets.get(cl);
+            if (type != null)
+                return type;
+            cl = cl.getSuperclass();
         }
-        return packets.get(cl);
+        return null;
     }
 
     /**

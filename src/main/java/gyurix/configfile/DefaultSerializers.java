@@ -108,8 +108,14 @@ public class DefaultSerializers {
             Class cl = parameters.length >= 1 ? (Class) parameters[0] : Object.class;
             ConfigData d = new ConfigData();
             d.listData = new ArrayList<>();
-            for (Object o : Arrays.asList((Object[]) input)) {
-                if (o != null) {
+            if (input instanceof Object[])
+                for (Object o : Arrays.asList((Object[]) input)) {
+                    d.listData.add(serializeObject(o, o.getClass() != cl));
+                }
+            else {
+                int len = Array.getLength(input);
+                for (int i = 0; i < len; ++i) {
+                    Object o = Array.get(input, i);
                     d.listData.add(serializeObject(o, o.getClass() != cl));
                 }
             }

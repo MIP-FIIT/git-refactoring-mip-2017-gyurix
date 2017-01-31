@@ -9,6 +9,7 @@ import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.CHANGE;
@@ -34,9 +35,9 @@ public class SidebarLine {
         bar.currentData.teams.put(team.name, team);
     }
 
-    public void hide() {
+    public boolean hide() {
         if (hidden)
-            return;
+            return false;
         String user = team.players.iterator().next();
         bar.currentData.scores.remove(user);
         for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
@@ -44,6 +45,7 @@ public class SidebarLine {
             SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(CHANGE, bar.currentData.barname, user, number));
         }
         hidden = true;
+        return true;
     }
 
     public void setNumber(int value) {
@@ -73,11 +75,17 @@ public class SidebarLine {
             bar.currentData.scores.remove(oldUser);
         if (hidden)
             return;
-        for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
+        Iterator<Map.Entry<String, BarData>> it = bar.active.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, BarData> e = it.next();
             String pln = e.getKey();
             BarData bd = e.getValue();
             TeamData td = bd.teams.get(team.name);
             Player plr = Bukkit.getPlayer(pln);
+            if (plr == null) {
+                it.remove();
+                continue;
+            }
             team.update(plr, td);
             td.prefix = set[0];
             td.players.clear();
@@ -94,9 +102,9 @@ public class SidebarLine {
         }
     }
 
-    public void show() {
+    public boolean show() {
         if (!hidden)
-            return;
+            return false;
         String user = team.players.iterator().next();
         bar.currentData.scores.put(user, number);
         for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
@@ -104,6 +112,7 @@ public class SidebarLine {
             SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(REMOVE, bar.currentData.barname, user, 0));
         }
         hidden = false;
+        return true;
     }
 }
 

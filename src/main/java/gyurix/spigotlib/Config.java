@@ -20,6 +20,7 @@ public class Config {
     public static boolean disableWeatherChange;
     public static String earlyJoinKickMsg = "§eStarting server...";
     public static int earlyJoinProtection = 30;
+    public static int animationApiThreads;
     @ConfigOptions(comment = "EconomyAPI settings")
     public static EconomyAPI economy = new EconomyAPI();
     @ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")

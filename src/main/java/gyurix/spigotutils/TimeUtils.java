@@ -32,7 +32,7 @@ public class TimeUtils {
      */
     public static String getTime(Player plr, Long time) {
         time /= 1000;
-        if (time == null || time < 0 || time == Long.MAX_VALUE / 1000) {
+        if (time == null || time <= 0 || time >= Long.MAX_VALUE / 1000) {
             return Main.lang.get(plr, "time.never");
         }
         int w = (int) (time / 604800);
@@ -50,7 +50,7 @@ public class TimeUtils {
             sb.append(Main.lang.get(plr, "time." + (h > 1 ? "hp" : "h"), "h", "" + h)).append(sep);
         if (m > 0)
             sb.append(Main.lang.get(plr, "time." + (m > 1 ? "mp" : "m"), "m", "" + m)).append(sep);
-        if (s > 0)
+        if (sb.length() == 0 || s > 0)
             sb.append(Main.lang.get(plr, "time." + (s > 1 ? "sp" : "s"), "s", "" + s)).append(sep);
         return sb.substring(0, sb.length() - sep.length());
     }

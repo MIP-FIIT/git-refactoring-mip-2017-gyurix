@@ -18,6 +18,7 @@ import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.manager.ProtocolImpl;
+import gyurix.protocol.manager.ProtocolLegacyImpl;
 import gyurix.protocol.utils.WrapperFactory;
 import gyurix.scoreboard.ScoreboardAPI;
 import gyurix.spigotlib.Config.PlayerFile;
@@ -86,7 +87,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "5.8";
+    public static final String version = "6.0";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -94,9 +95,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Tells if the server was fully enabled, or not yet. If not yet, then the players are automatically kicked to prevent any damage caused by too early joins.
      */
-    public static boolean fullyEnabled,
-
-    schedulePacketAPI;
+    public static boolean fullyEnabled, schedulePacketAPI;
     public static ConfigFile kf, itemf;
     public static PluginLang lang;
     public static Main pl;
@@ -155,18 +154,18 @@ public class Main extends JavaPlugin implements Listener {
         cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
         AnimationAPI.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
-        if (ver.isAbove(v1_8)) {
-            cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI, CommandAPI...");
-            WrapperFactory.init();
-            PacketInType.init();
-            PacketOutType.init();
-            startPacketAPI();
-            ChatAPI.init();
-            NBTApi.init();
-        } else {
+        //if (ver.isAbove(v1_8)) {
+        cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI, CommandAPI...");
+        WrapperFactory.init();
+        PacketInType.init();
+        PacketOutType.init();
+        startPacketAPI();
+        ChatAPI.init();
+        NBTApi.init();
+        /*} else {
             cs.sendMessage("§2[§aStartup§2]§e Found§c INCOMPATIBLE SERVER VERSION: §e" + ver + "§c, so the following features was NOT active, so they WILL NOT work:" +
                     " §ePacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI§c. The other features might work. For additional help contact the plugins developer, §cgyuriX§e!");
-        }
+        }*/
         cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
         VariableAPI.phaHook = pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
     }
@@ -484,22 +483,20 @@ public class Main extends JavaPlugin implements Listener {
     public void onEnable() {
         SU.pm.registerEvents(new EnchantAPI(), this);
         cm = new CustomCommandMap();
-        if (ver.isAbove(v1_8)) {
-            pm.registerEvents(tp, this);
-            if (schedulePacketAPI) {
-                sch.scheduleSyncDelayedTask(this, new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            tp.init();
-                            cs.sendMessage("§2[§aStartup§2]§a Initialized PacketAPI.");
-                        } catch (Throwable e) {
-                            cs.sendMessage("§cFailed to initialize PacketAPI.");
-                            error(cs, e, "SpigotLib", "gyurix");
-                        }
+        pm.registerEvents(tp, this);
+        if (schedulePacketAPI) {
+            sch.scheduleSyncDelayedTask(this, new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        tp.init();
+                        cs.sendMessage("§2[§aStartup§2]§a Initialized PacketAPI.");
+                    } catch (Throwable e) {
+                        cs.sendMessage("§cFailed to initialize PacketAPI.");
+                        error(cs, e, "SpigotLib", "gyurix");
                     }
-                });
-            }
+                }
+            });
         }
         cs.sendMessage("§2[§aStartup§2]§e Initializing offline player manager...");
         initOfflinePlayerManager();
@@ -634,6 +631,7 @@ public class Main extends JavaPlugin implements Listener {
         UUID uid = plr.getUniqueId();
         savePlayerConfig(uid);
         unloadPlayerConfig(uid);
+        AnimationAPI.stopRunningAnimations(plr);
         if (ver.isAbove(v1_8))
             ScoreboardAPI.playerLeave(plr);
     }
@@ -736,7 +734,10 @@ public class Main extends JavaPlugin implements Listener {
 
     public void startPacketAPI() {
         cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-        tp = new ProtocolImpl();
+        if (Reflection.ver.isAbove(v1_8))
+            tp = new ProtocolImpl();
+        else
+            tp = new ProtocolLegacyImpl();
         tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
         try {
             tp.init();

@@ -30,9 +30,6 @@ public enum PacketInType {
     Flying,
     HeldItemSlot,
     KeepAlive,
-    Look,
-    Position,
-    RelPositionLook,
     ResourcePackStatus,
     SetCreativeSlot,
     Settings,
@@ -68,16 +65,22 @@ public enum PacketInType {
      */
     public static PacketInType getType(Object packet) {
         Class cl = packet.getClass();
-        String cn = cl.getName();
-        while (cn.contains("$")) {
-            try {
-                cl = Class.forName(cn.substring(0, cn.indexOf("$")));
-                cn = cl.getName();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+        while (cl != null && cl != Object.class) {
+            String cn = cl.getName();
+            while (cn.contains("$")) {
+                try {
+                    cl = Class.forName(cn.substring(0, cn.indexOf("$")));
+                    cn = cl.getName();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
+            PacketInType type = packets.get(cl);
+            if (type != null)
+                return type;
+            cl = cl.getSuperclass();
         }
-        return packets.get(cl);
+        return null;
     }
 
     /**

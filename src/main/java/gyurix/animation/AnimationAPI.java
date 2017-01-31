@@ -5,22 +5,23 @@ import gyurix.animation.effects.*;
 import gyurix.api.VariableAPI;
 import gyurix.api.VariableAPI.VariableHandler;
 import gyurix.configfile.ConfigSerialization;
+import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
-public class AnimationAPI {
+public final class AnimationAPI {
+    protected static final ScheduledExecutorService pool = Executors.newScheduledThreadPool(Config.animationApiThreads);
     public static HashMap<String, Class> effects = new HashMap();
-    private static HashMap<Integer, AnimationRunnable> animationsRunnables = new HashMap();
-    private static HashMap<Animation, ArrayList<AnimationRunnable>> runningAnimations = new HashMap();
-
-    public static void addAnimation(Animation animation) {
-        runningAnimations.put(animation, new ArrayList());
-    }
+    private static HashMap<Plugin, HashMap<String, HashSet<AnimationRunnable>>> runningAnimations = new HashMap();
 
     public static void init() {
         effects.put("scroller", ScrollerEffect.class);
@@ -34,37 +35,57 @@ public class AnimationAPI {
         ConfigSerialization.serializers.put(Animation.class, new AnimationSerializer());
     }
 
-    public static boolean removeAnimation(Animation a) {
-        if (a == null) {
-            return false;
-        }
-        for (AnimationRunnable ar : runningAnimations.remove(a)) {
-            if (ar.running == 0) continue;
-            SU.sch.cancelTask(ar.running);
-        }
-        return true;
-    }
-
-    public static void removeAnimationRunnable(AnimationRunnable ar) {
-        if (ar == null) {
+    public static void stopRunningAnimations(Plugin pl) {
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.remove(pl);
+        if (map == null || map.isEmpty())
             return;
+        for (HashSet<AnimationRunnable> ars : map.values()) {
+            for (AnimationRunnable ar : ars)
+                ar.stop();
         }
-        SU.sch.cancelTask(ar.running);
-        runningAnimations.get(ar.a).remove(ar);
     }
 
-    public static AnimationRunnable runAnimation(Animation a, String name, Player plr, Object obj) {
-        ArrayList<AnimationRunnable> list = runningAnimations.get(a);
-        if (list == null) {
-            throw new RuntimeException("The given animation is not registered!");
+    public static void stopRunningAnimations(Plugin pl, Player plr) {
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
+        if (map == null || map.isEmpty())
+            return;
+        HashSet<AnimationRunnable> ars = map.remove(plr.getName());
+        if (ars != null)
+            for (AnimationRunnable ar : ars)
+                ar.stop();
+    }
+
+    public static void stopRunningAnimations(Player plr) {
+        for (HashMap<String, HashSet<AnimationRunnable>> map : runningAnimations.values()) {
+            HashSet<AnimationRunnable> ars = map.remove(plr.getName());
+            if (ars != null)
+                for (AnimationRunnable ar : ars)
+                    if (ar.future != null)
+                        ar.future.cancel(true);
         }
-        AnimationRunnable ar = new AnimationRunnable(a, name, plr, obj);
-        list.add(ar);
+    }
+
+    public static void stopRunningAnimation(AnimationRunnable ar) {
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(ar.pl);
+        if (map == null || map.isEmpty())
+            return;
+        HashSet<AnimationRunnable> ars = map.get(ar.plr.getName());
+        ars.remove(ar);
+        ar.stop();
+    }
+
+    public static AnimationRunnable runAnimation(Plugin pl, Animation a, String name, Player plr, AnimationUpdateListener listener) {
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
+        if (map == null)
+            runningAnimations.put(pl, map = new HashMap<>());
+        HashSet<AnimationRunnable> ars = map.get(plr.getName());
+        if (ars == null)
+            map.put(plr.getName(), ars = new HashSet<>());
+        AnimationRunnable ar = new AnimationRunnable(pl, a, name, plr, listener);
         return ar;
     }
 
-    public static class CustomEffectHandler
-            implements VariableHandler {
+    public static class CustomEffectHandler implements VariableHandler {
         public final String name;
 
         public CustomEffectHandler(String name) {

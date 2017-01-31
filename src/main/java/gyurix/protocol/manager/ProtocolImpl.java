@@ -93,8 +93,8 @@ public class ProtocolImpl extends Protocol {
     }
 
     @Override
-    public Player getPlayer(Channel channel) {
-        NewChannelHandler ch = channel.pipeline().get(NewChannelHandler.class);
+    public Player getPlayer(Object channel) {
+        NewChannelHandler ch = ((Channel) channel).pipeline().get(NewChannelHandler.class);
         if (ch == null)
             return null;
         return ch.player;
@@ -176,10 +176,10 @@ public class ProtocolImpl extends Protocol {
         receivePacket(getChannel(player), packet);
     }
 
-    public void receivePacket(Channel channel, Object packet) {
+    public void receivePacket(Object channel, Object packet) {
         if (packet instanceof WrappedPacket)
             packet = ((WrappedPacket) packet).getVanillaPacket();
-        channel.pipeline().context("encoder").fireChannelRead(packet);
+        ((Channel) channel).pipeline().context("encoder").fireChannelRead(packet);
     }
 
     private void registerChannelHandler() {
@@ -192,7 +192,7 @@ public class ProtocolImpl extends Protocol {
     }
 
     private void registerPlayers() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : SU.srv.getOnlinePlayers()) {
             injectPlayer(player);
         }
     }
@@ -201,12 +201,12 @@ public class ProtocolImpl extends Protocol {
         sendPacket(getChannel(player), packet);
     }
 
-    public void sendPacket(Channel channel, Object packet) {
+    public void sendPacket(Object channel, Object packet) {
         if (channel == null || packet == null)
             return;
         if (packet instanceof WrappedPacket)
             packet = ((WrappedPacket) packet).getVanillaPacket();
-        channel.pipeline().writeAndFlush(packet);
+        ((Channel) channel).pipeline().writeAndFlush(packet);
     }
 
     @Override

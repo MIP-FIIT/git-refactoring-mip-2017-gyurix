@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import static gyurix.scoreboard.ScoreboardDisplayMode.INTEGER;
@@ -188,9 +189,13 @@ public abstract class ScoreboardBar {
     }
 
     public void update() {
-        for (Map.Entry<String, BarData> e : active.entrySet()) {
+        Iterator<Map.Entry<String, BarData>> it = active.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, BarData> e = it.next();
             BarData newBd = currentData.clone();
             Player plr = Bukkit.getPlayer(e.getKey());
+            if (plr == null)
+                it.remove();
             newBd.update(plr, e.getValue());
             e.setValue(newBd);
         }

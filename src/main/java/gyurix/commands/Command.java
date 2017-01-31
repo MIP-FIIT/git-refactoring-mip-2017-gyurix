@@ -7,7 +7,6 @@ import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.economy.EconomyAPI;
 import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.ChatAPI.ChatMessageType;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.bukkit.*;
@@ -479,6 +478,19 @@ public class Command implements StringSerializable {
         return true;
     }
 
+    public static boolean executeAll(Iterable<String> plns, ArrayList<Command> list, Object... args) {
+        if (plns == null || list == null)
+            return false;
+        for (String pln : plns) {
+            Player p = Bukkit.getPlayer(pln);
+            if (p == null)
+                continue;
+            for (Command c : list)
+                c.execute(p, args);
+        }
+        return true;
+    }
+
     public boolean execute(CommandSender sender, Object... args) {
         if (delay < 0)
             return executeNow(sender, args);
@@ -492,14 +504,13 @@ public class Command implements StringSerializable {
         try {
             CustomCommandHandler h = customCommands.get(type);
             if (h == null) {
-                SU.cs.sendMessage("§cCommandAPI: §eHandler for command \"§f" + type + "§e\" was not found.");
+                sender.sendMessage("§cCommandAPI: §eHandler for command \"§f" + type + "§e\" was not found.");
                 return false;
             }
             return h.handle(sender, text, args);
         } catch (Throwable e) {
-            SU.cs.sendMessage("§cCommandAPI: §eError on executing command \"§b" + type + ":§f" + text + "§e\".");
-            if (Config.debug)
-                SU.error(sender, e, "SpigotLib", "gyurix");
+            SU.cs.sendMessage("§cCommandAPI: §eError on executing command \"§b" + type + ":§f" + text + "§e\" for sender " + (sender == null ? "null" : sender.getName()) + ".");
+            SU.error(sender, e, "SpigotLib", "gyurix");
             return false;
         }
     }

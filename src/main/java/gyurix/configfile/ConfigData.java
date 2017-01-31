@@ -248,7 +248,7 @@ public class ConfigData implements Comparable<ConfigData> {
         } else {
             String value = cd.toString();
             if (value != null)
-                l.add("INSERT INTO  `" + dbTable + "` (`uuid`,`key`,`value`) VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", MySQLDatabase.escape(value)) + ')');
+                l.add("INSERT INTO  `" + dbTable + "` VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", MySQLDatabase.escape(value)) + ')');
         }
         DefaultSerializers.leftPad = 0;
     }

@@ -468,7 +468,7 @@ public final class SU {
                 return plr;
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
@@ -789,5 +789,15 @@ public final class SU {
             }
         }
         System.gc();
+    }
+
+    public static Player getPlayer(UUID uid) {
+        Player plr = Bukkit.getPlayer(uid);
+        if (plr != null)
+            return plr;
+        OfflinePlayer op = Bukkit.getOfflinePlayer(uid);
+        if (op != null)
+            return loadPlayer(uid);
+        return null;
     }
 }

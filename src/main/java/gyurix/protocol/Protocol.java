@@ -6,9 +6,7 @@ import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.event.PacketOutEvent;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.manager.PacketCapture;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
-import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
@@ -48,9 +46,8 @@ public abstract class Protocol implements Listener {
                 try {
                     l.onPacketIN(event);
                 } catch (Throwable e) {
-                    SU.cs.sendMessage(pa + "Error on dispatching PacketInEvent for packet type:§c " + pn + "§e.");
-                    if (Config.debug)
-                        e.printStackTrace();
+                    SU.cs.sendMessage(pa + "Error on dispatching PacketInEvent for packet type:§c " + event.getType() + "§e in listener §c" + l.getClass().getName() + "§e:");
+                    SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 }
             }
     }
@@ -72,9 +69,8 @@ public abstract class Protocol implements Listener {
                 try {
                     l.onPacketOUT(event);
                 } catch (Throwable e) {
-                    SU.cs.sendMessage(pa + "Error on dispatching PacketOutEvent for packet type:§c " + pn + "§e.");
-                    if (Config.debug)
-                        e.printStackTrace();
+                    SU.cs.sendMessage(pa + "Error on dispatching PacketOutEvent for packet type:§c " + event.getType() + "§e in listener §c" + l.getClass().getName() + "§e:");
+                    SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 }
             }
     }
@@ -94,7 +90,7 @@ public abstract class Protocol implements Listener {
      * @param plr - The target Player
      * @return The channel of the target Player
      */
-    public abstract Channel getChannel(Player plr);
+    public abstract Object getChannel(Player plr);
 
     /**
      * Returns the Player belonging to the given channel
@@ -102,7 +98,7 @@ public abstract class Protocol implements Listener {
      * @param channel - The target Player
      * @return The Player for who is the given channel belongs to, or null if the Channel and the Player object is not yet matched.
      */
-    public abstract Player getPlayer(Channel channel);
+    public abstract Player getPlayer(Object channel);
 
     /**
      * Initializes the PacketAPI
@@ -123,7 +119,7 @@ public abstract class Protocol implements Listener {
      * @param channel - The sender players channel
      * @param packet  - The sendable packet
      */
-    public abstract void receivePacket(Channel channel, Object packet);
+    public abstract void receivePacket(Object channel, Object packet);
 
     /**
      * Registers an incoming packet listener
@@ -185,7 +181,7 @@ public abstract class Protocol implements Listener {
      * @param channel - The target players channel
      * @param packet  - The sendable packet
      */
-    public abstract void sendPacket(Channel channel, Object packet);
+    public abstract void sendPacket(Object channel, Object packet);
 
     /**
      * Sets the PacketCapturer of a players channel
@@ -209,11 +205,11 @@ public abstract class Protocol implements Listener {
     }
 
     public void unregisterIncomingListener(PacketInListener listener) {
-        inListeners.remove(inListenerTypes.remove(listener));
+        inListeners.get(inListenerTypes.remove(listener)).remove(listener);
     }
 
     public void unregisterOutgoingListener(PacketOutListener listener) {
-        outListeners.remove(outListenerTypes.remove(listener));
+        outListeners.get(outListenerTypes.remove(listener)).remove(listener);
     }
 
     /**

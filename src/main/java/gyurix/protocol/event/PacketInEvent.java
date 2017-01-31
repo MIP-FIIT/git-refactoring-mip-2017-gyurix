@@ -1,13 +1,11 @@
 package gyurix.protocol.event;
 
-import io.netty.channel.Channel;
 import org.bukkit.entity.Player;
 
-public class PacketInEvent
-        extends PacketEvent {
+public class PacketInEvent extends PacketEvent {
     private final PacketInType type;
 
-    public PacketInEvent(Channel channel, Player plr, Object packet) {
+    public PacketInEvent(Object channel, Player plr, Object packet) {
         super(channel, plr, packet);
         type = PacketInType.getType(packet);
     }
