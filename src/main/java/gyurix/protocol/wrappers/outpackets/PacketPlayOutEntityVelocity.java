@@ -29,10 +29,6 @@ public class PacketPlayOutEntityVelocity extends WrappedPacket {
         return PacketOutType.EntityVelocity.newPacket(entityId, velX, velY, velZ);
     }
 
-    public Vector getVelocity() {
-        return new Vector(velX / 8000.0, velY / 8000.0, velZ / 8000.0);
-    }
-
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] d = PacketOutType.EntityVelocity.getPacketData(packet);
@@ -40,5 +36,9 @@ public class PacketPlayOutEntityVelocity extends WrappedPacket {
         velX = (int) d[1];
         velY = (int) d[2];
         velZ = (int) d[3];
+    }
+
+    public Vector getVelocity() {
+        return new Vector(velX / 8000.0, velY / 8000.0, velZ / 8000.0);
     }
 }

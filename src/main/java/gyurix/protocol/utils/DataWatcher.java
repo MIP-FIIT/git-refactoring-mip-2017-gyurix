@@ -125,11 +125,18 @@ public class DataWatcher implements WrappedData, StringSerializable {
             Map<Integer, Object> m = (Map<Integer, Object>) dwField.get(dw);
             for (Entry<Integer, Object> e : map.entrySet()) {
                 Object o = WrapperFactory.unwrap(e.getValue());
+                if (o == null)
+                    continue;
                 try {
-                    m.put(e.getKey(), itc.newInstance(objcon.newInstance(e.getKey(),
-                            serializers.get(o.getClass())), o));
+                    if (Reflection.ver.isAbove(ServerVersion.v1_9)) {
+                        m.put(e.getKey(), itc.newInstance(objcon.newInstance(e.getKey(), serializers.get(o.getClass())), o));
+                    } else {
+                        int type = (int) serializers.get(o.getClass());
+                        m.put(e.getKey(), itc.newInstance(type, e.getKey(), o));
+                    }
                 } catch (Throwable err) {
                     SU.cs.sendMessage("§e[DataWatcher] §cError on getting serializer for object #" + e.getKey() + " - §f" + o + "§c having class §f" + (o == null ? "null" : o.getClass().getSimpleName()));
+                    SU.error(SU.cs, err, "SpigotLib", "gyurix");
                 }
             }
         } catch (Throwable e) {

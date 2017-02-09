@@ -34,8 +34,91 @@ public class ConfigFile {
         load(stream);
     }
 
+    public boolean load(InputStream stream) {
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            while (true) {
+                int id = stream.read();
+                if (id < 0)
+                    break;
+                bos.write(id);
+            }
+            stream.close();
+            return load(new String(bos.toByteArray(), utf8));
+        } catch (Throwable e) {
+            error(cs, e, "SpigotLib", "gyurix");
+        }
+        return false;
+    }
+
+    public boolean load(String in) {
+        ArrayList<ConfigReader> readers = new ArrayList<>();
+        readers.add(new ConfigReader(-1, data));
+        for (String s : in.split("\r?\n")) {
+            int blockLvl = 0;
+            while (s.length() > blockLvl && s.charAt(blockLvl) == ' ')
+                blockLvl++;
+            s = s.substring(blockLvl);
+            int id = readers.size() - 1;
+            if (!s.isEmpty()) {
+                if (s.startsWith("#")) {
+                    readers.get(id).addComment(s.substring(1));
+                } else {
+                    while (readers.get(id).blockLvl > blockLvl) {
+                        readers.remove(id);
+                        id--;
+                    }
+                    readers.get(id).handleInput(readers, s, blockLvl);
+                }
+            }
+        }
+        backup = getString("backup");
+        return true;
+    }
+
+    public String getString(String address) {
+        ConfigData cd = getData(address);
+        return String.valueOf(cd.objectData == null ? cd.stringData : cd.objectData);
+    }
+
+    public ConfigData getData(String address) {
+        String[] parts = address.split(addressSplit);
+        ConfigData d = data;
+        for (String p : parts) {
+            if (p.matches("#\\d+")) {
+                int num = Integer.valueOf(p.substring(1));
+                if (d.listData == null || d.listData.size() <= num)
+                    return new ConfigData("");
+                d = d.listData.get(num);
+            } else {
+                ConfigData key = new ConfigData(p);
+                if (d.mapData == null)
+                    return new ConfigData("");
+                if (d.mapData.containsKey(key)) {
+                    d = d.mapData.get(key);
+                } else {
+                    return new ConfigData("");
+                }
+            }
+        }
+        return d;
+    }
+
     public ConfigFile(File file) {
         load(file);
+    }
+
+    public boolean load(File f) {
+        try {
+            file = f;
+            f.createNewFile();
+            byte[] b = Files.readAllBytes(f.toPath());
+            load(new String(b, utf8));
+            return true;
+        } catch (Throwable e) {
+            error(cs, e, "SpigotLib", "gyurix");
+        }
+        return false;
     }
 
     public ConfigFile(MySQLDatabase mysql) {
@@ -89,67 +172,6 @@ public class ConfigFile {
         return getData(address).deserialize(Byte.class);
     }
 
-    public ConfigData getData(String address) {
-        String[] parts = address.split(addressSplit);
-        ConfigData d = data;
-        for (String p : parts) {
-            if (p.matches("#\\d+")) {
-                int num = Integer.valueOf(p.substring(1));
-                if (d.listData == null || d.listData.size() <= num)
-                    return new ConfigData("");
-                d = d.listData.get(num);
-            } else {
-                ConfigData key = new ConfigData(p);
-                if (d.mapData == null)
-                    return new ConfigData("");
-                if (d.mapData.containsKey(key)) {
-                    d = d.mapData.get(key);
-                } else {
-                    return new ConfigData("");
-                }
-            }
-        }
-        return d;
-    }
-
-    public ConfigData getData(String address, boolean autoCreate) {
-        if (!autoCreate)
-            return getData(address);
-        String[] parts = address.split(addressSplit);
-        ConfigData d = data;
-        for (String p : parts) {
-            if (p.matches("#\\d+")) {
-                int num = Integer.valueOf(p.substring(1));
-                if (d.listData == null) {
-                    d.listData = new ArrayList<>();
-                }
-                while (d.listData.size() <= num) {
-                    d.listData.add(new ConfigData(""));
-                }
-                d = d.listData.get(num);
-            } else {
-                ConfigData key = new ConfigData(p);
-                if (d.mapData == null)
-                    d.mapData = new LinkedHashMap<>();
-                if (d.mapData.containsKey(key)) {
-                    d = d.mapData.get(key);
-                } else {
-                    d.mapData.put(key, d = new ConfigData(""));
-                }
-            }
-        }
-        return d;
-    }
-
-    public ConfigData getData(ConfigData key) {
-        if (data.mapData == null)
-            data.mapData = new LinkedHashMap<>();
-        ConfigData out = data.mapData.get(key);
-        if (out == null)
-            data.mapData.put(key, out = new ConfigData(""));
-        return out;
-    }
-
     public double getDouble(String address) {
         return getData(address).deserialize(Double.class);
     }
@@ -168,11 +190,6 @@ public class ConfigFile {
 
     public short getShort(String address) {
         return getData(address).deserialize(Short.class);
-    }
-
-    public String getString(String address) {
-        ConfigData cd = getData(address);
-        return String.valueOf(cd.objectData == null ? cd.stringData : cd.objectData);
     }
 
     public ArrayList<String> getStringKeyList() {
@@ -199,61 +216,6 @@ public class ConfigFile {
         return out;
     }
 
-    public boolean load(InputStream stream) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            while (true) {
-                int id = stream.read();
-                if (id < 0)
-                    break;
-                bos.write(id);
-            }
-            stream.close();
-            return load(new String(bos.toByteArray(), utf8));
-        } catch (Throwable e) {
-            error(cs, e, "SpigotLib", "gyurix");
-        }
-        return false;
-    }
-
-    public boolean load(String in) {
-        ArrayList<ConfigReader> readers = new ArrayList<>();
-        readers.add(new ConfigReader(-1, data));
-        for (String s : in.split("\r?\n")) {
-            int blockLvl = 0;
-            while (s.length() > blockLvl && s.charAt(blockLvl) == ' ')
-                blockLvl++;
-            s = s.substring(blockLvl);
-            int id = readers.size() - 1;
-            if (!s.isEmpty()) {
-                if (s.startsWith("#")) {
-                    readers.get(id).addComment(s.substring(1));
-                } else {
-                    while (readers.get(id).blockLvl > blockLvl) {
-                        readers.remove(id);
-                        id--;
-                    }
-                    readers.get(id).handleInput(readers, s, blockLvl);
-                }
-            }
-        }
-        backup = getString("backup");
-        return true;
-    }
-
-    public boolean load(File f) {
-        try {
-            file = f;
-            f.createNewFile();
-            byte[] b = Files.readAllBytes(f.toPath());
-            load(new String(b, utf8));
-            return true;
-        } catch (Throwable e) {
-            error(cs, e, "SpigotLib", "gyurix");
-        }
-        return false;
-    }
-
     public void mysqlLoad(String key, String args) {
         String q = "SELECT `" + dbKey + "`, `" + dbValue + "` FROM " + dbTable + " WHERE " + args;
         try {
@@ -271,6 +233,26 @@ public class ConfigFile {
         }
     }
 
+    public void setData(String address, ConfigData cd) {
+        String[] parts = address.split(addressSplit);
+        ConfigData last = data;
+        ConfigData lastKey = data;
+        ConfigData d = data;
+        for (String p : parts) {
+            ConfigData key = new ConfigData(p);
+            if (d.mapData == null)
+                d.mapData = new LinkedHashMap<>();
+            last = d;
+            lastKey = key;
+            if (d.mapData.containsKey(key)) {
+                d = d.mapData.get(key);
+            } else {
+                d.mapData.put(key, d = new ConfigData(""));
+            }
+        }
+        last.mapData.put(lastKey, cd);
+    }
+
     public void mysqlLoad() {
         String q = "SELECT `" + dbKey + "`, `" + dbValue + "` FROM " + dbTable;
         try {
@@ -286,15 +268,6 @@ public class ConfigFile {
             error(cs, e, "SpigotLib", "gyurix");
             e.printStackTrace();
         }
-    }
-
-    public void mysqlUpdate(ArrayList<String> l, String args) {
-        if (dbTable == null)
-            return;
-        l.add("DELETE FROM " + dbTable + (dbArgs == null ? "" : (" WHERE " + dbArgs)));
-        if (args == null)
-            args = dbArgs == null ? "'<key>','<value>'" : dbArgs.substring(dbArgs.indexOf('=') + 1) + ",'<key>','<value>'";
-        data.saveToMySQL(l, dbTable, args, "");
     }
 
     public boolean reload() {
@@ -356,16 +329,21 @@ public class ConfigFile {
         return false;
     }
 
-    public boolean save(OutputStream out) {
+    public void mysqlUpdate(ArrayList<String> l, String args) {
+        if (dbTable == null)
+            return;
+        l.add("DELETE FROM " + dbTable + (dbArgs == null ? "" : (" WHERE " + dbArgs)));
+        if (args == null)
+            args = dbArgs == null ? "'<key>','<value>'" : dbArgs.substring(dbArgs.indexOf('=') + 1) + ",'<key>','<value>'";
+        data.saveToMySQL(l, dbTable, args, "");
+    }
+
+    public String toString() {
         try {
-            byte[] data = toString().getBytes(utf8);
-            out.write(data);
-            out.flush();
-            out.close();
-            return true;
+            String s = data.toString().replace("\n  ", "\n").replaceAll("\n +#", "\n#");
+            return s.startsWith("\n") ? s.substring(1) : s;
         } catch (Throwable e) {
-            e.printStackTrace();
-            return false;
+            return "";
         }
     }
 
@@ -397,6 +375,19 @@ public class ConfigFile {
         }
     }
 
+    public boolean save(OutputStream out) {
+        try {
+            byte[] data = toString().getBytes(utf8);
+            out.write(data);
+            out.flush();
+            out.close();
+            return true;
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public boolean saveNoAsync() {
         if (db != null) {
             ArrayList<String> sl = new ArrayList<>();
@@ -423,28 +414,37 @@ public class ConfigFile {
         data.types = newCd.types;
     }
 
-    public void setData(String address, ConfigData cd) {
-        String[] parts = address.split(addressSplit);
-        ConfigData last = data;
-        ConfigData lastKey = data;
-        ConfigData d = data;
-        for (String p : parts) {
-            ConfigData key = new ConfigData(p);
-            if (d.mapData == null)
-                d.mapData = new LinkedHashMap<>();
-            last = d;
-            lastKey = key;
-            if (d.mapData.containsKey(key)) {
-                d = d.mapData.get(key);
-            } else {
-                d.mapData.put(key, d = new ConfigData(""));
-            }
-        }
-        last.mapData.put(lastKey, cd);
-    }
-
     public void setObject(String address, Object obj) {
         getData(address, true).objectData = obj;
+    }
+
+    public ConfigData getData(String address, boolean autoCreate) {
+        if (!autoCreate)
+            return getData(address);
+        String[] parts = address.split(addressSplit);
+        ConfigData d = data;
+        for (String p : parts) {
+            if (p.matches("#\\d+")) {
+                int num = Integer.valueOf(p.substring(1));
+                if (d.listData == null) {
+                    d.listData = new ArrayList<>();
+                }
+                while (d.listData.size() <= num) {
+                    d.listData.add(new ConfigData(""));
+                }
+                d = d.listData.get(num);
+            } else {
+                ConfigData key = new ConfigData(p);
+                if (d.mapData == null)
+                    d.mapData = new LinkedHashMap<>();
+                if (d.mapData.containsKey(key)) {
+                    d = d.mapData.get(key);
+                } else {
+                    d.mapData.put(key, d = new ConfigData(""));
+                }
+            }
+        }
+        return d;
     }
 
     public void setString(String adress, String value) {
@@ -469,6 +469,15 @@ public class ConfigFile {
         return new ConfigFile(getData(key));
     }
 
+    public ConfigData getData(ConfigData key) {
+        if (data.mapData == null)
+            data.mapData = new LinkedHashMap<>();
+        ConfigData out = data.mapData.get(key);
+        if (out == null)
+            data.mapData.put(key, out = new ConfigData(""));
+        return out;
+    }
+
     public ConfigFile subConfig(int id) {
         try {
             return new ConfigFile(data.listData.get(id));
@@ -476,14 +485,5 @@ public class ConfigFile {
             error(cs, e, "SpigotLib", "gyurix");
         }
         return null;
-    }
-
-    public String toString() {
-        try {
-            String s = data.toString().replace("\n  ", "\n").replaceAll("\n +#", "\n#");
-            return s.startsWith("\n") ? s.substring(1) : s;
-        } catch (Throwable e) {
-            return "";
-        }
     }
 }

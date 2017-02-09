@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.HashMap;
 
 public class Config {
+    public static int animationApiThreads;
     public static HashMap<BlockData, ItemStack> blocks = new HashMap<>();
     public static BungeeAPI bungee;
     @ConfigOptions(comment = "Debug mode, if disabled, then some of the stack traces won't be visible in console.")
@@ -20,7 +21,6 @@ public class Config {
     public static boolean disableWeatherChange;
     public static String earlyJoinKickMsg = "§eStarting server...";
     public static int earlyJoinProtection = 30;
-    public static int animationApiThreads;
     @ConfigOptions(comment = "EconomyAPI settings")
     public static EconomyAPI economy = new EconomyAPI();
     @ConfigOptions(comment = "Hook to the clips PlaceholderAPI in order to obtain more variables.")

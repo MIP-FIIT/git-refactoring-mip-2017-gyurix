@@ -10,8 +10,8 @@ public class PacketPlayOutEntityStatus extends WrappedPacket {
     public int entityId;
     /**
      * 1 	Sent when resetting a mob spawn minecart's timer — appears to be unused by the client 2 	Living Entity hurt 3
-     * 	Living Entity dead 4 	Iron Golem throwing up arms 6 	Wolf/Ocelot/Horse taming — Spawn “heart” particles 7
-     * 	Wolf/Ocelot/Horse tamed — Spawn “smoke” particles 8 	Wolf shaking water — Trigger the shaking animation 9 	(of
+     * Living Entity dead 4 	Iron Golem throwing up arms 6 	Wolf/Ocelot/Horse taming — Spawn “heart” particles 7
+     * Wolf/Ocelot/Horse tamed — Spawn “smoke” particles 8 	Wolf shaking water — Trigger the shaking animation 9 	(of
      * self) Eating accepted by server 10 	Sheep eating grass or play TNT ignite sound 11 	Iron Golem handing over a
      * rose 12 	Villager mating — Spawn “heart” particles 13 	Spawn particles indicating that a villager is angry and
      * seeking revenge 14 	Spawn happy particles near a villager 15 	Witch animation — Spawn “magic” particles 16 	Play

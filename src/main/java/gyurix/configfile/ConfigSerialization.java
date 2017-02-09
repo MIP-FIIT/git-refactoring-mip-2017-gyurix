@@ -93,7 +93,9 @@ public class ConfigSerialization {
         String comment() default "";
 
         boolean compress() default false;
+
         String defaultValue() default "null";
+
         boolean serialize() default true;
     }
 

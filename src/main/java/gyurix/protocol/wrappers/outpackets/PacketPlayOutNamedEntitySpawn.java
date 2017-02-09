@@ -33,6 +33,14 @@ public class PacketPlayOutNamedEntitySpawn extends WrappedPacket {
         meta = data;
     }
 
+    public void setLocation(LocationData loc) {
+        x = loc.x;
+        y = loc.y;
+        z = loc.z;
+        yaw = (byte) (loc.yaw / 360.0 * 256);
+        pitch = (byte) (loc.pitch / 360.0 * 256);
+    }
+
     @Override
     public Object getVanillaPacket() {
         if (Reflection.ver == ServerVersion.v1_9)
@@ -58,13 +66,5 @@ public class PacketPlayOutNamedEntitySpawn extends WrappedPacket {
         yaw = (byte) d[5];
         pitch = (byte) d[6];
         meta = new DataWatcher(d[7]);
-    }
-
-    public void setLocation(LocationData loc) {
-        x = loc.x;
-        y = loc.y;
-        z = loc.z;
-        yaw = (byte) (loc.yaw / 360.0 * 256);
-        pitch = (byte) (loc.pitch / 360.0 * 256);
     }
 }

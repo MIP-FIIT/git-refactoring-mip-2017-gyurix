@@ -20,10 +20,6 @@ public class PacketInEvent extends PacketEvent {
         type.fillPacket(getPacket(), data);
     }
 
-    public PacketInType getType() {
-        return type;
-    }
-
     @Override
     public boolean setPacketData(int id, Object o) {
         try {
@@ -33,6 +29,10 @@ public class PacketInEvent extends PacketEvent {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public PacketInType getType() {
+        return type;
     }
 }
 

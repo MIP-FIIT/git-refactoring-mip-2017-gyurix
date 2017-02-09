@@ -48,32 +48,6 @@ public class EnchantAPI implements Listener {
         return true;
     }
 
-    public static ItemStack fixItem(ItemStack is) {
-        if (is == null || is.getType() == Material.AIR)
-            return is;
-        ItemMeta meta = is.getItemMeta();
-        List<String> lore = meta.getLore();
-        if (lore == null)
-            lore = new ArrayList<>();
-        int addId = 0;
-        for (Map.Entry<Enchantment, Integer> e : is.getEnchantments().entrySet()) {
-            Enchantment ec = e.getKey();
-            if (!vanillaEnchantIds.contains(ec.getId())) {
-                String ll = "§7" + ec.getName() + " ";
-                ArrayList<String> newLore = new ArrayList<>();
-                for (String s : lore) {
-                    if (!s.startsWith(ll))
-                        newLore.add(s);
-                }
-                newLore.add(addId++, ll + RomanNumsAPI.toRoman(e.getValue()));
-                lore = newLore;
-            }
-        }
-        meta.setLore(lore);
-        is.setItemMeta(meta);
-        return is;
-    }
-
     @EventHandler
     public static void onAnvilPrepare(final PrepareAnvilEvent e) {
         AnvilInventory inv = e.getInventory();
@@ -104,6 +78,32 @@ public class EnchantAPI implements Listener {
                 ((Player) e.getView().getPlayer()).updateInventory();
             }
         });
+    }
+
+    public static ItemStack fixItem(ItemStack is) {
+        if (is == null || is.getType() == Material.AIR)
+            return is;
+        ItemMeta meta = is.getItemMeta();
+        List<String> lore = meta.getLore();
+        if (lore == null)
+            lore = new ArrayList<>();
+        int addId = 0;
+        for (Map.Entry<Enchantment, Integer> e : is.getEnchantments().entrySet()) {
+            Enchantment ec = e.getKey();
+            if (!vanillaEnchantIds.contains(ec.getId())) {
+                String ll = "§7" + ec.getName() + " ";
+                ArrayList<String> newLore = new ArrayList<>();
+                for (String s : lore) {
+                    if (!s.startsWith(ll))
+                        newLore.add(s);
+                }
+                newLore.add(addId++, ll + RomanNumsAPI.toRoman(e.getValue()));
+                lore = newLore;
+            }
+        }
+        meta.setLore(lore);
+        is.setItemMeta(meta);
+        return is;
     }
 
     public static boolean removeEnchant(Enchantment enchantment) {

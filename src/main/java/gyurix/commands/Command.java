@@ -467,30 +467,6 @@ public class Command implements StringSerializable {
         return true;
     }
 
-    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
-        if (list == null || pls == null)
-            return false;
-        for (Player p : pls) {
-            if (p != plr)
-                for (Command c : list)
-                    c.execute(p, args);
-        }
-        return true;
-    }
-
-    public static boolean executeAll(Iterable<String> plns, ArrayList<Command> list, Object... args) {
-        if (plns == null || list == null)
-            return false;
-        for (String pln : plns) {
-            Player p = Bukkit.getPlayer(pln);
-            if (p == null)
-                continue;
-            for (Command c : list)
-                c.execute(p, args);
-        }
-        return true;
-    }
-
     public boolean execute(CommandSender sender, Object... args) {
         if (delay < 0)
             return executeNow(sender, args);
@@ -513,6 +489,30 @@ public class Command implements StringSerializable {
             SU.error(sender, e, "SpigotLib", "gyurix");
             return false;
         }
+    }
+
+    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
+        if (list == null || pls == null)
+            return false;
+        for (Player p : pls) {
+            if (p != plr)
+                for (Command c : list)
+                    c.execute(p, args);
+        }
+        return true;
+    }
+
+    public static boolean executeAll(Iterable<String> plns, ArrayList<Command> list, Object... args) {
+        if (plns == null || list == null)
+            return false;
+        for (String pln : plns) {
+            Player p = Bukkit.getPlayer(pln);
+            if (p == null)
+                continue;
+            for (Command c : list)
+                c.execute(p, args);
+        }
+        return true;
     }
 
     @Override

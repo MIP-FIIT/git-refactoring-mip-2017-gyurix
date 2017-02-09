@@ -22,22 +22,6 @@ public class NBTList
         loadFromNMS(tag);
     }
 
-    public NBTList addAll(Collection col) {
-        for (Object o : col) {
-            if (o == null) continue;
-            list.add(NBTTag.make(o));
-        }
-        return this;
-    }
-
-    public NBTList addAll(Object... col) {
-        for (Object o : col) {
-            if (o == null) continue;
-            list.add(NBTTag.make(o));
-        }
-        return this;
-    }
-
     @Override
     public void loadFromNMS(Object tag) {
         try {
@@ -75,6 +59,22 @@ public class NBTList
             e.printStackTrace();
             return null;
         }
+    }
+
+    public NBTList addAll(Collection col) {
+        for (Object o : col) {
+            if (o == null) continue;
+            list.add(NBTTag.make(o));
+        }
+        return this;
+    }
+
+    public NBTList addAll(Object... col) {
+        for (Object o : col) {
+            if (o == null) continue;
+            list.add(NBTTag.make(o));
+        }
+        return this;
     }
 
     public String toString() {

@@ -9,7 +9,7 @@ import gyurix.protocol.wrappers.outpackets.PacketPlayOutMap;
  */
 public class MapPacketCanceler implements PacketOutListener {
     @Override
-    public void onPacketOUT (PacketOutEvent e) {
+    public void onPacketOUT(PacketOutEvent e) {
         PacketPlayOutMap p = new PacketPlayOutMap();
         p.loadVanillaPacket(e.getPacket());
         if (p.mapId == 1 && (p.x != 128 || p.z != 128))

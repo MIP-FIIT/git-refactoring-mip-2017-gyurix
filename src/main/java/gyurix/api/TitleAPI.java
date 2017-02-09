@@ -48,20 +48,7 @@ public class TitleAPI {
         setTitle(title, plrs);
     }
 
-    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... plrs) {
-        setShowTime(fadeIn, showtime, fadeOut, plrs);
-        setSubTitle(NullUtils.to0(subtitle), plrs);
-        setTitle(title, plrs);
-    }
-
     public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> plrs) {
-        Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
-        for (Player p : plrs) {
-            SU.tp.sendPacket(p, packet);
-        }
-    }
-
-    public static void setShowTime(int fadein, int show, int fadeout, Player... plrs) {
         Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
@@ -75,15 +62,28 @@ public class TitleAPI {
         }
     }
 
-    public static void setSubTitle(String subtitle, Player... plrs) {
-        Object packet = new PacketPlayOutTitle(TitleAction.SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
+    public static void setTitle(String title, Collection<? extends Player> plrs) {
+        Object packet = new PacketPlayOutTitle(TitleAction.TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
         }
     }
 
-    public static void setTitle(String title, Collection<? extends Player> plrs) {
-        Object packet = new PacketPlayOutTitle(TitleAction.TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... plrs) {
+        setShowTime(fadeIn, showtime, fadeOut, plrs);
+        setSubTitle(NullUtils.to0(subtitle), plrs);
+        setTitle(title, plrs);
+    }
+
+    public static void setShowTime(int fadein, int show, int fadeout, Player... plrs) {
+        Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
+        for (Player p : plrs) {
+            SU.tp.sendPacket(p, packet);
+        }
+    }
+
+    public static void setSubTitle(String subtitle, Player... plrs) {
+        Object packet = new PacketPlayOutTitle(TitleAction.SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
         }

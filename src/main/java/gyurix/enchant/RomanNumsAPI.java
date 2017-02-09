@@ -41,6 +41,15 @@ public class RomanNumsAPI {
         reversed = romanNums.descendingMap();
     }
 
+    public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+        while (true) {
+            System.out.print(">>> ");
+            int out = fromRoman(scan.nextLine());
+            System.out.println(out);
+        }
+    }
+
     /**
      * Convert the given roman number to latin
      *
@@ -59,15 +68,6 @@ public class RomanNumsAPI {
             }
         }
         return out;
-    }
-
-    public static void main(String[] args) {
-        Scanner scan = new Scanner(System.in);
-        while (true) {
-            System.out.print(">>> ");
-            int out = fromRoman(scan.nextLine());
-            System.out.println(out);
-        }
     }
 
     /**

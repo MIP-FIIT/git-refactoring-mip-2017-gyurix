@@ -27,6 +27,14 @@ public class PacketPlayOutEntityTeleport extends WrappedPacket {
         setLocation(loc);
     }
 
+    public void setLocation(LocationData loc) {
+        x = loc.x;
+        y = loc.y;
+        z = loc.z;
+        yaw = (byte) (loc.yaw / 360.0 * 256);
+        pitch = (byte) (loc.pitch / 360.0 * 256);
+    }
+
     @Override
     public Object getVanillaPacket() {
         if (Reflection.ver == ServerVersion.v1_8)
@@ -51,13 +59,5 @@ public class PacketPlayOutEntityTeleport extends WrappedPacket {
         yaw = (byte) d[4];
         pitch = (byte) d[5];
         onGround = (boolean) d[6];
-    }
-
-    public void setLocation(LocationData loc) {
-        x = loc.x;
-        y = loc.y;
-        z = loc.z;
-        yaw = (byte) (loc.yaw / 360.0 * 256);
-        pitch = (byte) (loc.pitch / 360.0 * 256);
     }
 }

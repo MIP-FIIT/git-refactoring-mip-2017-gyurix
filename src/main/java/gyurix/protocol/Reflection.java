@@ -29,70 +29,6 @@ public class Reflection {
     public static ServerVersion ver = ServerVersion.UNKNOWN;
     public static String version;
 
-    /**
-     * Compares two arrays of classes
-     *
-     * @param l1 - The first array of classes
-     * @param l2 - The second array of classes
-     * @return True if the classes matches in the 2 arrays, false otherwise
-     */
-    public static boolean classArrayCompare(Class[] l1, Class[] l2) {
-        if (l1.length != l2.length) {
-            return false;
-        }
-        for (int i = 0; i < l1.length; i++) {
-            if (l1[i] != l2[i])
-                return false;
-        }
-        return true;
-    }
-
-    /**
-     * Compares two arrays of classes
-     *
-     * @param l1 - The first array of classes
-     * @param l2 - The second array of classes
-     * @return True if each of the second arrays classes is assignable from the first arrays classes
-     */
-    public static boolean classArrayCompareLight(Class[] l1, Class[] l2) {
-        if (l1.length != l2.length) {
-            return false;
-        }
-        for (int i = 0; i < l1.length; i++) {
-            if (!Primitives.wrap(l2[i]).isAssignableFrom(Primitives.wrap(l1[i])))
-                return false;
-        }
-        return true;
-    }
-
-    public static <T> T convert(Object in, Class<T> to) {
-        if (in == null)
-            return null;
-        to = Primitives.wrap(to);
-        String inS = in.getClass().isEnum() ? ((Enum) in).name() : in.toString();
-        try {
-            Constructor<T> con = to.getConstructor(String.class);
-            con.setAccessible(true);
-            return con.newInstance(inS);
-        } catch (Throwable e) {
-        }
-        try {
-            Method m = to.getMethod("valueOf", String.class);
-            m.setAccessible(true);
-            return (T) m.invoke(null, inS);
-        } catch (Throwable e) {
-        }
-        try {
-            Method m = to.getMethod("fromString", String.class);
-            m.setAccessible(true);
-            return (T) m.invoke(null, inS);
-        } catch (Throwable e) {
-        }
-        if (Config.debug)
-            SU.cs.sendMessage(ra + "§cFailed to convert §f" + in + "§e(§f" + in.getClass().getName() + "§e)§c to class §f" + to.getName() + "§c.");
-        return null;
-    }
-
     public static Field[] getAllFields(Class c) {
         Field[] fs = allFieldCache.get(c);
         if (fs != null)
@@ -110,23 +46,16 @@ public class Reflection {
         return oa;
     }
 
-    /**
-     * Gets a class or an inner class
-     *
-     * @param className - The name of the gettable class
-     * @return The found class or null if it was not found.
-     */
-    public static Class getClass(String className) {
+    public static Field setFieldAccessible(Field f) {
         try {
-            String[] classNames = className.split("\\$");
-            Class c = Class.forName(classNames[0]);
-            for (int i = 1; i < classNames.length; i++)
-                c = getInnerClass(c, classNames[i]);
-            return c;
+            f.setAccessible(true);
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            int modifiers = modifiersField.getInt(f);
+            modifiersField.setInt(f, modifiers & -17);
+            return f;
         } catch (Throwable e) {
         }
-        if (Config.debug)
-            SU.cs.sendMessage(ra + "Class §f" + className + "§e was not found.");
         return null;
     }
 
@@ -201,14 +130,6 @@ public class Reflection {
         return obj;
     }
 
-    public static Object getEnum(Class enumType, String value) {
-        try {
-            return enumType.getMethod("valueOf", String.class).invoke(null, value);
-        } catch (Throwable e) {
-            return null;
-        }
-    }
-
     public static Field getField(Class clazz, String name) {
         try {
             return setFieldAccessible(clazz.getDeclaredField(name));
@@ -217,48 +138,57 @@ public class Reflection {
         }
     }
 
-    public static Object getFieldData(Class clazz, String name) {
-        return getFieldData(clazz, name, null);
-    }
-
-    public static Object getFieldData(Class clazz, String name, Object object) {
-        try {
-            return setFieldAccessible(clazz.getDeclaredField(name)).get(object);
-        } catch (Throwable e) {
-            return null;
+    public static Method getSimiliarMethod(Class ocl, String name, Class[] classes) {
+        Method m = getMethod(ocl, name, classes);
+        if (m == null) {
+            m = getMethod(ocl, "get" + name, classes);
+            if (m == null)
+                m = getMethod(ocl, "is" + name, classes);
         }
-    }
-
-    public static Field getFirstFieldOfType(Class clazz, Class type) {
-        try {
-            for (Field f : clazz.getDeclaredFields()) {
-                if (f.getType().equals(type))
-                    return setFieldAccessible(f);
+        if (m != null)
+            return m;
+        name = name.toLowerCase();
+        Class origCl = ocl;
+        while (ocl != null) {
+            for (Method m2 : ocl.getDeclaredMethods()) {
+                if (m2.getParameterTypes().length != classes.length)
+                    continue;
+                String mn = m2.getName().toLowerCase();
+                if (mn.endsWith(name) && (mn.startsWith(name) || mn.startsWith("get") || mn.startsWith("is")))
+                    return m2;
             }
-        } catch (Throwable e) {
+            ocl = ocl.getSuperclass();
         }
+        SU.cs.sendMessage(ra + "§cFailed to get similiar method to §e" + name + "§c in class §e" + origCl.getName() + "§c.");
         return null;
     }
 
-    public static Class getInnerClass(Class cl, String name) {
+    public static <T> T convert(Object in, Class<T> to) {
+        if (in == null)
+            return null;
+        to = Primitives.wrap(to);
+        String inS = in.getClass().isEnum() ? ((Enum) in).name() : in.toString();
         try {
-            name = cl.getName() + "$" + name;
-            for (Class c : cl.getDeclaredClasses())
-                if (c.getName().equals(name))
-                    return c;
+            Constructor<T> con = to.getConstructor(String.class);
+            con.setAccessible(true);
+            return con.newInstance(inS);
         } catch (Throwable e) {
-            e.printStackTrace();
         }
+        try {
+            Method m = to.getMethod("valueOf", String.class);
+            m.setAccessible(true);
+            return (T) m.invoke(null, inS);
+        } catch (Throwable e) {
+        }
+        try {
+            Method m = to.getMethod("fromString", String.class);
+            m.setAccessible(true);
+            return (T) m.invoke(null, inS);
+        } catch (Throwable e) {
+        }
+        if (Config.debug)
+            SU.cs.sendMessage(ra + "§cFailed to convert §f" + in + "§e(§f" + in.getClass().getName() + "§e)§c to class §f" + to.getName() + "§c.");
         return null;
-    }
-
-    public static Field getLastFieldOfType(Class clazz, Class type) {
-        Field field = null;
-        for (Field f : clazz.getDeclaredFields()) {
-            if (f.getType().equals(type))
-                field = f;
-        }
-        return setFieldAccessible(field);
     }
 
     public static Method getMethod(Class cl, String name, Class... args) {
@@ -293,6 +223,115 @@ public class Reflection {
         return null;
     }
 
+    private static Method methodCheckNoArg(Class cl, String name) {
+        try {
+            return cl.getDeclaredMethod(name);
+        } catch (Throwable e) {
+            Method[] mtds = cl.getDeclaredMethods();
+            for (Method met : mtds)
+                if (met.getParameterTypes().length == 0 && met.getName().equalsIgnoreCase(name))
+                    return met;
+            return null;
+        }
+    }
+
+    private static Method methodCheck(Class cl, String name, Class[] args) {
+        try {
+            return cl.getDeclaredMethod(name, args);
+        } catch (Throwable e) {
+            Method[] mtds = cl.getDeclaredMethods();
+            for (Method met : mtds)
+                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equals(name))
+                    return met;
+            for (Method met : mtds)
+                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equals(name))
+                    return met;
+            for (Method met : mtds)
+                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
+                    return met;
+            for (Method met : mtds)
+                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
+                    return met;
+            return null;
+        }
+    }
+
+    /**
+     * Compares two arrays of classes
+     *
+     * @param l1 - The first array of classes
+     * @param l2 - The second array of classes
+     * @return True if the classes matches in the 2 arrays, false otherwise
+     */
+    public static boolean classArrayCompare(Class[] l1, Class[] l2) {
+        if (l1.length != l2.length) {
+            return false;
+        }
+        for (int i = 0; i < l1.length; i++) {
+            if (l1[i] != l2[i])
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Compares two arrays of classes
+     *
+     * @param l1 - The first array of classes
+     * @param l2 - The second array of classes
+     * @return True if each of the second arrays classes is assignable from the first arrays classes
+     */
+    public static boolean classArrayCompareLight(Class[] l1, Class[] l2) {
+        if (l1.length != l2.length) {
+            return false;
+        }
+        for (int i = 0; i < l1.length; i++) {
+            if (!Primitives.wrap(l2[i]).isAssignableFrom(Primitives.wrap(l1[i])))
+                return false;
+        }
+        return true;
+    }
+
+    public static Object getEnum(Class enumType, String value) {
+        try {
+            return enumType.getMethod("valueOf", String.class).invoke(null, value);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    public static Object getFieldData(Class clazz, String name) {
+        return getFieldData(clazz, name, null);
+    }
+
+    public static Object getFieldData(Class clazz, String name, Object object) {
+        try {
+            return setFieldAccessible(clazz.getDeclaredField(name)).get(object);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    public static Field getFirstFieldOfType(Class clazz, Class type) {
+        try {
+            for (Field f : clazz.getDeclaredFields()) {
+                if (f.getType().equals(type))
+                    return setFieldAccessible(f);
+            }
+        } catch (Throwable e) {
+        }
+        return null;
+    }
+
+    public static Field getLastFieldOfType(Class clazz, Class type) {
+        Field field = null;
+        for (Field f : clazz.getDeclaredFields()) {
+            if (f.getType().equals(type))
+                field = f;
+        }
+        return setFieldAccessible(field);
+    }
+
     public static Class getNMSClass(String className) {
         String newName = nmsRenames.get(className);
         if (newName != null)
@@ -300,33 +339,40 @@ public class Reflection {
         return getClass("net.minecraft.server." + version + className);
     }
 
-    public static Class getOBCClass(String className) {
-        return getClass("org.bukkit.craftbukkit." + version + className);
+    /**
+     * Gets a class or an inner class
+     *
+     * @param className - The name of the gettable class
+     * @return The found class or null if it was not found.
+     */
+    public static Class getClass(String className) {
+        try {
+            String[] classNames = className.split("\\$");
+            Class c = Class.forName(classNames[0]);
+            for (int i = 1; i < classNames.length; i++)
+                c = getInnerClass(c, classNames[i]);
+            return c;
+        } catch (Throwable e) {
+        }
+        if (Config.debug)
+            SU.cs.sendMessage(ra + "Class §f" + className + "§e was not found.");
+        return null;
     }
 
-    public static Method getSimiliarMethod(Class ocl, String name, Class[] classes) {
-        Method m = getMethod(ocl, name, classes);
-        if (m == null) {
-            m = getMethod(ocl, "get" + name, classes);
-            if (m == null)
-                m = getMethod(ocl, "is" + name, classes);
+    public static Class getInnerClass(Class cl, String name) {
+        try {
+            name = cl.getName() + "$" + name;
+            for (Class c : cl.getDeclaredClasses())
+                if (c.getName().equals(name))
+                    return c;
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-        if (m != null)
-            return m;
-        name = name.toLowerCase();
-        Class origCl = ocl;
-        while (ocl != null) {
-            for (Method m2 : ocl.getDeclaredMethods()) {
-                if (m2.getParameterTypes().length != classes.length)
-                    continue;
-                String mn = m2.getName().toLowerCase();
-                if (mn.endsWith(name) && (mn.startsWith(name) || mn.startsWith("get") || mn.startsWith("is")))
-                    return m2;
-            }
-            ocl = ocl.getSuperclass();
-        }
-        SU.cs.sendMessage(ra + "§cFailed to get similiar method to §e" + name + "§c in class §e" + origCl.getName() + "§c.");
         return null;
+    }
+
+    public static Class getOBCClass(String className) {
+        return getClass("org.bukkit.craftbukkit." + version + className);
     }
 
     public static Class getUtilClass(String className) {
@@ -355,39 +401,6 @@ public class Reflection {
             nmsRenames.put("PacketPlayOutRelEntityMoveLook", "PacketPlayOutEntity$PacketPlayOutRelEntityMoveLook");
         }
         version += ".";
-    }
-
-    private static Method methodCheck(Class cl, String name, Class[] args) {
-        try {
-            return cl.getDeclaredMethod(name, args);
-        } catch (Throwable e) {
-            Method[] mtds = cl.getDeclaredMethods();
-            for (Method met : mtds)
-                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equals(name))
-                    return met;
-            for (Method met : mtds)
-                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equals(name))
-                    return met;
-            for (Method met : mtds)
-                if (classArrayCompare(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
-                    return met;
-            for (Method met : mtds)
-                if (classArrayCompareLight(args, met.getParameterTypes()) && met.getName().equalsIgnoreCase(name))
-                    return met;
-            return null;
-        }
-    }
-
-    private static Method methodCheckNoArg(Class cl, String name) {
-        try {
-            return cl.getDeclaredMethod(name);
-        } catch (Throwable e) {
-            Method[] mtds = cl.getDeclaredMethods();
-            for (Method met : mtds)
-                if (met.getParameterTypes().length == 0 && met.getName().equalsIgnoreCase(name))
-                    return met;
-            return null;
-        }
     }
 
     /**
@@ -431,19 +444,6 @@ public class Reflection {
             }
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return null;
-    }
-
-    public static Field setFieldAccessible(Field f) {
-        try {
-            f.setAccessible(true);
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            int modifiers = modifiersField.getInt(f);
-            modifiersField.setInt(f, modifiers & -17);
-            return f;
-        } catch (Throwable e) {
         }
         return null;
     }

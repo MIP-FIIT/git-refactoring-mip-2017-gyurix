@@ -8,12 +8,12 @@ import gyurix.protocol.wrappers.WrappedPacket;
  * Created by GyuriX on 2016.03.08..
  */
 public class PacketPlayOutBlockBreakAnimation extends WrappedPacket {
-    public int entityId;
     public BlockLocation block;
     /**
      * 0-9, other value = remove effect
      */
     public int destroyStage;
+    public int entityId;
 
     public PacketPlayOutBlockBreakAnimation() {
 

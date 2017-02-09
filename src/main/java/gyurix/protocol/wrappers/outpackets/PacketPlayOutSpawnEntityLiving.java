@@ -1,9 +1,11 @@
 package gyurix.protocol.wrappers.outpackets;
 
+import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.utils.DataWatcher;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotutils.LocationData;
+import gyurix.spigotutils.ServerVersion;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 
@@ -57,26 +59,38 @@ public class PacketPlayOutSpawnEntityLiving extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.SpawnEntityLiving.newPacket(entityId, entityUUID, type, x, y, z, velX, velY, velZ,
-                (byte) (yaw / 360.0f * 256), (byte) (pitch / 360.0f * 256), (byte) (headPitch / 360.0f * 256), meta.toNMS());
+        return Reflection.ver.isAbove(ServerVersion.v1_9) ? PacketOutType.SpawnEntityLiving.newPacket(entityId, entityUUID, type, x, y, z, velX, velY, velZ,
+                (byte) (yaw / 360.0f * 256), (byte) (pitch / 360.0f * 256), (byte) (headPitch / 360.0f * 256), meta.toNMS()) :
+                PacketOutType.SpawnEntityLiving.newPacket(entityId, type, (int) x << 5, (int) y << 5, (int) z << 5, velX, velY, velZ,
+                        (byte) (yaw / 360.0f * 256), (byte) (pitch / 360.0f * 256), (byte) (headPitch / 360.0f * 256), meta.toNMS());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] d = PacketOutType.SpawnEntityLiving.getPacketData(packet);
         entityId = (int) d[0];
-        entityUUID = (UUID) d[1];
-        type = (int) d[2];
-        x = (double) d[3];
-        y = (double) d[4];
-        z = (double) d[5];
-        velX = (int) d[6];
-        velY = (int) d[7];
-        velZ = (int) d[8];
-        yaw = (float) ((byte) d[9] / 256.0 * 360);
-        pitch = (float) ((byte) d[10] / 256.0 * 360);
-        headPitch = (float) ((byte) d[11] / 256.0 * 360);
-        meta = new DataWatcher(d[12]);
+        int add = 0;
+        if (Reflection.ver.isAbove(ServerVersion.v1_9)) {
+            entityUUID = (UUID) d[1];
+            add = 1;
+        }
+        type = (int) d[add + 1];
+        if (Reflection.ver.isAbove(ServerVersion.v1_9)) {
+            x = (double) d[add + 2];
+            y = (double) d[add + 3];
+            z = (double) d[add + 4];
+        } else {
+            x = ((int) d[add + 2]) / 32.0;
+            y = ((int) d[add + 3]) / 32.0;
+            z = ((int) d[add + 4]) / 32.0;
+        }
+        velX = (int) d[add + 5];
+        velY = (int) d[add + 6];
+        velZ = (int) d[add + 7];
+        yaw = (float) ((byte) d[add + 8] / 256.0 * 360);
+        pitch = (float) ((byte) d[add + 9] / 256.0 * 360);
+        headPitch = (float) ((byte) d[add + 10] / 256.0 * 360);
+        meta = new DataWatcher(d[add + 11]);
     }
 
     public Vector getVelocity() {

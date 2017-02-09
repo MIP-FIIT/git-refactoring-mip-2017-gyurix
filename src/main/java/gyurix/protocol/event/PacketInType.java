@@ -129,27 +129,6 @@ public enum PacketInType {
     }
 
     /**
-     * Fills the given packet with the given data
-     *
-     * @param packet - The fillable packet
-     * @param data   - The filling data
-     */
-    public void fillPacket(Object packet, Object... data) {
-        ArrayList<Field> fields = Lists.newArrayList(fs);
-        for (Object d : data) {
-            for (int f = 0; f < fields.size(); f++) {
-                try {
-                    Field ff = fields.get(f);
-                    ff.set(packet, d);
-                    fields.remove(f--);
-                    break;
-                } catch (Throwable e) {
-                }
-            }
-        }
-    }
-
-    /**
      * Returns the packet data of a packet
      *
      * @param packet - The packet
@@ -191,6 +170,27 @@ public enum PacketInType {
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
+        }
+    }
+
+    /**
+     * Fills the given packet with the given data
+     *
+     * @param packet - The fillable packet
+     * @param data   - The filling data
+     */
+    public void fillPacket(Object packet, Object... data) {
+        ArrayList<Field> fields = Lists.newArrayList(fs);
+        for (Object d : data) {
+            for (int f = 0; f < fields.size(); f++) {
+                try {
+                    Field ff = fields.get(f);
+                    ff.set(packet, d);
+                    fields.remove(f--);
+                    break;
+                } catch (Throwable e) {
+                }
+            }
         }
     }
 

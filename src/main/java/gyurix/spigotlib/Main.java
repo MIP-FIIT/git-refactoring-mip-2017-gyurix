@@ -100,76 +100,6 @@ public class Main extends JavaPlugin implements Listener {
     public static PluginLang lang;
     public static Main pl;
 
-    public static ArrayList<Class> getClasses(String packageName) {
-        ArrayList<Class> classes = new ArrayList();
-        try {
-            String packagePrefix = packageName.replace(".", "/");
-            File f = new File(Material.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6));
-            ZipInputStream zis = new ZipInputStream(new FileInputStream(f));
-            ZipEntry ze = zis.getNextEntry();
-            while (ze != null) {
-                String name = ze.getName();
-                if (name.startsWith(packagePrefix) && name.endsWith(".class") && !name.contains("$"))
-                    classes.add(Class.forName(name.substring(0, name.length() - 6).replace("/", ".")));
-                ze = zis.getNextEntry();
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        return classes;
-    }
-
-    public void load() throws Throwable {
-        cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
-        saveResources(this, "lang.yml", "config.yml", "items.yml");
-        kf = new ConfigFile(getResource("config.yml"));
-        kf.load(new File(dir + File.separator + "config.yml"));
-        kf.data.deserialize(Config.class);
-        kf.save();
-        lang = GlobalLangFile.loadLF("spigotlib", getResource("lang.yml"), dir + File.separator + "lang.yml");
-
-        cs.sendMessage("§2[§aStartup§2]§e Loading enchants file...");
-        itemf = new ConfigFile(new File(dir + File.separator + "items.yml"));
-        itemf.data.deserialize(Items.class);
-        boolean saveIf = false;
-        for (Enchantment e : Enchantment.values()) {
-            if (!enchants.containsKey(e.getName())) {
-                enchants.put(e.getName(), newArrayList(e.getName().toLowerCase().replace("_", "")));
-                saveIf = true;
-            }
-        }
-        if (saveIf)
-            itemf.save();
-        if (backend == BackendType.FILE) {
-            cs.sendMessage("§2[§aStartup§2]§e Loading §cFILE§e backend for §cplayer file§e...");
-            pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
-        } else if (backend == BackendType.MYSQL) {
-            cs.sendMessage("§2[§aStartup§2]§e Loading §cMySQL§e backend for §cplayer file§e...");
-            mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
-            pf = new ConfigFile(mysql, mysql.table, "key", "value");
-            loadPlayerConfig(null);
-        }
-        cs.sendMessage("§2[§aStartup§2]§e Loading ReflectionAPI...");
-        Reflection.init();
-        cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
-        AnimationAPI.init();
-        ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
-        //if (ver.isAbove(v1_8)) {
-        cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI, CommandAPI...");
-        WrapperFactory.init();
-        PacketInType.init();
-        PacketOutType.init();
-        startPacketAPI();
-        ChatAPI.init();
-        NBTApi.init();
-        /*} else {
-            cs.sendMessage("§2[§aStartup§2]§e Found§c INCOMPATIBLE SERVER VERSION: §e" + ver + "§c, so the following features was NOT active, so they WILL NOT work:" +
-                    " §ePacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI§c. The other features might work. For additional help contact the plugins developer, §cgyuriX§e!");
-        }*/
-        cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
-        VariableAPI.phaHook = pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
-    }
-
     @EventHandler
     public void onClick(InventoryClickEvent e) {
         Inventory top = e.getView().getTopInventory();
@@ -439,6 +369,178 @@ public class Main extends JavaPlugin implements Listener {
         return true;
     }
 
+    public static ArrayList<Class> getClasses(String packageName) {
+        ArrayList<Class> classes = new ArrayList();
+        try {
+            String packagePrefix = packageName.replace(".", "/");
+            File f = new File(Material.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6));
+            ZipInputStream zis = new ZipInputStream(new FileInputStream(f));
+            ZipEntry ze = zis.getNextEntry();
+            while (ze != null) {
+                String name = ze.getName();
+                if (name.startsWith(packagePrefix) && name.endsWith(".class") && !name.contains("$"))
+                    classes.add(Class.forName(name.substring(0, name.length() - 6).replace("/", ".")));
+                ze = zis.getNextEntry();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return classes;
+    }
+
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        ArrayList<String> out = new ArrayList<>();
+        if (!sender.hasPermission("spigotlib.use")) {
+            lang.msg(sender, "noperm");
+            return out;
+        }
+        if (args.length == 1) {
+            args[0] = args[0].toLowerCase();
+            for (String cmd : commands) {
+                if (!cmd.startsWith(args[0]) || !sender.hasPermission("spigotlib.command." + cmd)) continue;
+                out.add(cmd);
+            }
+        } else if (args.length == 2) {
+            if (args[0].equals("reload")) {
+                return filterStart(new String[]{"config", "pf", "lf"}, args[1]);
+            } else {
+                return null;
+            }
+        }
+        return out;
+    }
+
+    public void onLoad() {
+        pl = this;
+        try {
+            srv = getServer();
+            pm = srv.getPluginManager();
+            cs = srv.getConsoleSender();
+            msg = srv.getMessenger();
+            sm = srv.getServicesManager();
+            sch = srv.getScheduler();
+            js = new ScriptEngineManager().getEngineByName("JavaScript");
+            dir = getDataFolder();
+        } catch (Throwable e) {
+            log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
+            return;
+        }
+        try {
+            DefaultSerializers.init();
+            ConfigHook.registerSerializers();
+            ConfigHook.registerVariables();
+        } catch (Throwable e) {
+            log(this, "§cFailed to load config hook :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
+            return;
+        }
+        try {
+            load();
+        } catch (Throwable e) {
+            log(this, "Failed to load plugin, trying to reset the config...");
+            error(cs, e, "SpigotLib", "gyurix");
+            resetConfig();
+        }
+    }
+
+    public void load() throws Throwable {
+        cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
+        saveResources(this, "lang.yml", "config.yml", "items.yml");
+        kf = new ConfigFile(getResource("config.yml"));
+        kf.load(new File(dir + File.separator + "config.yml"));
+        kf.data.deserialize(Config.class);
+        kf.save();
+        lang = GlobalLangFile.loadLF("spigotlib", getResource("lang.yml"), dir + File.separator + "lang.yml");
+
+        cs.sendMessage("§2[§aStartup§2]§e Loading enchants file...");
+        itemf = new ConfigFile(new File(dir + File.separator + "items.yml"));
+        itemf.data.deserialize(Items.class);
+        boolean saveIf = false;
+        for (Enchantment e : Enchantment.values()) {
+            if (!enchants.containsKey(e.getName())) {
+                enchants.put(e.getName(), newArrayList(e.getName().toLowerCase().replace("_", "")));
+                saveIf = true;
+            }
+        }
+        if (saveIf)
+            itemf.save();
+        if (backend == BackendType.FILE) {
+            cs.sendMessage("§2[§aStartup§2]§e Loading §cFILE§e backend for §cplayer file§e...");
+            pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
+        } else if (backend == BackendType.MYSQL) {
+            cs.sendMessage("§2[§aStartup§2]§e Loading §cMySQL§e backend for §cplayer file§e...");
+            mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
+            pf = new ConfigFile(mysql, mysql.table, "key", "value");
+            loadPlayerConfig(null);
+        }
+        cs.sendMessage("§2[§aStartup§2]§e Loading ReflectionAPI...");
+        Reflection.init();
+        cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
+        AnimationAPI.init();
+        ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
+        //if (ver.isAbove(v1_8)) {
+        cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI, CommandAPI...");
+        WrapperFactory.init();
+        PacketInType.init();
+        PacketOutType.init();
+        startPacketAPI();
+        ChatAPI.init();
+        NBTApi.init();
+        /*} else {
+            cs.sendMessage("§2[§aStartup§2]§e Found§c INCOMPATIBLE SERVER VERSION: §e" + ver + "§c, so the following features was NOT active, so they WILL NOT work:" +
+                    " §ePacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI§c. The other features might work. For additional help contact the plugins developer, §cgyuriX§e!");
+        }*/
+        cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
+        VariableAPI.phaHook = pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
+    }
+
+    public void resetConfig() {
+        try {
+            File oldConf = new File(dir + File.separator + "config.yml");
+            File backupConf = new File(dir + File.separator + "config.yml.bak");
+            if (backupConf.exists()) {
+                backupConf.delete();
+            }
+            oldConf.renameTo(backupConf);
+            File oldLang = new File(dir + File.separator + "lang.yml");
+            File backupLang = new File(dir + File.separator + "lang.yml.bak");
+            if (backupLang.exists()) {
+                backupLang.delete();
+            }
+            oldLang.renameTo(backupLang);
+        } catch (Throwable e) {
+            log(this, "§cFailed to reset the config :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
+            return;
+        }
+        try {
+            load();
+        } catch (Throwable e) {
+            log(this, "§cFailed to load plugin after config reset :-( The plugin is shutting down...");
+            error(cs, e, "SpigotLib", "gyurix");
+            pm.disablePlugin(this);
+        }
+    }
+
+    public void startPacketAPI() {
+        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
+        if (Reflection.ver.isAbove(v1_8))
+            tp = new ProtocolImpl();
+        else
+            tp = new ProtocolLegacyImpl();
+        tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
+        try {
+            tp.init();
+        } catch (Throwable e) {
+            schedulePacketAPI = true;
+            cs.sendMessage("§2[§aStartup§2]§c Scheduled PacketAPI initialization, because you are using late bind.");
+        }
+    }
+
     public void onDisable() {
         log(this, "§4[§cShutdown§4]§e Unloading plugins depending on SpigotLib...");
         for (Plugin p : newArrayList(pm.getPlugins())) {
@@ -577,42 +679,6 @@ public class Main extends JavaPlugin implements Listener {
         }, Config.earlyJoinProtection);
     }
 
-    public void onLoad() {
-        pl = this;
-        try {
-            srv = getServer();
-            pm = srv.getPluginManager();
-            cs = srv.getConsoleSender();
-            msg = srv.getMessenger();
-            sm = srv.getServicesManager();
-            sch = srv.getScheduler();
-            js = new ScriptEngineManager().getEngineByName("JavaScript");
-            dir = getDataFolder();
-        } catch (Throwable e) {
-            log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
-            error(cs, e, "SpigotLib", "gyurix");
-            pm.disablePlugin(this);
-            return;
-        }
-        try {
-            DefaultSerializers.init();
-            ConfigHook.registerSerializers();
-            ConfigHook.registerVariables();
-        } catch (Throwable e) {
-            log(this, "§cFailed to load config hook :-( The plugin is shutting down...");
-            error(cs, e, "SpigotLib", "gyurix");
-            pm.disablePlugin(this);
-            return;
-        }
-        try {
-            load();
-        } catch (Throwable e) {
-            log(this, "Failed to load plugin, trying to reset the config...");
-            error(cs, e, "SpigotLib", "gyurix");
-            resetConfig();
-        }
-    }
-
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerJoin(PlayerJoinEvent e) {
         Player plr = e.getPlayer();
@@ -657,28 +723,6 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        ArrayList<String> out = new ArrayList<>();
-        if (!sender.hasPermission("spigotlib.use")) {
-            lang.msg(sender, "noperm");
-            return out;
-        }
-        if (args.length == 1) {
-            args[0] = args[0].toLowerCase();
-            for (String cmd : commands) {
-                if (!cmd.startsWith(args[0]) || !sender.hasPermission("spigotlib.command." + cmd)) continue;
-                out.add(cmd);
-            }
-        } else if (args.length == 2) {
-            if (args[0].equals("reload")) {
-                return filterStart(new String[]{"config", "pf", "lf"}, args[1]);
-            } else {
-                return null;
-            }
-        }
-        return out;
-    }
-
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent e) {
         if (Config.disableWeatherChange)
@@ -700,50 +744,6 @@ public class Main extends JavaPlugin implements Listener {
             case "net.milkbowl.vault.permission.Permission":
                 perm = (Permission) p.getProvider();
                 break;
-        }
-    }
-
-    public void resetConfig() {
-        try {
-            File oldConf = new File(dir + File.separator + "config.yml");
-            File backupConf = new File(dir + File.separator + "config.yml.bak");
-            if (backupConf.exists()) {
-                backupConf.delete();
-            }
-            oldConf.renameTo(backupConf);
-            File oldLang = new File(dir + File.separator + "lang.yml");
-            File backupLang = new File(dir + File.separator + "lang.yml.bak");
-            if (backupLang.exists()) {
-                backupLang.delete();
-            }
-            oldLang.renameTo(backupLang);
-        } catch (Throwable e) {
-            log(this, "§cFailed to reset the config :-( The plugin is shutting down...");
-            error(cs, e, "SpigotLib", "gyurix");
-            pm.disablePlugin(this);
-            return;
-        }
-        try {
-            load();
-        } catch (Throwable e) {
-            log(this, "§cFailed to load plugin after config reset :-( The plugin is shutting down...");
-            error(cs, e, "SpigotLib", "gyurix");
-            pm.disablePlugin(this);
-        }
-    }
-
-    public void startPacketAPI() {
-        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-        if (Reflection.ver.isAbove(v1_8))
-            tp = new ProtocolImpl();
-        else
-            tp = new ProtocolLegacyImpl();
-        tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
-        try {
-            tp.init();
-        } catch (Throwable e) {
-            schedulePacketAPI = true;
-            cs.sendMessage("§2[§aStartup§2]§c Scheduled PacketAPI initialization, because you are using late bind.");
         }
     }
 

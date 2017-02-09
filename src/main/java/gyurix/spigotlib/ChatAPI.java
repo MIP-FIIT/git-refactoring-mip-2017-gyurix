@@ -27,16 +27,6 @@ public class ChatAPI {
     public static Method toICBC;
 
     /**
-     * Converts the given message to raw JSON format
-     *
-     * @param msg - The message
-     * @return The conversion result raw json
-     */
-    public static String TextToJson(String msg) {
-        return ChatTag.fromExtraText(msg).toString();
-    }
-
-    /**
      * Initializes the ChatAPI. Do not use this method.
      */
     public static void init() {
@@ -50,16 +40,6 @@ public class ChatAPI {
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
-    }
-
-    /**
-     * Converts a string to it's json format
-     *
-     * @param value - The convertable String
-     * @return The conversion result
-     */
-    public static String quoteJson(String value) {
-        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
     }
 
     /**
@@ -94,6 +74,26 @@ public class ChatAPI {
             for (Player p : pls)
                 p.sendMessage(msg);
         }
+    }
+
+    /**
+     * Converts a string to it's json format
+     *
+     * @param value - The convertable String
+     * @return The conversion result
+     */
+    public static String quoteJson(String value) {
+        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
+    }
+
+    /**
+     * Converts the given message to raw JSON format
+     *
+     * @param msg - The message
+     * @return The conversion result raw json
+     */
+    public static String TextToJson(String msg) {
+        return ChatTag.fromExtraText(msg).toString();
     }
 
     /**

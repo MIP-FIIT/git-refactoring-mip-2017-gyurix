@@ -29,6 +29,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Constructs a new BlockData representing the type of the given block state
+     *
      * @param b - Target Block
      */
     public BlockData(BlockState b) {
@@ -39,6 +40,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Constructs a new BlockData with the allowing any subtypes of the given item/block id
+     *
      * @param id - The wanted block / item id
      */
     public BlockData(int id) {
@@ -47,7 +49,8 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Constructs a new BlockData of the given item/block id and subtype
-     * @param id - The items / blocks id
+     *
+     * @param id   - The items / blocks id
      * @param data - The items / blocks subtype
      */
     public BlockData(int id, short data) {
@@ -58,6 +61,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Makes a new Block data from a String, which should have format [itemId|itemName][:subType]
+     *
      * @param in - The convertable String
      */
     public BlockData(String in) {
@@ -80,13 +84,13 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
             }
     }
 
-    public BlockData clone() {
-        return anydata ? new BlockData(id) : new BlockData(id, data);
-    }
-
     @Override
     public int compareTo(BlockData o) {
         return ((Integer) hashCode()).compareTo(o.hashCode());
+    }
+
+    public int hashCode() {
+        return (id << 5) + (anydata ? 16 : data);
     }
 
     public boolean equals(Object obj) {
@@ -97,12 +101,20 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
         return bd.id == id && (bd.data == data || bd.anydata || anydata);
     }
 
-    public int hashCode() {
-        return (id << 5) + (anydata ? 16 : data);
+    public BlockData clone() {
+        return anydata ? new BlockData(id) : new BlockData(id, data);
+    }
+
+    @Override
+    public String toString() {
+        Material m = Material.getMaterial(id);
+        String sid = m == null ? "" + id : m.name();
+        return anydata ? sid : sid + ':' + data;
     }
 
     /**
      * Checks if the given block has the same type as this block data.
+     *
      * @param b - Checkable block
      * @return True if the block's type is the same as this block data
      */
@@ -114,6 +126,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Sets the given blocks type and id to the one stored by this BlockData with allowing Minecraft physics calculations.
+     *
      * @param b - Setable block
      */
     public void setBlock(Block b) {
@@ -122,6 +135,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Sets the given blocks type and id to the one stored by this BlockData without allowing Minecraft physics calculations.
+     *
      * @param b - Setable block
      */
     public void setBlockNoPhysics(Block b) {
@@ -130,6 +144,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
 
     /**
      * Converts this block data to an item
+     *
      * @return The conversion result
      */
     public ItemStack toItem() {
@@ -139,13 +154,6 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
         if (is == null)
             is = new ItemStack(id, 1, data);
         return is;
-    }
-
-    @Override
-    public String toString() {
-        Material m = Material.getMaterial(id);
-        String sid = m == null ? "" + id : m.name();
-        return anydata ? sid : sid + ':' + data;
     }
 }
 

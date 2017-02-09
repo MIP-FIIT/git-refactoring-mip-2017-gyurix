@@ -35,6 +35,36 @@ public final class AnimationAPI {
         ConfigSerialization.serializers.put(Animation.class, new AnimationSerializer());
     }
 
+    public static AnimationRunnable runAnimation(Plugin pl, Animation a, String name, Player plr, AnimationUpdateListener listener) {
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
+        if (map == null)
+            runningAnimations.put(pl, map = new HashMap<>());
+        HashSet<AnimationRunnable> ars = map.get(plr.getName());
+        if (ars == null)
+            map.put(plr.getName(), ars = new HashSet<>());
+        AnimationRunnable ar = new AnimationRunnable(pl, a, name, plr, listener);
+        return ar;
+    }
+
+    public static void stopRunningAnimation(AnimationRunnable ar) {
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(ar.pl);
+        if (map == null || map.isEmpty())
+            return;
+        HashSet<AnimationRunnable> ars = map.get(ar.plr.getName());
+        ars.remove(ar);
+        ar.stop();
+    }
+
+    public static void stopRunningAnimations(Player plr) {
+        for (HashMap<String, HashSet<AnimationRunnable>> map : runningAnimations.values()) {
+            HashSet<AnimationRunnable> ars = map.remove(plr.getName());
+            if (ars != null)
+                for (AnimationRunnable ar : ars)
+                    if (ar.future != null)
+                        ar.future.cancel(true);
+        }
+    }
+
     public static void stopRunningAnimations(Plugin pl) {
         HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.remove(pl);
         if (map == null || map.isEmpty())
@@ -53,36 +83,6 @@ public final class AnimationAPI {
         if (ars != null)
             for (AnimationRunnable ar : ars)
                 ar.stop();
-    }
-
-    public static void stopRunningAnimations(Player plr) {
-        for (HashMap<String, HashSet<AnimationRunnable>> map : runningAnimations.values()) {
-            HashSet<AnimationRunnable> ars = map.remove(plr.getName());
-            if (ars != null)
-                for (AnimationRunnable ar : ars)
-                    if (ar.future != null)
-                        ar.future.cancel(true);
-        }
-    }
-
-    public static void stopRunningAnimation(AnimationRunnable ar) {
-        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(ar.pl);
-        if (map == null || map.isEmpty())
-            return;
-        HashSet<AnimationRunnable> ars = map.get(ar.plr.getName());
-        ars.remove(ar);
-        ar.stop();
-    }
-
-    public static AnimationRunnable runAnimation(Plugin pl, Animation a, String name, Player plr, AnimationUpdateListener listener) {
-        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
-        if (map == null)
-            runningAnimations.put(pl, map = new HashMap<>());
-        HashSet<AnimationRunnable> ars = map.get(plr.getName());
-        if (ars == null)
-            map.put(plr.getName(), ars = new HashSet<>());
-        AnimationRunnable ar = new AnimationRunnable(pl, a, name, plr, listener);
-        return ar;
     }
 
     public static class CustomEffectHandler implements VariableHandler {

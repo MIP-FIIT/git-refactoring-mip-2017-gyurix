@@ -26,7 +26,7 @@ public class ClientSession {
             e.printStackTrace();
         }
     }
-    
+
     public boolean invalidate() {
         try {
             post("https://authserver.mojang.com/invalidate",
@@ -37,7 +37,7 @@ public class ClientSession {
             return false;
         }
     }
-    
+
     public boolean refresh() {
         try {
             String s = post("https://authserver.mojang.com/refresh",
@@ -50,7 +50,7 @@ public class ClientSession {
             return false;
         }
     }
-    
+
     public boolean signOut() {
         try {
             post("https://authserver.mojang.com/signout",

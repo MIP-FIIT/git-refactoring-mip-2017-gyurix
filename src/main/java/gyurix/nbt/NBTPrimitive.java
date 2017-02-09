@@ -20,6 +20,26 @@ public class NBTPrimitive
         loadFromNMS(tag);
     }
 
+    @Override
+    public void loadFromNMS(Object nmsTag) {
+        try {
+            data = f.get(nmsTag.getClass()).get(nmsTag);
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Object saveToNMS() {
+        try {
+            return c.get(data.getClass()).newInstance(data);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            SU.cs.sendMessage("§eError on converting " + data + " " + data.getClass() + " to NMS.");
+            return null;
+        }
+    }
+
     static void init() {
         Class cl;
         NBTApi.types[0] = Reflection.getNMSClass("NBTTagEnd");
@@ -50,26 +70,6 @@ public class NBTPrimitive
         NBTApi.types[11] = cl = Reflection.getNMSClass("NBTTagIntArray");
         c.put(int[].class, Reflection.getConstructor(cl, int[].class));
         f.put(cl, Reflection.getField(cl, "data"));
-    }
-
-    @Override
-    public void loadFromNMS(Object nmsTag) {
-        try {
-            data = f.get(nmsTag.getClass()).get(nmsTag);
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public Object saveToNMS() {
-        try {
-            return c.get(data.getClass()).newInstance(data);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            SU.cs.sendMessage("§eError on converting " + data + " " + data.getClass() + " to NMS.");
-            return null;
-        }
     }
 
     public NBTPrimitive setData(Object data) {

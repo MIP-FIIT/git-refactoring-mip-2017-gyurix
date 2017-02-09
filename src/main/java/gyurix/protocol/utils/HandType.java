@@ -12,6 +12,7 @@ public enum HandType implements WrappedData {
     MAIN_HAND,
     OFF_HAND;
     Method valueOf = Reflection.getMethod(Reflection.getNMSClass("EnumHand"), "valueOf", String.class);
+
     @Override
     public Object toNMS() {
         try {

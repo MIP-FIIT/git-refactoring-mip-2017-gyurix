@@ -17,37 +17,6 @@ public class NBTCompound extends NBTTag {
         loadFromNMS(nmsTag);
     }
 
-    public NBTCompound addAll(Map<?, ?> o) {
-        for (Entry e : o.entrySet()) {
-            if (e.getKey() == null || e.getValue() == null) continue;
-            map.put(e.getKey().toString(), NBTTag.make(e.getValue()));
-        }
-        return this;
-    }
-
-    public boolean getBoolean(String key) {
-        NBTTag tag = map.get(key);
-        return tag != null && tag instanceof NBTPrimitive && (Byte) ((NBTPrimitive) tag).data == 1;
-    }
-
-    public NBTCompound getCompound(String key) {
-        NBTTag tag = map.get(key);
-        if (tag == null || !(tag instanceof NBTCompound)) {
-            tag = new NBTCompound();
-            map.put(key, tag);
-        }
-        return (NBTCompound) tag;
-    }
-
-    public NBTList getList(String key) {
-        NBTTag tag = map.get(key);
-        if (tag == null || !(tag instanceof NBTList)) {
-            tag = new NBTList();
-            map.put(key, tag);
-        }
-        return (NBTList) tag;
-    }
-
     @Override
     public void loadFromNMS(Object tag) {
         try {
@@ -82,6 +51,37 @@ public class NBTCompound extends NBTTag {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public NBTCompound addAll(Map<?, ?> o) {
+        for (Entry e : o.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) continue;
+            map.put(e.getKey().toString(), NBTTag.make(e.getValue()));
+        }
+        return this;
+    }
+
+    public boolean getBoolean(String key) {
+        NBTTag tag = map.get(key);
+        return tag != null && tag instanceof NBTPrimitive && (Byte) ((NBTPrimitive) tag).data == 1;
+    }
+
+    public NBTCompound getCompound(String key) {
+        NBTTag tag = map.get(key);
+        if (tag == null || !(tag instanceof NBTCompound)) {
+            tag = new NBTCompound();
+            map.put(key, tag);
+        }
+        return (NBTCompound) tag;
+    }
+
+    public NBTList getList(String key) {
+        NBTTag tag = map.get(key);
+        if (tag == null || !(tag instanceof NBTList)) {
+            tag = new NBTList();
+            map.put(key, tag);
+        }
+        return (NBTList) tag;
     }
 
     public NBTCompound set(String key, Object value) {

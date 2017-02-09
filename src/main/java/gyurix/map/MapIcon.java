@@ -32,7 +32,7 @@ public class MapIcon implements WrappedData {
     public byte x;
     public byte y;
 
-    public MapIcon (Object nmsMapIcon) {
+    public MapIcon(Object nmsMapIcon) {
         try {
             type = (byte) fType.get(nmsMapIcon);
             x = (byte) fX.get(nmsMapIcon);
@@ -43,7 +43,7 @@ public class MapIcon implements WrappedData {
         }
     }
 
-    public MapIcon (int type, int x, int y, int rotation) {
+    public MapIcon(int type, int x, int y, int rotation) {
         this.type = (byte) type;
         this.x = (byte) x;
         this.y = (byte) y;
@@ -51,7 +51,7 @@ public class MapIcon implements WrappedData {
     }
 
     @Override
-    public Object toNMS () {
+    public Object toNMS() {
         try {
             return con.newInstance(type, x, y, rotation);
         } catch (Throwable e) {
@@ -61,7 +61,7 @@ public class MapIcon implements WrappedData {
     }
 
     @Override
-    public String toString () {
+    public String toString() {
         return JsonAPI.serialize(this);
     }
 }

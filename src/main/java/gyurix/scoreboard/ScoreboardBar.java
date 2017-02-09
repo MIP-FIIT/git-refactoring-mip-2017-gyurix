@@ -117,6 +117,19 @@ public abstract class ScoreboardBar {
         update();
     }
 
+    public void update() {
+        Iterator<Map.Entry<String, BarData>> it = active.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, BarData> e = it.next();
+            BarData newBd = currentData.clone();
+            Player plr = Bukkit.getPlayer(e.getKey());
+            if (plr == null)
+                it.remove();
+            newBd.update(plr, e.getValue());
+            e.setValue(newBd);
+        }
+    }
+
     /**
      * Checks if this ScoreboardBar is active for the given player or not
      *
@@ -186,19 +199,6 @@ public abstract class ScoreboardBar {
         active.remove(plr.getName());
         bd.unload(plr);
         return true;
-    }
-
-    public void update() {
-        Iterator<Map.Entry<String, BarData>> it = active.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, BarData> e = it.next();
-            BarData newBd = currentData.clone();
-            Player plr = Bukkit.getPlayer(e.getKey());
-            if (plr == null)
-                it.remove();
-            newBd.update(plr, e.getValue());
-            e.setValue(newBd);
-        }
     }
 }
 

@@ -39,6 +39,18 @@ public class MySQLDatabase {
         openConnection();
     }
 
+    public boolean openConnection() {
+        try {
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
+            con.setAutoReconnect(true);
+            con.setConnectTimeout(timeout);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            return false;
+        }
+        return true;
+    }
+
     public static String escape(String in) {
         StringBuilder out = new StringBuilder();
         for (char c : in.toCharArray()) {
@@ -90,17 +102,6 @@ public class MySQLDatabase {
         }
     }
 
-    public boolean command(String cmd) {
-        PreparedStatement st;
-        try {
-            st = getConnection().prepareStatement(cmd);
-            return st.execute();
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return false;
-    }
-
     private Connection getConnection() {
         try {
             if (con == null || !con.isValid(timeout)) {
@@ -112,16 +113,15 @@ public class MySQLDatabase {
         return con;
     }
 
-    public boolean openConnection() {
+    public boolean command(String cmd) {
+        PreparedStatement st;
         try {
-            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
-            con.setAutoReconnect(true);
-            con.setConnectTimeout(timeout);
+            st = getConnection().prepareStatement(cmd);
+            return st.execute();
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            return false;
         }
-        return true;
+        return false;
     }
 
     public ResultSet querry(String cmd) {

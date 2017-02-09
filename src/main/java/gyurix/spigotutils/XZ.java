@@ -37,14 +37,14 @@ public class XZ implements StringSerializable, Comparable<XZ> {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        XZ xz = (XZ) obj;
-        return x == xz.x && z == xz.z;
+    public int hashCode() {
+        return x << 16 + z;
     }
 
     @Override
-    public int hashCode() {
-        return x << 16 + z;
+    public boolean equals(Object obj) {
+        XZ xz = (XZ) obj;
+        return x == xz.x && z == xz.z;
     }
 
     @Override

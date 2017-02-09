@@ -68,23 +68,25 @@ public class PacketPlayOutSpawnEntity extends WrappedPacket {
     public void loadVanillaPacket(Object packet) {
         Object[] o = PacketOutType.SpawnEntity.getPacketData(packet);
         entityId = (int) o[0];
-        entityUUID = (UUID) o[1];
+        int st = 5;
         if (Reflection.ver.isAbove(ServerVersion.v1_10)) {
+            entityUUID = (UUID) o[1];
             x = (double) o[2];
             y = (double) o[3];
             z = (double) o[4];
         } else {
-            x = (double) (int) o[2] / 32.0;
-            y = (double) (int) o[3] / 32.0;
-            z = (double) (int) o[4] / 32.0;
+            x = (double) (int) o[1] / 32.0;
+            y = (double) (int) o[2] / 32.0;
+            z = (double) (int) o[3] / 32.0;
+            st = 4;
         }
-        speedX = (float) (int) o[5] / 8000.0f;
-        speedY = (float) (int) o[6] / 8000.0f;
-        speedZ = (float) (int) o[7] / 8000.0f;
-        pitch = (float) (int) o[8] / 256.0f * 360.0f;
-        yaw = (float) (int) o[9] / 256.0f * 360.0f;
-        entityTypeId = (int) o[10];
-        objectData = (int) o[11];
+        speedX = (float) (int) o[st] / 8000.0f;
+        speedY = (float) (int) o[st + 1] / 8000.0f;
+        speedZ = (float) (int) o[st + 2] / 8000.0f;
+        pitch = (float) (int) o[st + 3] / 256.0f * 360.0f;
+        yaw = (float) (int) o[st + 4] / 256.0f * 360.0f;
+        entityTypeId = (int) o[st + 5];
+        objectData = (int) o[st + 6];
     }
 }
 

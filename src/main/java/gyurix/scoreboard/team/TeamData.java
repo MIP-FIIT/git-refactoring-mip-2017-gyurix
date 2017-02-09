@@ -81,11 +81,6 @@ public class TeamData {
         return new PacketPlayOutScoreboardTeam(name, 1);
     }
 
-    public PacketPlayOutScoreboardTeam getUpdatePacket() {
-        return new PacketPlayOutScoreboardTeam(name, displayName, prefix, suffix, nameTagVisibility, collisionRule, color,
-                null, 2, (friendlyFire ? 1 : 0) + (seeInvisible ? 2 : 0));
-    }
-
     public void update(Player plr, TeamData oldTeam) {
         //Update info
         if (!oldTeam.displayName.equals(displayName) || !oldTeam.prefix.equals(prefix) || !oldTeam.suffix.equals(suffix) ||
@@ -106,5 +101,10 @@ public class TeamData {
                 list.add(p);
         if (!list.isEmpty())
             SU.tp.sendPacket(plr, new PacketPlayOutScoreboardTeam(name, 3, list));
+    }
+
+    public PacketPlayOutScoreboardTeam getUpdatePacket() {
+        return new PacketPlayOutScoreboardTeam(name, displayName, prefix, suffix, nameTagVisibility, collisionRule, color,
+                null, 2, (friendlyFire ? 1 : 0) + (seeInvisible ? 2 : 0));
     }
 }

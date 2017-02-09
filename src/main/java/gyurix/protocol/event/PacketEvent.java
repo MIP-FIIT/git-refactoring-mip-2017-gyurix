@@ -39,10 +39,6 @@ public abstract class PacketEvent extends Event implements Cancellable {
         this.packet = packet;
     }
 
-    public void setPacket(WrappedPacket packet) {
-        this.packet = packet.getVanillaPacket();
-    }
-
     public abstract Object[] getPacketData();
 
     public abstract void setPacketData(Object... var1);
@@ -57,6 +53,10 @@ public abstract class PacketEvent extends Event implements Cancellable {
 
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
+    }
+
+    public void setPacket(WrappedPacket packet) {
+        this.packet = packet.getVanillaPacket();
     }
 
     public abstract boolean setPacketData(int var1, Object var2);

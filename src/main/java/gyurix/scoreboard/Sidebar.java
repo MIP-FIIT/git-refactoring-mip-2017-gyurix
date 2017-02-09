@@ -25,6 +25,12 @@ public class Sidebar extends ScoreboardBar {
         lines.get(line - 1).hide();
     }
 
+    public boolean isShown(int line) {
+        if (line < 1 || line > 15)
+            return false;
+        return !lines.get(line - 1).hidden;
+    }
+
     public void setLine(int line, String text) {
         if (line < 1 || line > 15)
             return;
@@ -41,12 +47,6 @@ public class Sidebar extends ScoreboardBar {
         if (line < 1 || line > 15)
             return;
         lines.get(line - 1).show();
-    }
-
-    public boolean isShown(int line) {
-        if (line < 1 || line > 15)
-            return false;
-        return !lines.get(line - 1).hidden;
     }
 }
 

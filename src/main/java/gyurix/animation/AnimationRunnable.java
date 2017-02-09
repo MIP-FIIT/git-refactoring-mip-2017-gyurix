@@ -12,9 +12,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class AnimationRunnable implements Runnable {
-    public final Plugin pl;
     public final Animation a;
     public final String name;
+    public final Plugin pl;
     public final Player plr;
     protected final HashMap<String, HashMap<String, CustomEffect>> effects = new HashMap();
     private final FramesEffect f;
@@ -53,16 +53,16 @@ public class AnimationRunnable implements Runnable {
         future = AnimationAPI.pool.schedule(this, f.delay, TimeUnit.MILLISECONDS);
     }
 
+    public boolean isRunning() {
+        return future != null;
+    }
+
     public boolean stop() {
         if (future == null)
             return false;
         future.cancel(true);
         future = null;
         return true;
-    }
-
-    public boolean isRunning() {
-        return future != null;
     }
 }
 

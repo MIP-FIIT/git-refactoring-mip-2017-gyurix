@@ -48,9 +48,25 @@ public class CustomCommandMap extends SimpleCommandMap {
         }
     }
 
+    public void setFallbackCommands() {
+        backend.setFallbackCommands();
+    }
+
     @Override
-    public void clearCommands() {
-        backend.clearCommands();
+    public void registerAll(String fallbackPrefix, List<Command> commands) {
+        backend.registerAll(fallbackPrefix, commands);
+    }
+
+    @Override
+    public boolean register(String fallbackPrefix, Command command) {
+        if (backend == null)
+            return false;
+        return backend.register(fallbackPrefix, command);
+    }
+
+    @Override
+    public boolean register(String label, String fallbackPrefix, Command command) {
+        return backend.register(label, fallbackPrefix, command);
     }
 
     @Override
@@ -85,37 +101,13 @@ public class CustomCommandMap extends SimpleCommandMap {
     }
 
     @Override
+    public void clearCommands() {
+        backend.clearCommands();
+    }
+
+    @Override
     public Command getCommand(String name) {
         return backend.getCommand(name);
-    }
-
-    public Collection<Command> getCommands() {
-        return Collections.unmodifiableCollection(knownCommands.values());
-    }
-
-    @Override
-    public boolean register(String fallbackPrefix, Command command) {
-        if (backend == null)
-            return false;
-        return backend.register(fallbackPrefix, command);
-    }
-
-    @Override
-    public boolean register(String label, String fallbackPrefix, Command command) {
-        return backend.register(label, fallbackPrefix, command);
-    }
-
-    @Override
-    public void registerAll(String fallbackPrefix, List<Command> commands) {
-        backend.registerAll(fallbackPrefix, commands);
-    }
-
-    public void registerServerAliases() {
-        backend.registerServerAliases();
-    }
-
-    public void setFallbackCommands() {
-        backend.setFallbackCommands();
     }
 
     @Override
@@ -132,5 +124,13 @@ public class CustomCommandMap extends SimpleCommandMap {
         if (e.isCancelled())
             return e.getResult();
         return list;
+    }
+
+    public Collection<Command> getCommands() {
+        return Collections.unmodifiableCollection(knownCommands.values());
+    }
+
+    public void registerServerAliases() {
+        backend.registerServerAliases();
     }
 }

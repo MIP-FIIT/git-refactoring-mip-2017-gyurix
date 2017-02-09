@@ -28,6 +28,10 @@ public class ScoreboardAPI {
             sb.drop(plr);
     }
 
+    public static void setNametagBar(Player plr, NametagBar bar) {
+        set(plr, nametags.get(plr.getName()), bar);
+    }
+
     private static boolean set(Player plr, PlayerBars info, ScoreboardBar to) {
         ScoreboardBar from = info.active;
         info.active = to;
@@ -41,10 +45,6 @@ public class ScoreboardAPI {
         if (!to.load(plr))
             to.activate(plr);
         return true;
-    }
-
-    public static void setNametagBar(Player plr, NametagBar bar) {
-        set(plr, nametags.get(plr.getName()), bar);
     }
 
     public static void setSidebar(Player plr, Sidebar bar) {
