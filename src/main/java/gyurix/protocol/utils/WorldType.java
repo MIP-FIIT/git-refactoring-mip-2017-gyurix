@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 public enum WorldType implements WrappedData {
     DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED, DEBUG_ALL_BLOCK_STATES, DEFAULT_1_1;
     public static final Method enumDifficultyVO;
-    public static final Class enumGmCl = Reflection.getNMSClass("EnumGamemode"),
+    public static final Class enumGmCl = Reflection.getNMSClass("WorldSettings$EnumGamemode"),
             enumDifficultyCl = Reflection.getNMSClass("EnumDifficulty"),
             worldTypeCl = Reflection.getNMSClass("WorldType");
     public static final Method enumGmVO = Reflection.getMethod(enumGmCl, "valueOf", String.class);

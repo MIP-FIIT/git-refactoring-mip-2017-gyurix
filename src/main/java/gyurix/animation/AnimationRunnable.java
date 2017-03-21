@@ -1,7 +1,6 @@
 package gyurix.animation;
 
 import gyurix.animation.effects.FramesEffect;
-import gyurix.api.VariableAPI;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -11,6 +10,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static gyurix.api.VariableAPI.fillVariables;
+
 public class AnimationRunnable implements Runnable {
     public final Animation a;
     public final String name;
@@ -19,6 +20,7 @@ public class AnimationRunnable implements Runnable {
     protected final HashMap<String, HashMap<String, CustomEffect>> effects = new HashMap();
     private final FramesEffect f;
     private final AnimationUpdateListener listener;
+    public String text = "§cERROR";
     protected ScheduledFuture future;
 
     protected AnimationRunnable(Plugin pl, Animation a, String name, Player plr, AnimationUpdateListener listener) {
@@ -37,11 +39,15 @@ public class AnimationRunnable implements Runnable {
         run();
     }
 
+    public boolean isRunning() {
+        return future != null;
+    }
+
     @Override
     public void run() {
         future = null;
         try {
-            String text = VariableAPI.fillVariables(SU.optimizeColorCodes(f.next("")), plr, this);
+            text = fillVariables(SU.optimizeColorCodes(f.next("")), plr, this);
             if (!listener.onUpdate(this, text) || f.delay >= Integer.MAX_VALUE)
                 return;
         } catch (Throwable e) {
@@ -51,10 +57,6 @@ public class AnimationRunnable implements Runnable {
         if (f.delay < 1)
             f.delay = 1;
         future = AnimationAPI.pool.schedule(this, f.delay, TimeUnit.MILLISECONDS);
-    }
-
-    public boolean isRunning() {
-        return future != null;
     }
 
     public boolean stop() {

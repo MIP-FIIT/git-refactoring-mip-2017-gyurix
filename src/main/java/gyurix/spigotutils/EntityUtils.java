@@ -26,16 +26,15 @@ public class EntityUtils {
             craftWorldCL = getOBCClass("CraftWorld"),
             nmsWorldCL = getNMSClass("World"),
             nmsWorldDataCL = getNMSClass("WorldData");
-    public static final Field killerField = getField(getNMSClass("EntityLiving"), "killer"),
+    public static final Method setLocationM = getMethod(nmsEntityCL, "setLocation", double.class, double.class, double.class, float.class, float.class),
+            bukkitEntityM = getMethod(nmsEntityCL, "getBukkitEntity");
+    public static Field killerField = getField(getNMSClass("EntityLiving"), "killer"),
             nmsEntityF = getField(craftEntity, "entity"),
             nmsWorldF = getField(craftWorldCL, "world"),
-            nmsWorldGameModeF = getFirstFieldOfType(nmsWorldDataCL, WorldType.enumGmCl),
             nmsWorldTypeF = getFirstFieldOfType(nmsWorldDataCL, WorldType.worldTypeCl),
             nmsWorldDataF = getField(nmsWorldCL, "worldData"),
             dataWatcherF = getField(nmsEntityCL, "datawatcher"),
             craftWorldF = getField(nmsWorldCL, "world");
-    public static final Method setLocationM = getMethod(nmsEntityCL, "setLocation", double.class, double.class, double.class, float.class, float.class),
-            bukkitEntityM = getMethod(nmsEntityCL, "getBukkitEntity");
 
     /**
      * Converts the given NMS entity to a Bukkit entity
@@ -76,6 +75,21 @@ public class EntityUtils {
     public static DataWatcher getDataWatcher(Entity ent) {
         try {
             return new DataWatcher(dataWatcherF.get(nmsEntityF.get(ent)));
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
+    }
+
+    /**
+     * Converts the given Bukkit entity to an NMS entity
+     *
+     * @param ent - The Bukkit entity
+     * @return The NMS entity
+     */
+    public static Object getNMSEntity(Entity ent) {
+        try {
+            return nmsEntityF.get(ent);
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
@@ -168,21 +182,6 @@ public class EntityUtils {
         } catch (IllegalAccessException e) {
 
         }
-    }
-
-    /**
-     * Converts the given Bukkit entity to an NMS entity
-     *
-     * @param ent - The Bukkit entity
-     * @return The NMS entity
-     */
-    public static Object getNMSEntity(Entity ent) {
-        try {
-            return nmsEntityF.get(ent);
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return null;
     }
 
     /**

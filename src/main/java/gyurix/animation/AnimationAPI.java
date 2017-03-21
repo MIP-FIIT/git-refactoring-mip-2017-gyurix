@@ -43,6 +43,7 @@ public final class AnimationAPI {
         if (ars == null)
             map.put(plr.getName(), ars = new HashSet<>());
         AnimationRunnable ar = new AnimationRunnable(pl, a, name, plr, listener);
+        ars.add(ar);
         return ar;
     }
 

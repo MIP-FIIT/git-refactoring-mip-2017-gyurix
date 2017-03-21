@@ -22,6 +22,13 @@ public class SignConfig {
         return "- " + lines.get(0) + "\n- " + lines.get(1) + "\n- " + lines.get(2) + "\n- " + lines.get(3);
     }
 
+    public String[] getLinesArray(Object... vars) {
+        String[] out = new String[4];
+        for (int i = 0; i < 4; i++)
+            out[i] = SU.fillVariables(lines.get(i), vars);
+        return out;
+    }
+
     public boolean linesEqual(String[] lines) {
         for (int i = 0; i < 4; i++)
             if (!lines[i].equals(this.lines.get(i)))

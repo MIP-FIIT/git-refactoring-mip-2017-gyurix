@@ -5,7 +5,7 @@ import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
  * Created by GyuriX on 2016. 12. 03..
@@ -16,9 +16,9 @@ public class TeamData {
     public boolean friendlyFire, seeInvisible;
     public String name, displayName, prefix, suffix;
     public NameTagVisibility nameTagVisibility;
-    public HashSet<String> players = new HashSet<>();
+    public ConcurrentSkipListSet<String> players = new ConcurrentSkipListSet<>();
 
-    public TeamData(String name, String displayName, String prefix, String suffix, boolean friendlyFire, boolean seeInvisible, NameTagVisibility nameTagVisibility, CollisionRule collisionRule, int color, HashSet<String> players) {
+    public TeamData(String name, String displayName, String prefix, String suffix, boolean friendlyFire, boolean seeInvisible, NameTagVisibility nameTagVisibility, CollisionRule collisionRule, int color, ConcurrentSkipListSet<String> players) {
         this.name = name;
         this.displayName = displayName;
         this.prefix = prefix;
@@ -47,8 +47,7 @@ public class TeamData {
                 nameTagVisibility = p.nameTagVisibility;
                 collisionRule = p.collisionRule;
                 color = p.color;
-                for (String s : p.players)
-                    players.add(s);
+                players.addAll(p.players);
                 return;
             case 2: //update team info
                 displayName = p.displayName;
@@ -69,7 +68,7 @@ public class TeamData {
     }
 
     public TeamData clone() {
-        return new TeamData(name, displayName, prefix, suffix, friendlyFire, seeInvisible, nameTagVisibility, collisionRule, color, new HashSet<>(players));
+        return new TeamData(name, displayName, prefix, suffix, friendlyFire, seeInvisible, nameTagVisibility, collisionRule, color, new ConcurrentSkipListSet<>(players));
     }
 
     public PacketPlayOutScoreboardTeam getCreatePacket() {
@@ -77,8 +76,13 @@ public class TeamData {
                 new ArrayList<>(players), 0, (friendlyFire ? 1 : 0) + (seeInvisible ? 2 : 0));
     }
 
-    public Object getRemovePacket() {
+    public PacketPlayOutScoreboardTeam getRemovePacket() {
         return new PacketPlayOutScoreboardTeam(name, 1);
+    }
+
+    public PacketPlayOutScoreboardTeam getUpdatePacket() {
+        return new PacketPlayOutScoreboardTeam(name, displayName, prefix, suffix, nameTagVisibility, collisionRule, color,
+                null, 2, (friendlyFire ? 1 : 0) + (seeInvisible ? 2 : 0));
     }
 
     public void update(Player plr, TeamData oldTeam) {
@@ -101,10 +105,5 @@ public class TeamData {
                 list.add(p);
         if (!list.isEmpty())
             SU.tp.sendPacket(plr, new PacketPlayOutScoreboardTeam(name, 3, list));
-    }
-
-    public PacketPlayOutScoreboardTeam getUpdatePacket() {
-        return new PacketPlayOutScoreboardTeam(name, displayName, prefix, suffix, nameTagVisibility, collisionRule, color,
-                null, 2, (friendlyFire ? 1 : 0) + (seeInvisible ? 2 : 0));
     }
 }

@@ -1,10 +1,10 @@
+name: SpigotLib
 author: gyuriX
+version: 6.0
+main: gyurix.spigotlib.Main
+loadbefore: [ProtocolLib]
+softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI,WorldEdit]
 commands:
-  spigotlib: 
+  spigotlib:
     aliases: [sl]
     description: Main command
-loadbefore: [ProtocolLib]
-main: gyurix.spigotlib.Main
-name: SpigotLib
-softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI,WorldEdit]
-version: 6.0

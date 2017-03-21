@@ -13,8 +13,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="spigot-1.11" level="application" />
     <orderEntry type="library" name="Vault" level="application" />
-    <orderEntry type="library" name="WorldEdit" level="application" />
     <orderEntry type="library" name="spigot-1.7.10" level="application" />
     <orderEntry type="library" name="PlaceholderAPI" level="application" />
+    <orderEntry type="library" name="WorldEdit" level="application" />
   </component>
 </module>

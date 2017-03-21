@@ -130,7 +130,7 @@ public class DefaultSerializers {
         }
 
         public ConfigData toData(Object in, Type... parameters) {
-            return new ConfigData((boolean) in ? "+" : "-");
+            return new ConfigData((boolean) in ? "+" : "\\-");
         }
     }
 

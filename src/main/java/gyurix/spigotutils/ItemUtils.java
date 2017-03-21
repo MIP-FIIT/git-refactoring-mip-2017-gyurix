@@ -81,6 +81,163 @@ public class ItemUtils {
     }
 
     /**
+     * A truth check if an iterable contains the given typed item or not
+     *
+     * @param source ItemStack iterable
+     * @param is     checked ItemStack
+     * @return True if the ItemStack iterable contains the checked ItemStack in any amount, false otherwise.
+     */
+    public static boolean containsItem(Iterable<ItemStack> source, ItemStack is) {
+        for (ItemStack i : source) {
+            if (itemSimilar(i, is))
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Counts the given item in the given inventory
+     *
+     * @param inv - The inventory in which the item should be counted
+     * @param is  - The countable item, the amount of the item is ignored (calculated as 1)
+     * @return The amount of the item which is in the inventory
+     */
+    public static int countItem(Inventory inv, ItemStack is) {
+        int count = 0;
+        int size = inv instanceof PlayerInventory ? 36 : inv.getSize();
+        for (int i = 0; i < size; i++) {
+            ItemStack current = inv.getItem(i);
+            if (current != null && current.getType() == is.getType() && current.getDurability() == is.getDurability())
+                count += current.getAmount();
+        }
+        return count;
+    }
+
+    /**
+     * Counts the available space for the given item in the given inventory
+     *
+     * @param inv      - The inventory to which the item should be added
+     * @param is       - The addable item
+     * @param maxStack - Maximal stack size of the item
+     * @return The maximum amount
+     */
+    public static int countItemSpace(Inventory inv, ItemStack is, int maxStack) {
+        int space = 0;
+        int size = inv instanceof PlayerInventory ? 36 : inv.getSize();
+        for (int i = 0; i < size; i++) {
+            ItemStack current = inv.getItem(i);
+            if (current == null || current.getType() == Material.AIR)
+                space += maxStack;
+            else if (itemSimilar(current, is))
+                space += maxStack - current.getAmount();
+        }
+        return space;
+    }
+
+    /**
+     * Fill variables in a ItemStack
+     * Available special variables:
+     * #amount: the amount value of the item
+     * #id: the id of the item
+     * #sub: the subid of the item
+     *
+     * @param is   - The ItemStack in which the variables should be filled
+     * @param vars - The fillable variables
+     * @return A clone of the original ItemStack with filled variables
+     */
+    public static ItemStack fillVariables(ItemStack is, Object... vars) {
+        if (is == null || is.getType() == Material.AIR)
+            return is;
+        is = is.clone();
+        String last = null;
+        for (Object v : vars) {
+            if (last == null)
+                last = (String) v;
+            else {
+                switch (last) {
+                    case "#amount":
+                        is.setAmount(Integer.valueOf(String.valueOf(v)));
+                        break;
+                    case "#id":
+                        String vs = String.valueOf(v);
+                        try {
+                            is.setTypeId(Integer.valueOf(vs));
+                        } catch (Throwable e) {
+                            try {
+                                is.setType(Material.valueOf(vs.toUpperCase()));
+                            } catch (Throwable e2) {
+                                error(cs, e2, "SpigotLib", "gyurix");
+                            }
+                        }
+                        break;
+                    case "#sub":
+                        is.setDurability(Short.valueOf(String.valueOf(v)));
+                        break;
+                    case "#owner":
+                        try {
+                            SkullMeta sm = (SkullMeta) is.getItemMeta();
+                            sm.setOwner(String.valueOf(v));
+                            is.setItemMeta(sm);
+                        } catch (Throwable e) {
+                        }
+                        break;
+                }
+                last = null;
+            }
+        }
+        if (is.hasItemMeta() && is.getItemMeta() != null) {
+            ItemMeta meta = is.getItemMeta();
+            if (meta.hasDisplayName() && meta.getDisplayName() != null)
+                meta.setDisplayName(SU.fillVariables(meta.getDisplayName(), vars));
+            if (meta.hasLore() && meta.getLore() != null) {
+                List<String> lore = meta.getLore();
+                for (int i = 0; i < lore.size(); i++)
+                    lore.set(i, SU.fillVariables(lore.get(i), vars));
+                ArrayList<String> newLore = new ArrayList<>();
+                for (String l : lore) {
+                    Collections.addAll(newLore, l.split("\n"));
+                }
+                meta.setLore(newLore);
+            }
+            is.setItemMeta(meta);
+        }
+        return is;
+    }
+
+    /**
+     * Get the numeric id of the given itemname, it works for both numeric and text ids.
+     *
+     * @param name the case insensitive material name of the item or the numeric id of the item.
+     * @return the numeric id of the requested item or 1, if the given name is incorrect or null
+     */
+    public static BlockData getId(String name) {
+        try {
+            BlockData bd = nameAliases.get(name.toLowerCase());
+            if (bd != null)
+                return bd.clone();
+            return new BlockData(Material.valueOf(name.toUpperCase()).getId());
+        } catch (Throwable e) {
+            try {
+                return new BlockData(Integer.valueOf(name));
+            } catch (Throwable e2) {
+                return new BlockData(7);
+            }
+        }
+    }
+
+    /**
+     * A truth check for two items, if they are actually totally same or not
+     *
+     * @param item1 first item of the equal checking
+     * @param item2 second item of the equal checking
+     * @return True if the two itemstack contains exactly the same abilities (id, count, durability, metadata), false
+     * otherwise
+     */
+    public static boolean itemEqual(ItemStack item1, ItemStack item2) {
+        return itemToString(item1).equals(itemToString(item2));
+    }
+
+    /**
      * A truth check for two items, if they type is actually totally same or not.
      * The only allowed difference between the stacks could be only their count.
      *
@@ -224,72 +381,6 @@ public class ItemUtils {
         return out.toString();
     }
 
-    /**
-     * A truth check if an iterable contains the given typed item or not
-     *
-     * @param source ItemStack iterable
-     * @param is     checked ItemStack
-     * @return True if the ItemStack iterable contains the checked ItemStack in any amount, false otherwise.
-     */
-    public static boolean containsItem(Iterable<ItemStack> source, ItemStack is) {
-        for (ItemStack i : source) {
-            if (itemSimilar(i, is))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * Counts the given item in the given inventory
-     *
-     * @param inv - The inventory in which the item should be counted
-     * @param is  - The countable item, the amount of the item is ignored (calculated as 1)
-     * @return The amount of the item which is in the inventory
-     */
-    public static int countItem(Inventory inv, ItemStack is) {
-        int count = 0;
-        int size = inv.getSize();
-        for (int i = 0; i < size; i++) {
-            ItemStack current = inv.getItem(i);
-            if (current != null && current.getType() == is.getType() && current.getDurability() == is.getDurability())
-                count += current.getAmount();
-        }
-        return count;
-    }
-
-    /**
-     * Counts the available space for the given item in the given inventory
-     *
-     * @param inv      - The inventory to which the item should be added
-     * @param is       - The addable item
-     * @param maxStack - Maximal stack size of the item
-     * @return The maximum amount
-     */
-    public static int countItemSpace(Inventory inv, ItemStack is, int maxStack) {
-        int space = 0;
-        int size = inv.getSize();
-        for (int i = 0; i < size; i++) {
-            ItemStack current = inv.getItem(i);
-            if (current == null || current.getType() == Material.AIR)
-                space += maxStack;
-            else if (itemSimilar(current, is))
-                space += maxStack - current.getAmount();
-        }
-        return space;
-    }
-
-    /**
-     * A truth check for two items, if they are actually totally same or not
-     *
-     * @param item1 first item of the equal checking
-     * @param item2 second item of the equal checking
-     * @return True if the two itemstack contains exactly the same abilities (id, count, durability, metadata), false
-     * otherwise
-     */
-    public static boolean itemEqual(ItemStack item1, ItemStack item2) {
-        return itemToString(item1).equals(itemToString(item2));
-    }
-
     public static ItemStack makeItem(Material type, int amount, short sub, String name, String... lore) {
         ItemStack is = new ItemStack(type, amount, sub);
         ItemMeta im = is.getItemMeta();
@@ -318,76 +409,6 @@ public class ItemUtils {
     }
 
     /**
-     * Fill variables in a ItemStack
-     * Available special variables:
-     * #amount: the amount value of the item
-     * #id: the id of the item
-     * #sub: the subid of the item
-     *
-     * @param is   - The ItemStack in which the variables should be filled
-     * @param vars - The fillable variables
-     * @return A clone of the original ItemStack with filled variables
-     */
-    public static ItemStack fillVariables(ItemStack is, Object... vars) {
-        if (is == null || is.getType() == Material.AIR)
-            return is;
-        is = is.clone();
-        String last = null;
-        for (Object v : vars) {
-            if (last == null)
-                last = (String) v;
-            else {
-                switch (last) {
-                    case "#amount":
-                        is.setAmount(Integer.valueOf(String.valueOf(v)));
-                        break;
-                    case "#id":
-                        String vs = String.valueOf(v);
-                        try {
-                            is.setTypeId(Integer.valueOf(vs));
-                        } catch (Throwable e) {
-                            try {
-                                is.setType(Material.valueOf(vs.toUpperCase()));
-                            } catch (Throwable e2) {
-                                error(cs, e2, "SpigotLib", "gyurix");
-                            }
-                        }
-                        break;
-                    case "#sub":
-                        is.setDurability(Short.valueOf(String.valueOf(v)));
-                        break;
-                    case "#owner":
-                        try {
-                            SkullMeta sm = (SkullMeta) is.getItemMeta();
-                            sm.setOwner(String.valueOf(v));
-                            is.setItemMeta(sm);
-                        } catch (Throwable e) {
-                        }
-                        break;
-                }
-                last = null;
-            }
-        }
-        if (is.hasItemMeta() && is.getItemMeta() != null) {
-            ItemMeta meta = is.getItemMeta();
-            if (meta.hasDisplayName() && meta.getDisplayName() != null)
-                meta.setDisplayName(SU.fillVariables(meta.getDisplayName(), vars));
-            if (meta.hasLore() && meta.getLore() != null) {
-                List<String> lore = meta.getLore();
-                for (int i = 0; i < lore.size(); i++)
-                    lore.set(i, SU.fillVariables(lore.get(i), vars));
-                ArrayList<String> newLore = new ArrayList<>();
-                for (String l : lore) {
-                    Collections.addAll(newLore, l.split("\n"));
-                }
-                meta.setLore(newLore);
-            }
-            is.setItemMeta(meta);
-        }
-        return is;
-    }
-
-    /**
      * Removes the given item from the given inventory
      *
      * @param inv - The inventory from which the item should be removed
@@ -396,7 +417,7 @@ public class ItemUtils {
      */
     public static int removeItem(Inventory inv, ItemStack is) {
         int left = is.getAmount();
-        int size = inv.getSize();
+        int size = inv instanceof PlayerInventory ? 36 : inv.getSize();
         for (int i = 0; i < size; i++) {
             ItemStack current = inv.getItem(i);
             if (current != null && current.getType() == is.getType() && current.getDurability() == is.getDurability()) {
@@ -636,26 +657,5 @@ public class ItemUtils {
         }
         out.setItemMeta(meta);
         return out;
-    }
-
-    /**
-     * Get the numeric id of the given itemname, it works for both numeric and text ids.
-     *
-     * @param name the case insensitive material name of the item or the numeric id of the item.
-     * @return the numeric id of the requested item or 1, if the given name is incorrect or null
-     */
-    public static BlockData getId(String name) {
-        try {
-            BlockData bd = nameAliases.get(name.toLowerCase());
-            if (bd != null)
-                return bd.clone();
-            return new BlockData(Material.valueOf(name.toUpperCase()).getId());
-        } catch (Throwable e) {
-            try {
-                return new BlockData(Integer.valueOf(name));
-            } catch (Throwable e2) {
-                return new BlockData(7);
-            }
-        }
     }
 }

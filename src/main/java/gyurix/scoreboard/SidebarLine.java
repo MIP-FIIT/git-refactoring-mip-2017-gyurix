@@ -1,6 +1,5 @@
 package gyurix.scoreboard;
 
-import com.google.common.collect.Sets;
 import gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore;
 import gyurix.scoreboard.team.CollisionRule;
 import gyurix.scoreboard.team.NameTagVisibility;
@@ -11,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.CHANGE;
 import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.REMOVE;
@@ -22,45 +22,22 @@ public class SidebarLine {
     public int number;
     public TeamData team, oldTeam;
     public String teamName;
-    public String text;
 
     public SidebarLine(Sidebar bar, char ch, String text, int number) {
         this.bar = bar;
         uniqueChar = ch;
         teamName = bar.teamNamePrefix + "§" + uniqueChar;
         String[] set = ScoreboardAPI.specialSplit(text, uniqueChar);
-        oldTeam = team = new TeamData(teamName, teamName, set[0], set[2], false, false, NameTagVisibility.always, CollisionRule.always, 0, Sets.newHashSet(set[1]));
+        ConcurrentSkipListSet cset = new ConcurrentSkipListSet();
+        cset.add(set[1]);
+        oldTeam = team = new TeamData(teamName, teamName, set[0], set[2], false, false, NameTagVisibility.always, CollisionRule.always, 0, cset);
         this.number = number;
         bar.currentData.scores.put(set[1], number);
         bar.currentData.teams.put(team.name, team);
     }
 
-    public boolean hide() {
-        if (hidden)
-            return false;
-        String user = team.players.iterator().next();
-        bar.currentData.scores.remove(user);
-        for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
-            e.getValue().scores.put(user, number);
-            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(CHANGE, bar.currentData.barname, user, number));
-        }
-        hidden = true;
-        return true;
-    }
-
-    public void setNumber(int value) {
-        if (number == value)
-            return;
-        number = value;
-        if (hidden)
-            return;
-        String user = team.players.iterator().next();
-        bar.currentData.scores.put(user, number);
-        Object packet = new PacketPlayOutScoreboardScore(PacketPlayOutScoreboardScore.ScoreAction.CHANGE, bar.currentData.barname, user, number).getVanillaPacket();
-        for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
-            e.getValue().scores.put(user, number);
-            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), packet);
-        }
+    public String getText() {
+        return team.prefix + team.players.iterator().next() + team.suffix;
     }
 
     public void setText(String text) {
@@ -99,6 +76,34 @@ public class SidebarLine {
                 e.getValue().scores.put(set[1], number);
                 SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), packet);
             }
+        }
+    }
+
+    public boolean hide() {
+        if (hidden)
+            return false;
+        String user = team.players.iterator().next();
+        bar.currentData.scores.remove(user);
+        for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
+            e.getValue().scores.put(user, number);
+            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(CHANGE, bar.currentData.barname, user, number));
+        }
+        hidden = true;
+        return true;
+    }
+
+    public void setNumber(int value) {
+        if (number == value)
+            return;
+        number = value;
+        if (hidden)
+            return;
+        String user = team.players.iterator().next();
+        bar.currentData.scores.put(user, number);
+        Object packet = new PacketPlayOutScoreboardScore(PacketPlayOutScoreboardScore.ScoreAction.CHANGE, bar.currentData.barname, user, number).getVanillaPacket();
+        for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
+            e.getValue().scores.put(user, number);
+            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), packet);
         }
     }
 

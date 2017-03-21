@@ -68,9 +68,11 @@ public class PacketPlayOutScoreboardTeam extends WrappedPacket {
     @Override
     public Object getVanillaPacket() {
         if (Reflection.ver.isAbove(ServerVersion.v1_9))
-            return ScoreboardTeam.newPacket(name, displayName, prefix, suffix, nameTagVisibility.name(), collisionRule.name(), color, players == null ? new ArrayList<>() : new ArrayList<>(players), action, friendFlags);
+            return ScoreboardTeam.newPacket(name, displayName, prefix, suffix, nameTagVisibility == null ? null : nameTagVisibility.name(), collisionRule == null ? null : collisionRule.name(), color, players == null ? new ArrayList<>() : new ArrayList<>(players), action, friendFlags);
+        else if (Reflection.ver.isAbove(ServerVersion.v1_8))
+            return ScoreboardTeam.newPacket(name, displayName, prefix, suffix, nameTagVisibility == null ? null : nameTagVisibility.name(), color, players == null ? new ArrayList<>() : new ArrayList<>(players), action, friendFlags);
         else
-            return ScoreboardTeam.newPacket(name, displayName, prefix, suffix, nameTagVisibility.name(), color, players == null ? new ArrayList<>() : new ArrayList<>(players), action, friendFlags);
+            return ScoreboardTeam.newPacket(name, displayName, prefix, suffix, players == null ? new ArrayList<>() : new ArrayList<>(players), action, friendFlags);
     }
 
     @Override
@@ -80,11 +82,13 @@ public class PacketPlayOutScoreboardTeam extends WrappedPacket {
         displayName = (String) d[1];
         prefix = (String) d[2];
         suffix = (String) d[3];
-        nameTagVisibility = NameTagVisibility.valueOf((String) d[4]);
-        int from = 4;
-        if (Reflection.ver.isAbove(ServerVersion.v1_9))
-            collisionRule = CollisionRule.valueOf((String) d[++from]);
-        color = (int) d[++from];
+        int from = 3;
+        if (Reflection.ver.isAbove(ServerVersion.v1_8)) {
+            nameTagVisibility = NameTagVisibility.valueOf((String) d[++from]);
+            if (Reflection.ver.isAbove(ServerVersion.v1_9))
+                collisionRule = CollisionRule.valueOf((String) d[++from]);
+            color = (int) d[++from];
+        }
         players = new ArrayList<>((Collection<String>) d[++from]);
         action = (int) d[++from];
         friendFlags = (int) d[++from];

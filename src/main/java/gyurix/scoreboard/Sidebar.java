@@ -8,7 +8,7 @@ public class Sidebar extends ScoreboardBar {
     /**
      * The lines of the Sidebar (0-14)
      */
-    private final ArrayList<SidebarLine> lines = new ArrayList<>();
+    public final ArrayList<SidebarLine> lines = new ArrayList<>();
 
     /**
      * Default sidebar constructor
