@@ -99,7 +99,7 @@ public class DataWatcher implements WrappedData, StringSerializable {
                 }
                 ++id;
             } catch (Throwable e) {
-                SU.error(SU.cs, e, "MythaliumCore", "gyuriX");
+                SU.error(SU.cs, e, "SpigotLib", "gyuriX");
             }
         }
         return out;

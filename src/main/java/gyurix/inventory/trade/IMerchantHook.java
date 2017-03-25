@@ -23,7 +23,7 @@ class IMerchantHook implements InvocationHandler {
         try {
             offers = (ArrayList<Object>) mrlC.newInstance();
         } catch (Throwable e) {
-            SU.error(SU.cs, e, "MythaliumCore", "mythalium");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
     }
 

@@ -44,7 +44,7 @@ public class PacketPlayInUseEntity extends WrappedPacket {
             try {
                 return valueOf.invoke(null, name());
             } catch (Throwable e) {
-                SU.error(SU.cs, e, "MythaliumCore", "mythalium");
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
             return null;
         }

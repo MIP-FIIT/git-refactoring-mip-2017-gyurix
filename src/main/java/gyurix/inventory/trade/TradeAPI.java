@@ -100,7 +100,7 @@ public class TradeAPI implements Listener {
             openTradeM.invoke(nmsPlr, im);
             return (MerchantInventory) plr.getOpenInventory().getTopInventory();
         } catch (Throwable e) {
-            SU.error(SU.cs, e, "MythaliumCore", "mythalium");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
