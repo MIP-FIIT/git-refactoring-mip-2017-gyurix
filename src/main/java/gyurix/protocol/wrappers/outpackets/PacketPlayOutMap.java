@@ -94,9 +94,8 @@ public class PacketPlayOutMap extends WrappedPacket {
             showIcons = (boolean) d[st++];
         Object[] nmsIcons = (Object[]) d[st++];
         icons.clear();
-        for (int i = 0; i < nmsIcons.length; i++) {
+        for (int i = 0; i < nmsIcons.length; i++)
             icons.add(new MapIcon(nmsIcons[i]));
-        }
         columns = (int) d[st++];
         rows = (int) d[st++];
         x = (int) d[st++];

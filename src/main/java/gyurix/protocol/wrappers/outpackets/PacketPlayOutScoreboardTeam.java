@@ -84,9 +84,12 @@ public class PacketPlayOutScoreboardTeam extends WrappedPacket {
         suffix = (String) d[3];
         int from = 3;
         if (Reflection.ver.isAbove(ServerVersion.v1_8)) {
-            nameTagVisibility = NameTagVisibility.valueOf((String) d[++from]);
-            if (Reflection.ver.isAbove(ServerVersion.v1_9))
-                collisionRule = CollisionRule.valueOf((String) d[++from]);
+            String name = (String) d[++from];
+            nameTagVisibility = name == null ? null : NameTagVisibility.valueOf(name);
+            if (Reflection.ver.isAbove(ServerVersion.v1_9)) {
+                name = (String) d[++from];
+                collisionRule = name == null ? null : CollisionRule.valueOf(name);
+            }
             color = (int) d[++from];
         }
         players = new ArrayList<>((Collection<String>) d[++from]);

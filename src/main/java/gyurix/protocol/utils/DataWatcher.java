@@ -10,16 +10,18 @@ import gyurix.spigotutils.ServerVersion;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.UUID;
 
 public class DataWatcher implements WrappedData, StringSerializable {
     private static Constructor con;
-    private static Field dwField;
+    private static Field dwField, itemField, idField;
     private static Constructor itc;
-    private static Field itemField;
-    private static Class nmsDW;
-    private static Class nmsItem;
+    private static Class nmsDW, nmsItem;
     private static Constructor objcon;
     private static Map<Class, Object> serializers;
 
@@ -51,6 +53,7 @@ public class DataWatcher implements WrappedData, StringSerializable {
                 nmsItem = Reflection.getInnerClass(nmsDW, "WatchableObject");
                 itc = nmsItem.getConstructors()[0];
                 itemField = Reflection.getFirstFieldOfType(nmsItem, Object.class);
+                idField = Reflection.getField(nmsItem, "b");
                 serializers = (Map<Class, Object>) Reflection.getFirstFieldOfType(nmsDW, Map.class).get(null);
             }
         } catch (Throwable e) {
@@ -63,11 +66,10 @@ public class DataWatcher implements WrappedData, StringSerializable {
     public DataWatcher() {
     }
 
-    public DataWatcher(Iterable<Object> list) {
+    public DataWatcher(Iterable<WrappedItem> list) {
         try {
-            int i = 0;
-            for (Object o : list)
-                map.put(i++, o);
+            for (WrappedItem wi : list)
+                map.put(wi.id, wi.data);
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
@@ -75,29 +77,31 @@ public class DataWatcher implements WrappedData, StringSerializable {
 
     public DataWatcher(Object nmsData) {
         try {
-            Map<Integer, Object> m = (Map<Integer, Object>) dwField.get(nmsData);
-            for (Entry<Integer, Object> e : m.entrySet()) {
-                map.put(e.getKey(), itemField.get(e.getValue()));
+            if (nmsData instanceof Iterable) {
+                for (WrappedItem wi : wrapNMSItems((Iterable<Object>) nmsData))
+                    map.put(wi.id, wi.data);
+                return;
             }
+            Map<Integer, Object> m = (Map<Integer, Object>) dwField.get(nmsData);
+            for (Entry<Integer, Object> e : m.entrySet())
+                map.put(e.getKey(), itemField.get(e.getValue()));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
     }
 
-    public static ArrayList<Object> convertToNmsItems(ArrayList<Object> in) {
+    public static ArrayList<Object> convertToNmsItems(Iterable<WrappedItem> in) {
         ArrayList<Object> out = new ArrayList<>();
-        int id = 0;
-        for (Object wr : in) {
+        for (WrappedItem wi : in) {
             try {
-                Object o = WrapperFactory.unwrap(wr);
+                Object o = WrapperFactory.unwrap(wi.data);
                 if (o != null) {
                     if (Reflection.ver.isAbove(ServerVersion.v1_9))
-                        out.add(itc.newInstance(objcon.newInstance(id, serializers.get(o.getClass())), o));
+                        out.add(itc.newInstance(objcon.newInstance(wi.id, serializers.get(o.getClass())), o));
                     else {
-                        out.add(itc.newInstance(serializers.get(o.getClass()), id, o));
+                        out.add(itc.newInstance(serializers.get(o.getClass()), wi.id, o));
                     }
                 }
-                ++id;
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyuriX");
             }
@@ -105,16 +109,48 @@ public class DataWatcher implements WrappedData, StringSerializable {
         return out;
     }
 
-    public static ArrayList<Object> wrapNMSItems(List<Object> in) {
-        ArrayList<Object> out = new ArrayList<>();
+    public static ArrayList<WrappedItem> wrapNMSItems(Iterable<Object> in) {
+        ArrayList<WrappedItem> out = new ArrayList<>();
         for (Object o : in) {
             try {
-                out.add(WrapperFactory.wrap(itemField.get(o)));
+                out.add(new WrappedItem(o));
             } catch (Throwable e) {
-                SU.error(SU.cs, e, "MythaliumCore", "gyuriX");
+                SU.error(SU.cs, e, "SpigotLib", "gyuriX");
             }
         }
         return out;
+    }
+
+    public static class WrappedItem implements WrappedData {
+        public Object data;
+        public int id;
+
+        public WrappedItem(int id, Object data) {
+            this.id = id;
+            this.data = data;
+        }
+
+        public WrappedItem(Object o) {
+            try {
+                data = WrapperFactory.wrap(itemField.get(o));
+                id = idField.getInt(o);
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+        }
+
+        @Override
+        public Object toNMS() {
+            try {
+                if (Reflection.ver.isAbove(ServerVersion.v1_9))
+                    return itc.newInstance(objcon.newInstance(id, serializers.get(data.getClass())), data);
+                else
+                    return itc.newInstance(serializers.get(data.getClass()), id, data);
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+            return null;
+        }
     }
 
     @Override
@@ -135,7 +171,7 @@ public class DataWatcher implements WrappedData, StringSerializable {
                         m.put(e.getKey(), itc.newInstance(type, e.getKey(), o));
                     }
                 } catch (Throwable err) {
-                    SU.cs.sendMessage("§e[DataWatcher] §cError on getting serializer for object #" + e.getKey() + " - §f" + o + "§c having class §f" + (o == null ? "null" : o.getClass().getSimpleName()));
+                    SU.cs.sendMessage("§e[DataWatcher] §cError on getting serializer for object #" + e.getKey() + " - §f" + o + "§c having class §f" + o.getClass().getSimpleName());
                     SU.error(SU.cs, err, "SpigotLib", "gyurix");
                 }
             }

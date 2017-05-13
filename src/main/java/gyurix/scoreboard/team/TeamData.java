@@ -86,6 +86,10 @@ public class TeamData {
     }
 
     public void update(Player plr, TeamData oldTeam) {
+        if (oldTeam == null) {
+            SU.tp.sendPacket(plr, getCreatePacket());
+            return;
+        }
         //Update info
         if (!oldTeam.displayName.equals(displayName) || !oldTeam.prefix.equals(prefix) || !oldTeam.suffix.equals(suffix) ||
                 oldTeam.friendlyFire != friendlyFire || oldTeam.seeInvisible != seeInvisible || oldTeam.nameTagVisibility != nameTagVisibility ||

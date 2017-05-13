@@ -6,9 +6,8 @@ import gyurix.protocol.utils.HandType;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotutils.ServerVersion;
 
-public class PacketPlayInArmAnimation
-        extends WrappedPacket {
-    public HandType hand = HandType.MAIN_HAND;
+public class PacketPlayInArmAnimation extends WrappedPacket {
+    public HandType hand;
     public long timestamp;
 
     @Override

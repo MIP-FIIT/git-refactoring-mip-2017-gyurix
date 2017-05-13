@@ -19,10 +19,16 @@ public class CuboidArea implements StringSerializable, Cloneable {
     public BlockLocation pos1, pos2;
     public String world;
 
+    public CuboidArea() {
+    }
+
     public CuboidArea(String in) {
         try {
             String[] d = in.split(" ", 7);
-            if (d.length == 6) {
+            if (d.length == 1) {
+                world = d[0];
+                return;
+            } else if (d.length == 6) {
                 pos1 = new BlockLocation(Integer.valueOf(d[0]), Integer.valueOf(d[1]), Integer.valueOf(d[2]));
                 pos2 = new BlockLocation(Integer.valueOf(d[3]), Integer.valueOf(d[4]), Integer.valueOf(d[5]));
             } else {
@@ -53,9 +59,6 @@ public class CuboidArea implements StringSerializable, Cloneable {
             pos1.z = pos2.z;
             pos2.z = tmp;
         }
-    }
-
-    public CuboidArea() {
     }
 
     public CuboidArea(Selection sel, boolean saveWorld) {

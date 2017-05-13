@@ -17,6 +17,13 @@ public class PacketPlayOutChat extends WrappedPacket {
      */
     public byte type;
 
+    public PacketPlayOutChat() {
+    }
+
+    public PacketPlayOutChat(byte type, ChatTag tag) {
+        this.type = type;
+        this.tag = tag;
+    }
 
     @Override
     public Object getVanillaPacket() {

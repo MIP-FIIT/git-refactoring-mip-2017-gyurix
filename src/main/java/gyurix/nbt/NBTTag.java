@@ -1,9 +1,13 @@
 package gyurix.nbt;
 
+import gyurix.protocol.utils.WrappedData;
+import io.netty.buffer.ByteBuf;
+
 import java.util.Collection;
 import java.util.Map;
 
-public abstract class NBTTag {
+public abstract class NBTTag implements WrappedData {
+
     public static NBTTag make(Object o) {
         if (o instanceof NBTTag) {
             return (NBTTag) o;
@@ -22,6 +26,6 @@ public abstract class NBTTag {
 
     public abstract void loadFromNMS(Object var1);
 
-    public abstract Object saveToNMS();
+    public abstract void write(ByteBuf buf);
 }
 

@@ -2,13 +2,15 @@ package gyurix.nbt;
 
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
+import io.netty.buffer.ByteBuf;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 
-public class NBTPrimitive
-        extends NBTTag {
+import static gyurix.spigotlib.SU.utf8;
+
+public class NBTPrimitive extends NBTTag {
     private static HashMap<Class, Constructor> c = new HashMap();
     private static HashMap<Class, Field> f = new HashMap();
     public Object data;
@@ -17,7 +19,10 @@ public class NBTPrimitive
     }
 
     public NBTPrimitive(Object tag) {
-        loadFromNMS(tag);
+        if (tag.getClass().getName().startsWith("net.minecraft.server."))
+            loadFromNMS(tag);
+        else
+            data = tag;
     }
 
     @Override
@@ -30,7 +35,7 @@ public class NBTPrimitive
     }
 
     @Override
-    public Object saveToNMS() {
+    public Object toNMS() {
         try {
             return c.get(data.getClass()).newInstance(data);
         } catch (Throwable e) {
@@ -70,6 +75,36 @@ public class NBTPrimitive
         NBTApi.types[11] = cl = Reflection.getNMSClass("NBTTagIntArray");
         c.put(int[].class, Reflection.getConstructor(cl, int[].class));
         f.put(cl, Reflection.getField(cl, "data"));
+    }
+
+    public void write(ByteBuf buf) {
+        if (data instanceof byte[]) {
+            byte[] d = (byte[]) data;
+            buf.writeInt(d.length);
+            buf.writeBytes(d);
+        } else if (data instanceof int[]) {
+            int[] d = (int[]) data;
+            buf.writeInt(d.length);
+            for (int i : d)
+                buf.writeInt(i);
+        } else if (data instanceof String) {
+            String d = (String) data;
+            byte[] bytes = d.getBytes(utf8);
+            buf.writeShort(bytes.length);
+            buf.writeBytes(bytes);
+        } else if (data instanceof Byte)
+            buf.writeByte((byte) data);
+        else if (data instanceof Short)
+            buf.writeShort((short) data);
+        else if (data instanceof Integer)
+            buf.writeInt((int) data);
+        else if (data instanceof Long)
+            buf.writeLong((long) data);
+        else if (data instanceof Float)
+            buf.writeFloat((float) data);
+        else if (data instanceof Double)
+            buf.writeDouble((double) data);
+
     }
 
     public NBTPrimitive setData(Object data) {

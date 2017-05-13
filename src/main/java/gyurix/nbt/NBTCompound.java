@@ -1,9 +1,13 @@
 package gyurix.nbt;
 
+import io.netty.buffer.ByteBuf;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static gyurix.spigotlib.SU.utf8;
 
 public class NBTCompound extends NBTTag {
     static Field mapField;
@@ -39,12 +43,12 @@ public class NBTCompound extends NBTTag {
     }
 
     @Override
-    public Object saveToNMS() {
+    public Object toNMS() {
         try {
             Object tag = nmsClass.newInstance();
             Map m = (Map) mapField.get(tag);
             for (Entry<String, NBTTag> e : map.entrySet()) {
-                m.put(e.getKey(), e.getValue().saveToNMS());
+                m.put(e.getKey(), e.getValue().toNMS());
             }
             return tag;
         } catch (Throwable e) {
@@ -91,6 +95,17 @@ public class NBTCompound extends NBTTag {
             map.put(key, NBTTag.make(value));
         }
         return this;
+    }
+
+    public void write(ByteBuf buf) {
+        for (Map.Entry<String, NBTTag> e : map.entrySet()) {
+            buf.writeByte(NBTApi.getType(e.getValue()));
+            byte[] a = e.getKey().getBytes(utf8);
+            buf.writeShort(a.length);
+            buf.writeBytes(a);
+            e.getValue().write(buf);
+        }
+        buf.writeByte(0);
     }
 
     public String toString() {

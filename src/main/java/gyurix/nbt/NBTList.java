@@ -1,5 +1,6 @@
 package gyurix.nbt;
 
+import io.netty.buffer.ByteBuf;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -8,8 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class NBTList
-        extends NBTTag {
+public class NBTList extends NBTTag {
     public static Class nmsClass;
     static Field listField;
     static Field listType;
@@ -43,12 +43,12 @@ public class NBTList
     }
 
     @Override
-    public Object saveToNMS() {
+    public Object toNMS() {
         try {
             Object o = nmsClass.newInstance();
             ArrayList<Object> l = new ArrayList<Object>();
             for (NBTTag t : list) {
-                l.add(t.saveToNMS());
+                l.add(t.toNMS());
             }
             listField.set(o, l);
             if (!l.isEmpty()) {
@@ -59,6 +59,19 @@ public class NBTList
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public void write(ByteBuf buf) {
+        if (list.isEmpty()) {
+            buf.writeByte(0);
+            buf.writeInt(0);
+            return;
+        }
+        buf.writeByte(NBTApi.getType(list.get(0)));
+        buf.writeInt(list.size());
+        for (NBTTag nbtTag : list)
+            nbtTag.write(buf);
     }
 
     public NBTList addAll(Collection col) {

@@ -1,14 +1,27 @@
 package gyurix.spigotutils;
 
+import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.protocol.Reflection;
+import gyurix.protocol.utils.WrappedData;
+import gyurix.spigotlib.SU;
 import org.bukkit.Chunk;
 import org.bukkit.block.Block;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 
 /**
  * Created by GyuriX on 2016. 08. 13..
  */
-public class XZ implements StringSerializable, Comparable<XZ> {
-    public final int x, z;
+public class XZ implements StringSerializable, Comparable<XZ>, WrappedData {
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    private static Class nmsClass = Reflection.getNMSClass("ChunkCoordIntPair");
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    private static Constructor con = Reflection.getConstructor(nmsClass, int.class, int.class);
+    @ConfigSerialization.ConfigOptions(serialize = false)
+    private static Field xField = Reflection.getField(nmsClass, "x"), zField = Reflection.getField(nmsClass, "z");
+    public int x, z;
 
     public XZ(String in) {
         String[] d = in.split(" ", 2);
@@ -24,6 +37,15 @@ public class XZ implements StringSerializable, Comparable<XZ> {
     public XZ(Block bl) {
         x = bl.getX();
         z = bl.getZ();
+    }
+
+    public XZ(Object nms) {
+        try {
+            x = xField.getInt(nms);
+            z = zField.getInt(nms);
+        } catch (IllegalAccessException e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
     }
 
     public XZ(Chunk c) {
@@ -45,6 +67,16 @@ public class XZ implements StringSerializable, Comparable<XZ> {
     public boolean equals(Object obj) {
         XZ xz = (XZ) obj;
         return x == xz.x && z == xz.z;
+    }
+
+    @Override
+    public Object toNMS() {
+        try {
+            return con.newInstance(x, z);
+        } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+        }
+        return null;
     }
 
     @Override

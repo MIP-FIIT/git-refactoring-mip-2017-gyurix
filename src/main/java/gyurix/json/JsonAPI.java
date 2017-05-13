@@ -6,9 +6,17 @@ import gyurix.protocol.Reflection;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import static gyurix.protocol.Reflection.newInstance;
 
@@ -16,7 +24,7 @@ public class JsonAPI {
     public static final Type[] emptyTypeArray = new Type[0];
 
     public static int HextoDec(char c) {
-        return c >= '0' && c <= '9' ? c - 48 : c >= 'A' && c <= 'F' ? c - 65 : c - 97;
+        return c >= '0' && c <= '9' ? c - 48 : c >= 'A' && c <= 'F' ? c - 55 : c - 87;
     }
 
     private static Object deserialize(Object parent, StringReader in, Class cl, Type... params) throws Throwable {

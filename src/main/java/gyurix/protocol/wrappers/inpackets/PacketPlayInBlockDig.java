@@ -8,22 +8,21 @@ import gyurix.protocol.wrappers.WrappedPacket;
 
 import java.lang.reflect.Method;
 
-public class PacketPlayInBlockDig
-        extends WrappedPacket {
+public class PacketPlayInBlockDig extends WrappedPacket {
     public BlockLocation block;
     public DigType digType;
     public Direction direction;
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.BlockDig.newPacket(block.toNMS(), direction.toNMS(), digType.toVanillaDigType());
+        return PacketInType.BlockDig.newPacket(block.toNMS(), direction == null ? null : direction.toNMS(), digType.toVanillaDigType());
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.BlockDig.getPacketData(packet);
         block = new BlockLocation(data[0]);
-        direction = Direction.valueOf(data[1].toString().toUpperCase());
+        direction = data[1] == null ? null : Direction.valueOf(data[1].toString().toUpperCase());
         digType = DigType.valueOf(data[2].toString());
     }
 

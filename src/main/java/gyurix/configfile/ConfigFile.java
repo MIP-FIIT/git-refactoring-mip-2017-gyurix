@@ -3,7 +3,14 @@ package gyurix.configfile;
 import gyurix.mysql.MySQLDatabase;
 import org.apache.commons.lang.ArrayUtils;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -157,7 +164,7 @@ public class ConfigFile {
     }
 
     public <T> T get(String adress, Class<T> cl) {
-        return getData(adress).deserialize(cl);
+        return getData(adress, true).deserialize(cl);
     }
 
     public <T> T get(String adress, Class<T> cl, Type... types) {
@@ -310,7 +317,7 @@ public class ConfigFile {
     }
 
     public boolean save() {
-        if (db != null && dbArgs != null) {
+        if (db != null) {
             ArrayList<String> sl = new ArrayList<>();
             mysqlUpdate(sl, dbArgs);
             db.batch(sl, null);

@@ -6,24 +6,24 @@ import gyurix.protocol.wrappers.WrappedPacket;
 import io.netty.buffer.ByteBuf;
 
 public class PacketPlayInCustomPayload extends WrappedPacket implements StringSerializable {
-    public String message;
-    public ByteBuf serializer;
+    public String channel;
+    public ByteBuf data;
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.CustomPayload.newPacket(message, serializer);
+        return PacketInType.CustomPayload.newPacket(channel, data);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
-        Object[] data = PacketInType.CustomPayload.getPacketData(packet);
-        message = (String) data[0];
-        serializer = (ByteBuf) data[1];
+        Object[] d = PacketInType.CustomPayload.getPacketData(packet);
+        channel = (String) d[0];
+        data = (ByteBuf) d[1];
     }
 
     @Override
     public String toString() {
-        return message;
+        return channel;
     }
 }
 

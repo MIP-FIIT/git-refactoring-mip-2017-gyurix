@@ -184,8 +184,10 @@ public class ChatTag {
         ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
         StringBuilder out = new StringBuilder();
         for (ChatTag tag : tags) {
-            out.append(tag.getFormatPrefix());
-            out.append(tag.text);
+            if (tag.text != null) {
+                out.append(tag.getFormatPrefix());
+                out.append(tag.text);
+            }
         }
         return SU.optimizeColorCodes(out.toString());
     }
@@ -211,7 +213,8 @@ public class ChatTag {
         ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
         StringBuilder out = new StringBuilder();
         for (ChatTag tag : tags) {
-            out.append(tag.text);
+            if (tag.text != null)
+                out.append(tag.text);
         }
         return out.toString();
     }

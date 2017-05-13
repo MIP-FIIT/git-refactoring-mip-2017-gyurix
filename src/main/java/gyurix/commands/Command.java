@@ -9,7 +9,11 @@ import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.ChatAPI.ChatMessageType;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Effect;
+import org.bukkit.Instrument;
+import org.bukkit.Location;
+import org.bukkit.Note;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -22,8 +26,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static gyurix.api.BungeeAPI.executeBungeeCommands;
-import static gyurix.api.BungeeAPI.executeServerCommands;
+import static gyurix.api.BungeeAPI.*;
 
 public class Command implements StringSerializable {
     public static HashMap<String, CustomCommandHandler> customCommands = new HashMap();
@@ -459,7 +462,7 @@ public class Command implements StringSerializable {
     }
 
     public static boolean executeAll(CommandSender sender, ArrayList<Command> list, Object... args) {
-        if (list == null)
+        if (sender == null || list == null)
             return false;
         for (Command c : list)
             if (!c.execute(sender, args))
@@ -467,14 +470,42 @@ public class Command implements StringSerializable {
         return true;
     }
 
+    public static boolean executeAll(Iterable<String> plns, ArrayList<Command> list, Object... args) {
+        if (plns == null || list == null)
+            return false;
+        for (String pln : plns) {
+            Player p = Bukkit.getPlayerExact(pln);
+            if (p == null)
+                continue;
+            for (Command c : list)
+                c.execute(p, args);
+        }
+        return true;
+    }
+
     public boolean execute(CommandSender sender, Object... args) {
+        if (sender == null)
+            return false;
         if (delay < 0)
             return executeNow(sender, args);
         SU.sch.scheduleSyncDelayedTask(Main.pl, new DelayedCommandExecutor(this, sender, args), delay);
         return true;
     }
 
+    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
+        if (list == null || pls == null)
+            return false;
+        for (Player p : pls) {
+            if (p != plr)
+                for (Command c : list)
+                    c.execute(p, args);
+        }
+        return true;
+    }
+
     public boolean executeNow(CommandSender sender, Object... args) {
+        if (sender == null)
+            return false;
         Player plr = sender instanceof Player ? (Player) sender : null;
         String text = VariableAPI.fillVariables(cmd, plr, args);
         try {
@@ -489,30 +520,6 @@ public class Command implements StringSerializable {
             SU.error(sender, e, "SpigotLib", "gyurix");
             return false;
         }
-    }
-
-    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
-        if (list == null || pls == null)
-            return false;
-        for (Player p : pls) {
-            if (p != plr)
-                for (Command c : list)
-                    c.execute(p, args);
-        }
-        return true;
-    }
-
-    public static boolean executeAll(Iterable<String> plns, ArrayList<Command> list, Object... args) {
-        if (plns == null || list == null)
-            return false;
-        for (String pln : plns) {
-            Player p = Bukkit.getPlayer(pln);
-            if (p == null)
-                continue;
-            for (Command c : list)
-                c.execute(p, args);
-        }
-        return true;
     }
 
     @Override

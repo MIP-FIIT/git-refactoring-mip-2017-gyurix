@@ -62,8 +62,13 @@ import javax.script.ScriptEngineManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -71,12 +76,11 @@ import static com.google.common.collect.Lists.newArrayList;
 import static gyurix.economy.EconomyAPI.VaultHookType.*;
 import static gyurix.economy.EconomyAPI.vaultHookType;
 import static gyurix.protocol.Reflection.ver;
-import static gyurix.spigotlib.Config.PlayerFile.backend;
-import static gyurix.spigotlib.Config.PlayerFile.mysql;
+import static gyurix.spigotlib.Config.PlayerFile.*;
 import static gyurix.spigotlib.Config.allowAllPermsForAuthor;
 import static gyurix.spigotlib.Items.enchants;
 import static gyurix.spigotlib.SU.*;
-import static gyurix.spigotutils.ServerVersion.v1_8;
+import static gyurix.spigotutils.ServerVersion.*;
 
 public class Main extends JavaPlugin implements Listener {
     /**
@@ -87,7 +91,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.0";
+    public static final String version = "6.1";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -546,7 +550,8 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void onEnable() {
-        SU.pm.registerEvents(new EnchantAPI(), this);
+        if (Reflection.ver.isAbove(v1_10))
+            SU.pm.registerEvents(new EnchantAPI(), this);
         cm = new CustomCommandMap();
         pm.registerEvents(tp, this);
         if (schedulePacketAPI) {

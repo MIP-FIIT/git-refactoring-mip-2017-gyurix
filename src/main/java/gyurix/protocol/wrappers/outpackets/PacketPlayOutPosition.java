@@ -5,6 +5,7 @@ import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.utils.WrappedData;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.ServerVersion;
 import org.bukkit.Location;
 
 import java.lang.reflect.Method;
@@ -74,7 +75,8 @@ public class PacketPlayOutPosition extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.Position.newPacket(x, y, z, yaw, pitch, getVanillaFlags(), teleportId);
+        return Reflection.ver.isAbove(ServerVersion.v1_9) ? PacketOutType.Position.newPacket(x, y, z, yaw, pitch, getVanillaFlags(), teleportId) :
+                PacketOutType.Position.newPacket(x, y, z, yaw, pitch, getVanillaFlags());
     }
 
     @Override
@@ -86,7 +88,8 @@ public class PacketPlayOutPosition extends WrappedPacket {
         yaw = (float) d[3];
         pitch = (float) d[4];
         setVanillaFlags((Set) d[5]);
-        teleportId = (int) d[6];
+        if (Reflection.ver.isAbove(ServerVersion.v1_9))
+            teleportId = (int) d[6];
     }
 
     public HashSet<Object> getVanillaFlags() {

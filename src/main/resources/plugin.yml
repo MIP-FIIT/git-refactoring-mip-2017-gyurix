@@ -1,6 +1,6 @@
 name: SpigotLib
 author: gyuriX
-version: 6.0
+version: 6.1
 main: gyurix.spigotlib.Main
 loadbefore: [ProtocolLib]
 softdepend: [ProtocolSupport,ViaVersion,Vault,Essentials,PlaceholderAPI,WorldEdit]

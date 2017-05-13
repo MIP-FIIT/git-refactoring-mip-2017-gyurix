@@ -9,8 +9,7 @@ import org.bukkit.entity.Player;
 import java.util.HashMap;
 import java.util.Map;
 
-import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.CHANGE;
-import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.REMOVE;
+import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.*;
 import static gyurix.scoreboard.ScoreboardDisplayMode.INTEGER;
 
 /**
@@ -33,8 +32,8 @@ public class BarData {
 
     public BarData clone() {
         BarData out = new BarData(barname, title, displayMode, visible);
-        for (TeamData td : teams.values())
-            out.teams.put(td.name, td.clone());
+        for (Map.Entry<String, TeamData> e : teams.entrySet())
+            out.teams.put(e.getKey(), e.getValue().clone());
         for (Map.Entry<String, Integer> e : scores.entrySet())
             out.scores.put(e.getKey(), e.getValue());
         return out;

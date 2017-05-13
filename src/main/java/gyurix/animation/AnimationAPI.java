@@ -1,7 +1,11 @@
 package gyurix.animation;
 
 import gyurix.animation.Animation.AnimationSerializer;
-import gyurix.animation.effects.*;
+import gyurix.animation.effects.BlinkEffect;
+import gyurix.animation.effects.FlameEffect;
+import gyurix.animation.effects.FramesEffect;
+import gyurix.animation.effects.RainbowEffect;
+import gyurix.animation.effects.ScrollerEffect;
 import gyurix.api.VariableAPI;
 import gyurix.api.VariableAPI.VariableHandler;
 import gyurix.configfile.ConfigSerialization;
@@ -29,13 +33,14 @@ public final class AnimationAPI {
         effects.put("frame", FramesEffect.class);
         effects.put("flame", FlameEffect.class);
         effects.put("rainbow", RainbowEffect.class);
-        for (String key : effects.keySet()) {
+        for (String key : effects.keySet())
             VariableAPI.handlers.put(key, new CustomEffectHandler(key));
-        }
         ConfigSerialization.serializers.put(Animation.class, new AnimationSerializer());
     }
 
     public static AnimationRunnable runAnimation(Plugin pl, Animation a, String name, Player plr, AnimationUpdateListener listener) {
+        if (pl == null || a == null || plr == null || listener == null)
+            return null;
         HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
         if (map == null)
             runningAnimations.put(pl, map = new HashMap<>());
@@ -48,6 +53,8 @@ public final class AnimationAPI {
     }
 
     public static void stopRunningAnimation(AnimationRunnable ar) {
+        if (ar == null)
+            return;
         HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(ar.pl);
         if (map == null || map.isEmpty())
             return;
@@ -57,6 +64,8 @@ public final class AnimationAPI {
     }
 
     public static void stopRunningAnimations(Player plr) {
+        if (plr == null)
+            return;
         for (HashMap<String, HashSet<AnimationRunnable>> map : runningAnimations.values()) {
             HashSet<AnimationRunnable> ars = map.remove(plr.getName());
             if (ars != null)
@@ -67,6 +76,8 @@ public final class AnimationAPI {
     }
 
     public static void stopRunningAnimations(Plugin pl) {
+        if (pl == null)
+            return;
         HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.remove(pl);
         if (map == null || map.isEmpty())
             return;
@@ -77,6 +88,8 @@ public final class AnimationAPI {
     }
 
     public static void stopRunningAnimations(Plugin pl, Player plr) {
+        if (pl == null || plr == null)
+            return;
         HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
         if (map == null || map.isEmpty())
             return;

@@ -11,6 +11,8 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.projectiles.ProjectileSource;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -35,6 +37,27 @@ public class EntityUtils {
             nmsWorldDataF = getField(nmsWorldCL, "worldData"),
             dataWatcherF = getField(nmsEntityCL, "datawatcher"),
             craftWorldF = getField(nmsWorldCL, "world");
+
+    public static Entity getEntityDamager(Entity ent) {
+        if (ent instanceof Projectile) {
+            ProjectileSource src = ((Projectile) ent).getShooter();
+            if (src instanceof Entity)
+                return (Entity) src;
+            return null;
+        }
+        return ent;
+    }
+
+    public static Player getPlayerDamager(Entity ent) {
+        if (ent instanceof Player)
+            return (Player) ent;
+        if (ent instanceof Projectile) {
+            ProjectileSource src = ((Projectile) ent).getShooter();
+            if (src instanceof Player)
+                return (Player) src;
+        }
+        return null;
+    }
 
     /**
      * Converts the given NMS entity to a Bukkit entity

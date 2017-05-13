@@ -21,7 +21,7 @@ public class PacketPlayInBlockPlace extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        Object[] d = null;
+        Object[] d;
         if (Reflection.ver.isBellow(ServerVersion.v1_8)) {
             d = new Object[7];
             d[0] = location.toNMS();

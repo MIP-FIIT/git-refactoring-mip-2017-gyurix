@@ -2,6 +2,7 @@ package gyurix.protocol.utils;
 
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.ServerVersion;
 
 import java.lang.reflect.Method;
 
@@ -16,15 +17,21 @@ public enum InventoryClickType implements WrappedData {
     THROW,
     QUICK_CRAFT,
     PICKUP_ALL;
-    Method valueOf = Reflection.getMethod(Reflection.getNMSClass("InventoryClickType"), "valueOf", String.class);
+    static Method valueOf;
+
+    static {
+        if (Reflection.ver.isAbove(ServerVersion.v1_9))
+            valueOf = Reflection.getMethod(Reflection.getNMSClass("InventoryClickType"), "valueOf", String.class);
+    }
 
     @Override
     public Object toNMS() {
-        try {
-            return valueOf.invoke(null, name());
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return null;
+        if (Reflection.ver.isAbove(ServerVersion.v1_9))
+            try {
+                return valueOf.invoke(null, name());
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+        return ordinal();
     }
 }

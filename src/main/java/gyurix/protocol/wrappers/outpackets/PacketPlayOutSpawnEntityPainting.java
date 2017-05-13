@@ -12,13 +12,14 @@ import java.util.UUID;
  */
 public class PacketPlayOutSpawnEntityPainting extends WrappedPacket {
     public int entityId;
+    public String title;
     public UUID entityUUID;
     public Direction facing;
     public BlockLocation location;
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.SpawnEntityPainting.newPacket(entityId, entityUUID, location.toNMS(), facing.toNMS());
+        return PacketOutType.SpawnEntityPainting.newPacket(entityId, entityUUID, location.toNMS(), facing.toNMS(), title);
     }
 
     @Override
@@ -27,6 +28,7 @@ public class PacketPlayOutSpawnEntityPainting extends WrappedPacket {
         entityId = (int) d[0];
         entityUUID = (UUID) d[1];
         location = new BlockLocation(d[2]);
-        facing = Direction.valueOf(d[0].toString());
+        facing = Direction.valueOf(d[3].toString());
+        title = (String) d[4];
     }
 }

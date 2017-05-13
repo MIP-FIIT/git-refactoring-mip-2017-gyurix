@@ -30,8 +30,6 @@ public class WebApi {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setDoOutput(true);
             con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json");
-            con.setRequestProperty("Content-Length", String.valueOf(req.length()));
             con.getOutputStream().write(req.getBytes(Charset.forName("UTF-8")));
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {

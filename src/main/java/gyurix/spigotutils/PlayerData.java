@@ -5,6 +5,7 @@ import gyurix.scoreboard.NametagBar;
 import gyurix.scoreboard.ScoreboardAPI;
 import gyurix.scoreboard.Sidebar;
 import gyurix.scoreboard.Tabbar;
+import gyurix.spigotlib.SU;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -31,12 +32,12 @@ public class PlayerData {
     public Location loc, compassTarget;
     public NametagBar nametagBar;
     public ArrayList<PotionEffect> pes = new ArrayList<PotionEffect>();
-    public Player plr;
+    public String pln;
     public Tabbar tabBar;
     public float xp, saturation, exhausion, walkSpeed, flySpeed;
 
     public PlayerData(Player plr, GameMode setGm, Location setLoc) {
-        this.plr = plr;
+        pln = plr.getName();
         loc = plr.getLocation();
         xp = plr.getExp();
         saturation = plr.getSaturation();
@@ -71,6 +72,7 @@ public class PlayerData {
     }
 
     public void restore() {
+        Player plr = SU.getPlayer(pln);
         plr.teleport(loc);
         plr.setLevel(level);
         plr.setExp(xp);

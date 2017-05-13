@@ -14,8 +14,16 @@ import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.*;
-import org.bukkit.command.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Server;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -34,8 +42,17 @@ import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
@@ -347,7 +364,7 @@ public final class SU {
                 p = loadPlayer(uuid);
             return p;
         }
-        Player p = Bukkit.getPlayer(name);
+        Player p = Bukkit.getPlayerExact(name);
         if (p == null)
             p = loadPlayer(getUUID(name));
         return p;
@@ -747,7 +764,7 @@ public final class SU {
     public static String[] splitPage(String text, int lines) {
         String[] d = text.split("\n");
         String[] out = new String[(d.length + (lines - 1)) / lines];
-        for (int i = 0; i < d.length % lines; i++) {
+        for (int i = 0; i < d.length; i++) {
             if (i % lines == 0)
                 out[i / lines] = d[i];
             else

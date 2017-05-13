@@ -10,7 +10,7 @@ public class PacketPlayInSetCreativeSlot extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.SetCreativeSlot.newPacket(slot, itemStack.toNMS());
+        return PacketInType.SetCreativeSlot.newPacket(slot, itemStack == null ? null : itemStack.toNMS());
     }
 
     @Override

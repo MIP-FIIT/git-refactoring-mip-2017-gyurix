@@ -38,8 +38,8 @@ public class ScoreboardAPI {
         if (from == to)
             return false;
         if (to == null) {
-            from.deActivate(plr);
-            SU.tp.sendPacket(plr, from.hidePacket);
+            from.unload(plr);
+            //SU.tp.sendPacket(plr, from.hidePacket);
             return true;
         }
         if (!to.load(plr))

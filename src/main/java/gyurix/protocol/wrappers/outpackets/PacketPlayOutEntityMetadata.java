@@ -2,6 +2,7 @@ package gyurix.protocol.wrappers.outpackets;
 
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.utils.DataWatcher;
+import gyurix.protocol.utils.DataWatcher.WrappedItem;
 import gyurix.protocol.wrappers.WrappedPacket;
 
 import java.util.ArrayList;
@@ -12,13 +13,13 @@ import java.util.List;
  */
 public class PacketPlayOutEntityMetadata extends WrappedPacket {
     public int entityId;
-    public ArrayList<Object> meta = new ArrayList<>();
+    public ArrayList<WrappedItem> meta = new ArrayList<>();
 
     public PacketPlayOutEntityMetadata() {
 
     }
 
-    public PacketPlayOutEntityMetadata(int entityId, ArrayList<Object> meta) {
+    public PacketPlayOutEntityMetadata(int entityId, ArrayList<WrappedItem> meta) {
         this.entityId = entityId;
         this.meta = meta;
     }

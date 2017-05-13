@@ -10,12 +10,29 @@ import gyurix.spigotlib.SU;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static gyurix.configfile.ConfigData.serializeObject;
@@ -415,7 +432,7 @@ public class DefaultSerializers {
             for (Field f : Reflection.getAllFields(fixClass)) {
                 f.setAccessible(true);
                 try {
-                    if (f.getType().getName().startsWith("java.lang.reflect."))
+                    if (f.getType() == Class.class || f.getType().getName().startsWith("java.lang.reflect."))
                         continue;
                     String fn = f.getName();
                     ConfigData d = input.mapData.get(new ConfigData(fn));
@@ -476,8 +493,10 @@ public class DefaultSerializers {
                         continue;
                     Object o = f.get(obj);
                     if (o != null && !o.toString().matches(dffValue)) {
-                        String fn = f.getName();
                         String cn = ConfigSerialization.calculateClassName(Primitives.wrap(f.getType()), o.getClass());
+                        if (f.getType() == Class.class || f.getType().getName().startsWith("java.lang.reflect."))
+                            continue;
+                        String fn = f.getName();
                         Type t = f.getGenericType();
                         ConfigData value = serializeObject(o, !cn.isEmpty(),
                                 t instanceof ParameterizedType ?

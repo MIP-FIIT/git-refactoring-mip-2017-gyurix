@@ -3,6 +3,8 @@ package gyurix.protocol.utils;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.LocationData;
+import gyurix.spigotutils.ServerVersion;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -13,10 +15,11 @@ import java.lang.reflect.Method;
 public class BlockLocation implements WrappedData, StringSerializable {
     public static final BlockLocation notDefined = new BlockLocation(0, 0, 0);
     private static final Class cl = Reflection.getNMSClass("BlockPosition");
+    private static final Class baseCl = Reflection.getNMSClass("BaseBlockPosition");
     private static final Constructor con = Reflection.getConstructor(cl, int.class, int.class, int.class);
-    private static final Method getX = Reflection.getMethod(cl, "getX");
-    private static final Method getY = Reflection.getMethod(cl, "getY");
-    private static final Method getZ = Reflection.getMethod(cl, "getZ");
+    private static final Method getX = Reflection.getMethod(Reflection.ver.isAbove(ServerVersion.v1_9) ? cl : baseCl, "getX");
+    private static final Method getY = Reflection.getMethod(Reflection.ver.isAbove(ServerVersion.v1_9) ? cl : baseCl, "getY");
+    private static final Method getZ = Reflection.getMethod(Reflection.ver.isAbove(ServerVersion.v1_9) ? cl : baseCl, "getZ");
     public int x;
     public int y;
     public int z;
@@ -46,6 +49,12 @@ public class BlockLocation implements WrappedData, StringSerializable {
         this(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
+    public BlockLocation(LocationData loc) {
+        this.x = (int) loc.x;
+        this.y = (int) loc.y;
+        this.z = (int) loc.z;
+    }
+
     public BlockLocation(Object nmsData) {
         try {
             x = (int) getX.invoke(nmsData);
@@ -58,6 +67,19 @@ public class BlockLocation implements WrappedData, StringSerializable {
 
     public BlockLocation clone() {
         return new BlockLocation(x, y, z);
+    }
+
+    @Override
+    public int hashCode() {
+        return (x << 20) + (y << 12) + z;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || obj.getClass() != BlockLocation.class)
+            return false;
+        BlockLocation bl = (BlockLocation) obj;
+        return bl.x == x && bl.y == y && bl.z == z;
     }
 
     @Override

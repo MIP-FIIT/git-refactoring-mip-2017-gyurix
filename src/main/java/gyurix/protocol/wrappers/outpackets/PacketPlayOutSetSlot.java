@@ -8,9 +8,9 @@ import gyurix.protocol.wrappers.WrappedPacket;
  * Created by GyuriX on 2016.02.28..
  */
 public class PacketPlayOutSetSlot extends WrappedPacket {
-    private ItemStackWrapper item;
-    private int slot;
-    private int windowId;
+    public ItemStackWrapper item;
+    public int slot;
+    public int windowId;
 
     public PacketPlayOutSetSlot() {
 
