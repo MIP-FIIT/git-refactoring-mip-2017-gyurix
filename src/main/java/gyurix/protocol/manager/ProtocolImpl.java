@@ -1,6 +1,5 @@
 package gyurix.protocol.manager;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.MapMaker;
 import com.mojang.authlib.GameProfile;
 import gyurix.protocol.Protocol;
@@ -12,7 +11,13 @@ import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPromise;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,37 +28,36 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
-import static gyurix.protocol.Reflection.getFirstFieldOfType;
-import static gyurix.protocol.Reflection.getNMSClass;
+import static gyurix.protocol.Reflection.*;
 import static gyurix.spigotlib.Main.pl;
 
 public class ProtocolImpl extends Protocol {
+    private static final Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
     private static final Field getGameProfile = getFirstFieldOfType(getNMSClass("PacketLoginInStart"), GameProfile.class);
     private static final Class minecraftServerClass = getNMSClass("MinecraftServer");
     private static final Class serverConnectionClass = getNMSClass("ServerConnection");
-    private final Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
-    private final List<Channel> serverChannels = Lists.newArrayList();
-    private ChannelInitializer<Channel> beginInit;
-    private List<ChannelFuture> channelFutures;
+    private static Object oldH, oldChildH;
+    private static Field oldHChildF;
+    private static Method oldHInitM;
+    private ChannelFuture cf;
     private boolean closed;
-    private ChannelInitializer<Channel> endInit;
     private ChannelInboundHandlerAdapter serverChannel;
 
     public ProtocolImpl() {
     }
 
-    public final void close() {
-        if (!closed) {
-            closed = true;
-            for (Player player : SU.srv.getOnlinePlayers()) {
-                uninjectPlayer(player);
-            }
-            HandlerList.unregisterAll(this);
-            unregisterChannelHandler();
-        }
+    public final void close() throws Throwable {
+        if (closed)
+            return;
+        closed = true;
+        HandlerList.unregisterAll(this);
+        unregisterChannelHandler();
+        for (Player player : SU.srv.getOnlinePlayers())
+            uninjectPlayer(player);
     }
 
     @Override
@@ -76,7 +80,9 @@ public class ProtocolImpl extends Protocol {
     public final void init() throws Throwable {
         Object minecraftServer = getFirstFieldOfType(Reflection.getOBCClass("CraftServer"), minecraftServerClass).get(SU.srv);
         Object serverConnection = getFirstFieldOfType(minecraftServerClass, serverConnectionClass).get(minecraftServer);
-        channelFutures = (List) getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection);
+        cf = (ChannelFuture) ((List) getFirstFieldOfType(serverConnectionClass, List.class).get(serverConnection)).iterator().next();
+        Field f = getLastFieldOfType(serverConnectionClass, List.class);
+        f.set(serverConnection, new NetworkManagerList((List) f.get(serverConnection)));
         registerChannelHandler();
         registerPlayers();
     }
@@ -119,108 +125,14 @@ public class ProtocolImpl extends Protocol {
         handler.pc = packetCapture;
     }
 
-    private void registerChannelHandler() {
-        createServerChannelHandler();
-        for (ChannelFuture ch : channelFutures) {
-            Channel serverChannel = ch.channel();
-            serverChannels.add(serverChannel);
-            serverChannel.pipeline().addFirst(this.serverChannel);
-        }
-    }
-
-    private void registerPlayers() {
-        for (Player player : SU.srv.getOnlinePlayers()) {
-            injectPlayer(player);
-        }
-    }
-
     private void createServerChannelHandler() {
-        endInit = new ChannelInitializer<Channel>() {
-
-            protected void initChannel(Channel channel) throws Exception {
-                try {
-                    if (!closed)
-                        injectChannelInternal(channel);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        beginInit = new ChannelInitializer<Channel>() {
-
-            protected void initChannel(Channel channel) throws Exception {
-                channel.pipeline().addLast(endInit);
-            }
-        };
-        serverChannel = new ChannelInboundHandlerAdapter() {
-            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-                Channel channel = (Channel) msg;
-                channel.pipeline().addFirst(beginInit);
-                ctx.fireChannelRead(msg);
-            }
-        };
-    }
-
-    public void injectPlayer(final Player plr) {
-        injectChannelInternal(getChannel(plr)).player = plr;
-    }
-
-    private NewChannelHandler injectChannelInternal(final Channel channel) {
-        NewChannelHandler interceptor = (NewChannelHandler) channel.pipeline().get("SpigotLib");
-        if (interceptor == null) {
-            final NewChannelHandler newInterceptor = interceptor = new NewChannelHandler();
-            try {
-                channel.pipeline().addBefore("packet_handler", "SpigotLib", newInterceptor);
-            } catch (Throwable e) {
-                System.err.println("Scheduled interception");
-                SU.sch.scheduleSyncDelayedTask(pl, new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            channel.pipeline().addBefore("packet_handler", "SpigotLib", newInterceptor);
-                        } catch (Throwable e) {
-                            System.err.println("Failed interception");
-                        }
-                    }
-                });
-            }
-        }
-        return interceptor;
-    }
-
-    public void uninjectPlayer(Player player) {
-        uninjectChannel(getChannel(player));
-    }
-
-    private void unregisterChannelHandler() {
-        if (serverChannel == null) {
-            return;
-        }
-        for (Channel ch : serverChannels) {
-            final ChannelPipeline pipeline = ch.pipeline();
-            ch.eventLoop().execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        pipeline.remove(serverChannel);
-                    } catch (Throwable e) {
-                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
-                    }
-                }
-            });
-        }
-    }
-
-    public void uninjectChannel(final Channel channel) {
-        if (channel == null)
-            return;
-        channel.eventLoop().execute(new Runnable() {
+        serverChannel = new ChannelInitializer() {
             @Override
-            public void run() {
-                channel.pipeline().remove("SpigotLib");
+            protected void initChannel(Channel channel) throws Exception {
+                NetworkManagerList.lastChannel.put(Thread.currentThread().getName(), channel);
+                oldHInitM.invoke(oldChildH, channel);
             }
-        });
+        };
     }
 
     public boolean hasInjected(Player player) {
@@ -229,6 +141,17 @@ public class ProtocolImpl extends Protocol {
 
     public boolean hasInjected(Channel channel) {
         return channel.pipeline().get("SpigotLib") != null;
+    }
+
+    private NewChannelHandler injectChannelInternal(final Channel channel) {
+        NewChannelHandler interceptor = (NewChannelHandler) channel.pipeline().get("SpigotLib");
+        if (interceptor == null)
+            channel.pipeline().addBefore("packet_handler", "SpigotLib", interceptor = new NewChannelHandler());
+        return interceptor;
+    }
+
+    public void injectPlayer(final Player plr) {
+        injectChannelInternal(getChannel(plr)).player = plr;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -240,9 +163,9 @@ public class ProtocolImpl extends Protocol {
             }
             if (closed)
                 return;
-            Channel channel = getChannel(e.getPlayer());
             injectPlayer(e.getPlayer());
         } catch (Throwable err) {
+            SU.error(SU.cs, err, "SpigotLib", "gyurix");
         }
     }
 
@@ -259,24 +182,38 @@ public class ProtocolImpl extends Protocol {
         });
     }
 
-    public final class NewChannelHandler extends ChannelDuplexHandler {
+    private void registerChannelHandler() throws IllegalAccessException {
+        createServerChannelHandler();
+        Channel serverCh = cf.channel();
+        oldH = serverCh.pipeline().first();
+        oldHChildF = Reflection.getField(oldH.getClass(), "childHandler");
+        oldChildH = oldHChildF.get(oldH);
+        oldHInitM = Reflection.getMethod(oldChildH.getClass(), "initChannel", Channel.class);
+        oldHChildF.set(oldH, serverChannel);
+    }
+
+    private void registerPlayers() {
+        for (Player player : SU.srv.getOnlinePlayers())
+            injectPlayer(player);
+    }
+
+    public void uninjectChannel(final Channel channel) {
+        if (channel == null)
+            return;
+        channel.pipeline().remove("SpigotLib");
+    }
+
+    public void uninjectPlayer(Player player) {
+        uninjectChannel(getChannel(player));
+    }
+
+    private void unregisterChannelHandler() throws IllegalAccessException {
+        oldHChildF.set(oldH, oldChildH);
+    }
+
+    public static final class NewChannelHandler extends ChannelDuplexHandler {
         public PacketCapture pc;
         public Player player;
-
-        public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
-            try {
-                if (pc != null)
-                    pc.capOut(packet);
-                PacketOutEvent e = new PacketOutEvent(ctx.channel(), player, packet);
-                dispatchPacketOutEvent(e);
-                packet = e.getPacket();
-                if (!e.isCancelled()) {
-                    super.write(ctx, packet, promise);
-                }
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
-        }
 
         public void channelRead(ChannelHandlerContext ctx, Object packet) throws Exception {
             try {
@@ -296,6 +233,21 @@ public class ProtocolImpl extends Protocol {
                 }
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
+        }
+
+        public void write(ChannelHandlerContext ctx, Object packet, ChannelPromise promise) throws Exception {
+            try {
+                if (pc != null)
+                    pc.capOut(packet);
+                PacketOutEvent e = new PacketOutEvent(ctx.channel(), player, packet);
+                dispatchPacketOutEvent(e);
+                packet = e.getPacket();
+                if (!e.isCancelled()) {
+                    super.write(ctx, packet, promise);
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
         }
 

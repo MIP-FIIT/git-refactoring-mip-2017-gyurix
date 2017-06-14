@@ -18,7 +18,7 @@ public class Config {
     public static boolean debug;
     @ConfigOptions(comment = "Servers default language.")
     public static String defaultLang = "en";
-    public static boolean disableWeatherChange;
+    public static boolean disableWeatherChange, forceReducedMode;
     public static String earlyJoinKickMsg = "§eStarting server...";
     public static int earlyJoinProtection = 30;
     @ConfigOptions(comment = "EconomyAPI settings")

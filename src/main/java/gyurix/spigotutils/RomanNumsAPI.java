@@ -1,16 +1,15 @@
-package gyurix.enchant;
+package gyurix.spigotutils;
 
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.Scanner;
 import java.util.TreeMap;
 
 /**
  * An API for converting latin numbers to roman and vice versa
  */
 public class RomanNumsAPI {
-    public static NavigableMap<Integer, String> reversed;
-    public static TreeMap<Integer, String> romanNums = new TreeMap<>();
+    private static NavigableMap<Integer, String> reversed;
+    private static TreeMap<Integer, String> romanNums = new TreeMap<>();
 
     static {
         romanNums.put(1, "I");
@@ -40,16 +39,6 @@ public class RomanNumsAPI {
         romanNums.put(1000000, "M̅");
         reversed = romanNums.descendingMap();
     }
-
-    public static void main(String[] args) {
-        Scanner scan = new Scanner(System.in);
-        while (true) {
-            System.out.print(">>> ");
-            int out = fromRoman(scan.nextLine());
-            System.out.println(out);
-        }
-    }
-
     /**
      * Convert the given roman number to latin
      *

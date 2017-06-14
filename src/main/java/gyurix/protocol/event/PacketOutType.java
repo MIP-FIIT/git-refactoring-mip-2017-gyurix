@@ -6,7 +6,6 @@ import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -15,6 +14,7 @@ import java.util.HashMap;
 
 public enum PacketOutType {
     Abilities,
+    Advancements,
     Animation,
     AttachEntity,
     Bed,
@@ -64,6 +64,7 @@ public enum PacketOutType {
     Position,
     RelEntityMove,
     RelEntityMoveLook,
+    Recipes,
     RemoveEntityEffect,
     ResourcePackSend,
     Respawn,
@@ -137,10 +138,6 @@ public enum PacketOutType {
      * Initializes the PacketOutType, DO NOT USE THIS METHOD
      */
     public static void init() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("§e-------->  §4[§cPacketAPI - PacketOutType INIT§4]§e");
-        ArrayList<PacketOutType> nowrapper = new ArrayList<>();
-        ArrayList<PacketOutType> notfound = new ArrayList<>();
         for (PacketOutType t : PacketOutType.values()) {
             String name = t.name();
             String cln = "Packet" + (name.startsWith("LoginOut") || name.startsWith("Status") ? name : "PlayOut" + name);
@@ -157,25 +154,36 @@ public enum PacketOutType {
                     t.fs.add(f);
                 }
                 t.supported = true;
-            } catch (Throwable e) {
-                notfound.add(t);
+            } catch (Throwable ignored) {
             }
             try {
                 t.wrapper = (Class<? extends WrappedPacket>) Class.forName("gyurix.protocol.wrappers.outpackets." + cln);
-            } catch (Throwable e) {
-                nowrapper.add(t);
+            } catch (Throwable ignored) {
             }
         }
-        if (!notfound.isEmpty())
-            sb.append("\n§cNot found OUT packets (please report to the dev):§f ").append(StringUtils.join(notfound, ", "));
-        else
-            sb.append("\n§aFound every supported packets (no errors)");
-        if (!nowrapper.isEmpty())
-            sb.append("\n§eMissing OUT packet wrappers (will be coded later):§f ").append(StringUtils.join(nowrapper, ", "));
-        else
-            sb.append("\n§aFound wrappers for all the IN packet types (that's awesome)");
-        sb.append("\n§e-------------------------------------------------------------------------------");
-        SU.cs.sendMessage(sb.toString());
+    }
+
+    /**
+     * Fills the given packet with the given data
+     *
+     * @param packet - The fillable packet
+     * @param data   - The filling data
+     */
+    public void fillPacket(Object packet, Object... data) {
+        ArrayList<Field> fields = Lists.newArrayList(fs);
+        for (Object d : data) {
+            for (int f = 0; f < fields.size(); f++) {
+                try {
+                    Field ff = fields.get(f);
+                    ff.set(packet, d);
+                    fields.remove(f--);
+                    break;
+                } catch (Throwable e) {
+                    if (Config.debug)
+                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                }
+            }
+        }
     }
 
     /**
@@ -220,29 +228,6 @@ public enum PacketOutType {
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
-        }
-    }
-
-    /**
-     * Fills the given packet with the given data
-     *
-     * @param packet - The fillable packet
-     * @param data   - The filling data
-     */
-    public void fillPacket(Object packet, Object... data) {
-        ArrayList<Field> fields = Lists.newArrayList(fs);
-        for (Object d : data) {
-            for (int f = 0; f < fields.size(); f++) {
-                try {
-                    Field ff = fields.get(f);
-                    ff.set(packet, d);
-                    fields.remove(f--);
-                    break;
-                } catch (Throwable e) {
-                    if (Config.debug)
-                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
-                }
-            }
         }
     }
 

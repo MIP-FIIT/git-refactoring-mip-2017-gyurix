@@ -25,16 +25,11 @@ public abstract class Protocol implements Listener {
     private static final HashMap<Plugin, ArrayList<PacketOutListener>> pluginOutListeners = new HashMap<>();
 
     /**
-     * Closes the PacketAPI
-     */
-    public abstract void close();
-
-    /**
      * Dispatches an incoming packet event
      *
      * @param event - The packet event
      */
-    public void dispatchPacketInEvent(PacketInEvent event) {
+    public static void dispatchPacketInEvent(PacketInEvent event) {
         String pn = event.getPacket().getClass().getSimpleName();
         if (event.getType() == null) {
             SU.cs.sendMessage(pa + "Missing in packet type:§c " + pn + "§e.");
@@ -57,7 +52,7 @@ public abstract class Protocol implements Listener {
      *
      * @param event - The packet event
      */
-    public void dispatchPacketOutEvent(PacketOutEvent event) {
+    public static void dispatchPacketOutEvent(PacketOutEvent event) {
         String pn = event.getPacket().getClass().getSimpleName();
         if (event.getType() == null) {
             SU.cs.sendMessage(pa + "Missing out packet type:§c " + pn + "§e.");
@@ -74,6 +69,11 @@ public abstract class Protocol implements Listener {
                 }
             }
     }
+
+    /**
+     * Closes the PacketAPI
+     */
+    public abstract void close() throws Throwable;
 
     /**
      * Returns the PacketCapturer, which captures the packets

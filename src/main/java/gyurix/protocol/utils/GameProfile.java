@@ -1,9 +1,7 @@
 package gyurix.protocol.utils;
 
 import com.google.common.collect.Multimap;
-import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.json.JsonAPI;
-import gyurix.json.JsonSettings;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
 
@@ -16,14 +14,8 @@ import java.util.UUID;
  * Created by GyuriX on 2015.12.25..
  */
 public class GameProfile implements WrappedData {
-    @JsonSettings(serialize = false)
-    @ConfigOptions(serialize = false)
     public static final Class cl = Reflection.getUtilClass("com.mojang.authlib.GameProfile");
-    @JsonSettings(serialize = false)
-    @ConfigOptions(serialize = false)
     public static final Constructor con = Reflection.getConstructor(cl, UUID.class, String.class);
-    @JsonSettings(serialize = false)
-    @ConfigOptions(serialize = false)
     public static final Field fid = Reflection.getField(cl, "id"),
             fname = Reflection.getField(cl, "name"),
             fproperties = Reflection.getField(cl, "properties"),
@@ -61,6 +53,15 @@ public class GameProfile implements WrappedData {
         }
     }
 
+    public GameProfile clone() {
+        GameProfile out = new GameProfile(name, id);
+        out.demo = demo;
+        out.legacy = legacy;
+        for (Property p : properties)
+            out.properties.add(p.clone());
+        return out;
+    }
+
     @Override
     public Object toNMS() {
         try {
@@ -76,21 +77,9 @@ public class GameProfile implements WrappedData {
         }
     }
 
-    @Override
-    public String toString() {
-        return JsonAPI.serialize(this);
-    }
-
-
     public static class Property implements WrappedData {
-        @JsonSettings(serialize = false)
-        @ConfigOptions(serialize = false)
         private static final Class cl = Reflection.getClass("com.mojang.authlib.properties.Property");
-        @JsonSettings(serialize = false)
-        @ConfigOptions(serialize = false)
         private static final Constructor con = Reflection.getConstructor(cl, String.class, String.class, String.class);
-        @JsonSettings(serialize = false)
-        @ConfigOptions(serialize = false)
         private static final Field fname = Reflection.getField(cl, "name"),
                 fvalue = Reflection.getField(cl, "value"),
                 fsignature = Reflection.getField(cl, "signature");
@@ -122,5 +111,16 @@ public class GameProfile implements WrappedData {
                 return null;
             }
         }
+
+        public Property clone() {
+            return new Property(name, value, signature);
+        }
     }
+
+    @Override
+    public String toString() {
+        return JsonAPI.serialize(this);
+    }
+
+
 }

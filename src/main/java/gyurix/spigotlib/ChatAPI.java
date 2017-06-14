@@ -3,7 +3,7 @@ package gyurix.spigotlib;
 import gyurix.chat.ChatTag;
 import gyurix.json.JsonAPI;
 import gyurix.protocol.Reflection;
-import gyurix.protocol.event.PacketOutType;
+import gyurix.protocol.wrappers.outpackets.PacketPlayOutChat;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -27,6 +27,16 @@ public class ChatAPI {
     public static Method toICBC;
 
     /**
+     * Converts the given message to raw JSON format
+     *
+     * @param msg - The message
+     * @return The conversion result raw json
+     */
+    public static String TextToJson(String msg) {
+        return ChatTag.fromExtraText(msg).toString();
+    }
+
+    /**
      * Initializes the ChatAPI. Do not use this method.
      */
     public static void init() {
@@ -40,6 +50,16 @@ public class ChatAPI {
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
+    }
+
+    /**
+     * Converts a string to it's json format
+     *
+     * @param value - The convertable String
+     * @return The conversion result
+     */
+    public static String quoteJson(String value) {
+        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
     }
 
     /**
@@ -66,7 +86,7 @@ public class ChatAPI {
      * @param pls  -  The receiver list, if it is empty then all the online players will get the message
      */
     public static void sendJsonMsg(ChatMessageType type, String msg, Collection<? extends Player> pls) {
-        if (Reflection.ver.isAbove(v1_8)) {
+        if (!Config.forceReducedMode && Reflection.ver.isAbove(v1_8)) {
             String json = type == ChatMessageType.ACTION_BAR ? quoteJson(msg) : TextToJson(msg);
             sendRawJson(type, json, pls);
         } else {
@@ -74,26 +94,6 @@ public class ChatAPI {
             for (Player p : pls)
                 p.sendMessage(msg);
         }
-    }
-
-    /**
-     * Converts a string to it's json format
-     *
-     * @param value - The convertable String
-     * @return The conversion result
-     */
-    public static String quoteJson(String value) {
-        return "{\"text\":\"" + JsonAPI.escape(value) + "\"}";
-    }
-
-    /**
-     * Converts the given message to raw JSON format
-     *
-     * @param msg - The message
-     * @return The conversion result raw json
-     */
-    public static String TextToJson(String msg) {
-        return ChatTag.fromExtraText(msg).toString();
     }
 
     /**
@@ -106,8 +106,8 @@ public class ChatAPI {
     public static void sendRawJson(ChatMessageType type, String json, Player... pls) {
         if (Config.debug)
             SU.cs.sendMessage("§bSendRawJson - §f" + json);
-        if (Reflection.ver.isAbove(v1_8)) {
-            Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, (byte) type.ordinal());
+        if (!Config.forceReducedMode && Reflection.ver.isAbove(v1_8)) {
+            Object packet = new PacketPlayOutChat((byte) type.ordinal(), JsonAPI.deserialize(json, ChatTag.class)).getVanillaPacket();
             for (Player p : pls)
                 SU.tp.sendPacket(p, packet);
             return;
@@ -128,7 +128,7 @@ public class ChatAPI {
         if (Config.debug)
             SU.cs.sendMessage("§bSendRawJson - §f" + json);
         if (Reflection.ver.isAbove(v1_8)) {
-            Object packet = PacketOutType.Chat.newPacket(toICBC(json), null, (byte) type.ordinal());
+            Object packet = new PacketPlayOutChat((byte) type.ordinal(), JsonAPI.deserialize(json, ChatTag.class)).getVanillaPacket();
             for (Player p : pls)
                 SU.tp.sendPacket(p, packet);
             return;

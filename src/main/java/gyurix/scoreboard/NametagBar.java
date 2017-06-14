@@ -16,7 +16,7 @@ public class NametagBar extends ScoreboardBar {
     int nextId = 0;
 
     public NametagBar() {
-        super("NB" + id, "NB" + id++, 1);
+        super("NB" + id, "NB" + id++, 2);
     }
 
     public void addPlayers(String team, String... players) {

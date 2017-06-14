@@ -48,7 +48,8 @@ public abstract class ScoreboardBar {
         newBd.update(plr, bd);
         loaded.put(plr.getName(), newBd);
         active.put(plr.getName(), newBd);
-        SU.tp.sendPacket(plr, showPacket);
+        if (currentData.visible)
+            SU.tp.sendPacket(plr, showPacket);
         return true;
     }
 
@@ -117,19 +118,6 @@ public abstract class ScoreboardBar {
         update();
     }
 
-    public void update() {
-        Iterator<Map.Entry<String, BarData>> it = active.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, BarData> e = it.next();
-            BarData newBd = currentData.clone();
-            Player plr = Bukkit.getPlayer(e.getKey());
-            if (plr == null)
-                it.remove();
-            newBd.update(plr, e.getValue());
-            e.setValue(newBd);
-        }
-    }
-
     /**
      * Checks if this ScoreboardBar is active for the given player or not
      *
@@ -165,8 +153,10 @@ public abstract class ScoreboardBar {
      * @param visible - The new visibility state
      */
     public void setVisible(boolean visible) {
-        if (visible != currentData.visible)
+        if (visible != currentData.visible) {
             currentData.visible = visible;
+            update();
+        }
     }
 
     /**
@@ -181,7 +171,8 @@ public abstract class ScoreboardBar {
         BarData bd = currentData.clone();
         bd.load(plr);
         loaded.put(plr.getName(), bd);
-        SU.tp.sendPacket(plr, showPacket);
+        if (currentData.visible)
+            SU.tp.sendPacket(plr, showPacket);
         active.put(plr.getName(), bd);
         return true;
     }
@@ -199,6 +190,23 @@ public abstract class ScoreboardBar {
         active.remove(plr.getName());
         bd.unload(plr);
         return true;
+    }
+
+    public void update() {
+        Iterator<Map.Entry<String, BarData>> it = active.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, BarData> e = it.next();
+            BarData newBd = currentData.clone();
+            Player plr = Bukkit.getPlayer(e.getKey());
+            if (plr == null)
+                it.remove();
+            newBd.update(plr, e.getValue());
+            if (!e.getValue().visible && newBd.visible)
+                SU.tp.sendPacket(plr, showPacket);
+            if (e.getValue().visible && !newBd.visible)
+                SU.tp.sendPacket(plr, hidePacket);
+            e.setValue(newBd);
+        }
     }
 }
 

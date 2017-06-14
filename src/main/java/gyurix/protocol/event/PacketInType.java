@@ -5,7 +5,6 @@ import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -18,6 +17,7 @@ public enum PacketInType {
     LoginInStart,
     Abilities,
     ArmAnimation,
+    AutoRecipe,
     BlockDig,
     BlockPlace,
     BoatMove,
@@ -30,6 +30,7 @@ public enum PacketInType {
     Flying,
     HeldItemSlot,
     KeepAlive,
+    RecipeDisplayed,
     ResourcePackStatus,
     SetCreativeSlot,
     Settings,
@@ -87,10 +88,6 @@ public enum PacketInType {
      * Initializes the PacketInType, DO NOT USE THIS METHOD
      */
     public static void init() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("§e-------->  §4[§cPacketAPI - PacketInType INIT§4]§e");
-        ArrayList<PacketInType> nowrapper = new ArrayList<>();
-        ArrayList<PacketInType> notfound = new ArrayList<>();
         for (PacketInType t : PacketInType.values()) {
             String name = t.name();
             String cln = "Packet" + (name.startsWith("Login") || name.startsWith("Status") || name.startsWith("Handshaking") ? name : "PlayIn" + name);
@@ -107,25 +104,34 @@ public enum PacketInType {
                     t.fs.add(f);
                 }
                 t.supported = true;
-            } catch (Throwable e) {
-                notfound.add(t);
+            } catch (Throwable ignored) {
             }
             try {
                 t.wrapper = (Class<? extends WrappedPacket>) Class.forName("gyurix.protocol.wrappers.inpackets." + cln);
-            } catch (Throwable e) {
-                nowrapper.add(t);
+            } catch (Throwable ignored) {
             }
         }
-        if (notfound.size() > 0)
-            sb.append("\n§cNot found IN packets (please report to the dev):§f " + StringUtils.join(notfound, ", "));
-        else
-            sb.append("\n§aFound every supported packets (no errors)");
-        if (nowrapper.size() > 0)
-            sb.append("\n§eMissing IN packet wrappers (will be coded later):§f " + StringUtils.join(nowrapper, ", "));
-        else
-            sb.append("\n§aFound wrappers for all the IN packet types (that's awesome)");
-        sb.append("\n§e--------------------------------------------------------------------------------");
-        SU.cs.sendMessage(sb.toString());
+    }
+
+    /**
+     * Fills the given packet with the given data
+     *
+     * @param packet - The fillable packet
+     * @param data   - The filling data
+     */
+    public void fillPacket(Object packet, Object... data) {
+        ArrayList<Field> fields = Lists.newArrayList(fs);
+        for (Object d : data) {
+            for (int f = 0; f < fields.size(); f++) {
+                try {
+                    Field ff = fields.get(f);
+                    ff.set(packet, d);
+                    fields.remove(f--);
+                    break;
+                } catch (Throwable e) {
+                }
+            }
+        }
     }
 
     /**
@@ -170,27 +176,6 @@ public enum PacketInType {
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
-        }
-    }
-
-    /**
-     * Fills the given packet with the given data
-     *
-     * @param packet - The fillable packet
-     * @param data   - The filling data
-     */
-    public void fillPacket(Object packet, Object... data) {
-        ArrayList<Field> fields = Lists.newArrayList(fs);
-        for (Object d : data) {
-            for (int f = 0; f < fields.size(); f++) {
-                try {
-                    Field ff = fields.get(f);
-                    ff.set(packet, d);
-                    fields.remove(f--);
-                    break;
-                } catch (Throwable e) {
-                }
-            }
         }
     }
 

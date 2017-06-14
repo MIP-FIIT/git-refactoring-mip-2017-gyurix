@@ -1,6 +1,7 @@
 package gyurix.scoreboard;
 
 import gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore;
+import gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction;
 import gyurix.scoreboard.team.CollisionRule;
 import gyurix.scoreboard.team.NameTagVisibility;
 import gyurix.scoreboard.team.TeamData;
@@ -12,8 +13,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.CHANGE;
-import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.REMOVE;
+import static gyurix.protocol.wrappers.outpackets.PacketPlayOutScoreboardScore.ScoreAction.*;
 
 public class SidebarLine {
     public final Sidebar bar;
@@ -71,9 +71,12 @@ public class SidebarLine {
         }
         if (!set[1].equals(oldUser)) {
             bar.currentData.scores.put(set[1], number);
-            Object packet = new PacketPlayOutScoreboardScore(PacketPlayOutScoreboardScore.ScoreAction.CHANGE, bar.currentData.barname, set[1], number).getVanillaPacket();
+            Object packet = new PacketPlayOutScoreboardScore(ScoreAction.REMOVE, bar.currentData.barname, oldUser, number).getVanillaPacket();
+            Object packet2 = new PacketPlayOutScoreboardScore(PacketPlayOutScoreboardScore.ScoreAction.CHANGE, bar.currentData.barname, set[1], number).getVanillaPacket();
             for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
+                e.getValue().scores.remove(oldUser);
                 e.getValue().scores.put(set[1], number);
+                SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), packet2);
                 SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), packet);
             }
         }

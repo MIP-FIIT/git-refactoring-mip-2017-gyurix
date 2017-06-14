@@ -11,13 +11,15 @@ import sun.reflect.ReflectionFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static gyurix.spigotutils.ServerVersion.v1_8;
-import static gyurix.spigotutils.ServerVersion.v1_9;
-import static org.apache.commons.lang.ArrayUtils.EMPTY_CLASS_ARRAY;
-import static org.apache.commons.lang.ArrayUtils.EMPTY_OBJECT_ARRAY;
+import static gyurix.spigotutils.ServerVersion.*;
+import static org.apache.commons.lang.ArrayUtils.*;
 
 public class Reflection {
     public static final Map<Class, Field[]> allFieldCache = (Map) Collections.synchronizedMap(new WeakHashMap<>());
@@ -144,12 +146,8 @@ public class Reflection {
             c.setAccessible(true);
             return c;
         } catch (Throwable e) {
-        }
-        if (Config.debug) {
-            StringBuilder sb = new StringBuilder();
-            for (Class c : classes)
-                sb.append(", ").append(c.getName());
-            SU.cs.sendMessage(ra + "§eConstructor §f" + cl.getName() + "§e( §f" + sb + "§e ) was not found.");
+            if (Config.debug)
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
@@ -206,6 +204,8 @@ public class Reflection {
         try {
             return enumType.getMethod("valueOf", String.class).invoke(null, value);
         } catch (Throwable e) {
+            if (Config.debug)
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
         }
     }
@@ -264,6 +264,8 @@ public class Reflection {
     }
 
     public static Method getMethod(Class cl, String name, Class... args) {
+        if (cl == null || name == null)
+            return null;
         String originalClassName = cl.getName();
         if (args.length == 0) {
             while (cl != null) {
@@ -342,12 +344,10 @@ public class Reflection {
         version = name.substring(name.lastIndexOf('.') + 1);
         try {
             ver = ServerVersion.valueOf(version.substring(0, version.length() - 3));
-        } catch (Throwable e) {
-
+        } catch (Throwable ignored) {
         }
-        if (version.equals("v1_8_R1")) {
-
-        } else {
+        SU.cs.sendMessage("§2[§aStartup§2]§e Detected server version:§a " + ver + "§e (§f" + version + "§e) - §f" + Bukkit.getServer().getVersion());
+        if (!version.equals("v1_8_R1")) {
             nmsRenames.put("PacketPlayInLook", "PacketPlayInFlying$PacketPlayInLook");
             nmsRenames.put("PacketPlayInPosition", "PacketPlayInFlying$PacketPlayInPosition");
             nmsRenames.put("PacketPlayInPositionLook", "PacketPlayInFlying$PacketPlayInPositionLook");

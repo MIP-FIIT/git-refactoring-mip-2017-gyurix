@@ -52,6 +52,9 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
         public int max, online;
         public ArrayList<GameProfile> sample = new ArrayList<>();
 
+        public PlayerList() {
+        }
+
         public PlayerList(Object nms) {
             try {
                 max = fields[0].getInt(nms);
@@ -62,6 +65,16 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
+        }
+
+        public PlayerList clone() {
+            PlayerList out = new PlayerList();
+            out.max = max;
+            out.online = online;
+            for (GameProfile gp : sample) {
+                out.sample.add(gp.clone());
+            }
+            return out;
         }
 
         @Override
@@ -89,6 +102,10 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
         public String name;
         public int protocol;
 
+        public ServerData() {
+
+        }
+
         public ServerData(Object nms) {
             try {
                 name = (String) nameField.get(nms);
@@ -96,6 +113,11 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
+        }
+
+        public ServerData(String name, int protocol) {
+            this.name = name;
+            this.protocol = protocol;
         }
 
         @Override
@@ -109,6 +131,10 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
             return null;
+        }
+
+        public ServerData clone() {
+            return new ServerData(name, protocol);
         }
     }
 
@@ -130,6 +156,10 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
         public PlayerList players;
         public ServerData version;
 
+        public ServerInfo() {
+
+        }
+
         public ServerInfo(Object nms) {
             try {
                 description = ChatTag.fromICBC(fields[0].get(nms)).toColoredString();
@@ -139,6 +169,15 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
             }
+        }
+
+        public ServerInfo clone() {
+            ServerInfo out = new ServerInfo();
+            out.description = description;
+            out.favicon = favicon;
+            out.players = players.clone();
+            out.version = version.clone();
+            return out;
         }
 
         @Override
@@ -155,6 +194,8 @@ public class PacketStatusOutServerInfo extends WrappedPacket {
             }
             return null;
         }
+
+
     }
 
 }

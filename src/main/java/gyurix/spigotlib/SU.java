@@ -619,7 +619,7 @@ public final class SU {
         StringBuilder oldFormat = new StringBuilder("§r");
         StringBuilder newFormat = new StringBuilder("§r");
         StringBuilder formatChange = new StringBuilder();
-        char prev = ' ';
+        String formatArchive = "";
         boolean color = false;
         for (char c : in.toCharArray()) {
             if (color) {
@@ -647,7 +647,14 @@ public final class SU {
                 formatChange.append('§').append(c);
             } else if (c == '§')
                 color = true;
-            else {
+            else if (c == '\u7777') {
+                formatArchive = newFormat.toString();
+            } else if (c == '\u7778') {
+                newFormat.setLength(0);
+                newFormat.append(formatArchive);
+                formatChange.setLength(0);
+                formatChange.append(formatArchive);
+            } else {
                 if (!newFormat.toString().equals(oldFormat.toString())) {
                     out.append(formatChange);
                     formatChange.setLength(0);
@@ -655,6 +662,11 @@ public final class SU {
                     oldFormat.append(newFormat);
                 }
                 out.append(c);
+                if (c == '\n') {
+                    formatChange.insert(0, oldFormat);
+                    oldFormat.setLength(0);
+                    newFormat.append(formatChange.toString());
+                }
             }
         }
         return out.toString();

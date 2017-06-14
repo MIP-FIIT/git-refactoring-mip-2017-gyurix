@@ -50,19 +50,6 @@ public class GlobalLangFile {
         return "§cNot found (§f" + lang + "." + adr + "§c)\\-T§ePlease try to remove the plugins lang.yml file. If the problem still appears, please contact the plugins dev.\\-S" + lang + "." + adr + " ";
     }
 
-    public static PluginLang loadLF(String pn, InputStream stream, String fn) {
-        try {
-            byte[] bytes = new byte[stream.available()];
-            stream.read(bytes);
-            load(new String(bytes, "UTF-8").split("\r?\n"));
-            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
-            return new PluginLang(pn);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     private static void load(String[] data) {
         String adr = ".en";
         StringBuilder cs = new StringBuilder();
@@ -105,6 +92,29 @@ public class GlobalLangFile {
         put(adr.substring(1), cs.toString());
     }
 
+    public static PluginLang loadLF(String pn, InputStream stream, String fn) {
+        try {
+            byte[] bytes = new byte[stream.available()];
+            stream.read(bytes);
+            load(new String(bytes, "UTF-8").replaceAll("&([0-9a-fk-or])", "§$1").split("\r?\n"));
+            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").replaceAll("&([0-9a-fk-or])", "§$1").split("\r?\n"));
+            return new PluginLang(pn);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static PluginLang loadLF(String pn, String fn) {
+        try {
+            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").replaceAll("&([0-9a-fk-or])", "§$1").split("\r?\n"));
+            return new PluginLang(pn);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private static void put(String adr, String value) {
         if (!adr.contains(".")) {
             if (!map.containsKey(adr)) {
@@ -113,16 +123,6 @@ public class GlobalLangFile {
         } else {
             HashMap<String, String> m = map.get(adr.substring(0, adr.indexOf('.')));
             m.put(adr.substring(adr.indexOf('.') + 1), value);
-        }
-    }
-
-    public static PluginLang loadLF(String pn, String fn) {
-        try {
-            load(new String(Files.readAllBytes(new File(fn).toPath()), "UTF-8").split("\r?\n"));
-            return new PluginLang(pn);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return null;
         }
     }
 
@@ -144,25 +144,6 @@ public class GlobalLangFile {
             pluginName = plugin;
         }
 
-        public void msg(CommandSender sender, String msg, String... repl) {
-            msg(sender, msg, (Object[]) repl);
-        }
-
-        public void msg(CommandSender sender, String msg, Object... repl) {
-            Player plr = sender instanceof Player ? (Player) sender : null;
-            msg(get(plr, "prefix"), sender, msg, repl);
-        }
-
-        public void msg(String prefix, CommandSender sender, String msg, Object... repl) {
-            Player plr = sender instanceof Player ? (Player) sender : null;
-            msg = prefix + get(plr, msg, repl);
-            if (plr == null || Reflection.ver.isBellow(ServerVersion.v1_7)) {
-                sender.sendMessage(ChatTag.stripExtras(msg));
-            } else {
-                ChatAPI.sendJsonMsg(ChatMessageType.CHAT, msg, plr);
-            }
-        }
-
         public String get(Player plr, String adr, String... repl) {
             return get(plr, adr, (Object[]) repl);
         }
@@ -179,6 +160,25 @@ public class GlobalLangFile {
                 key = null;
             }
             return msg;
+        }
+
+        public void msg(String prefix, CommandSender sender, String msg, Object... repl) {
+            Player plr = sender instanceof Player ? (Player) sender : null;
+            msg = prefix + get(plr, msg, repl);
+            if (plr == null || Reflection.ver.isBellow(ServerVersion.v1_7)) {
+                sender.sendMessage(ChatTag.stripExtras(msg));
+            } else {
+                ChatAPI.sendJsonMsg(ChatMessageType.CHAT, msg, plr);
+            }
+        }
+
+        public void msg(CommandSender sender, String msg, String... repl) {
+            msg(sender, msg, (Object[]) repl);
+        }
+
+        public void msg(CommandSender sender, String msg, Object... repl) {
+            Player plr = sender instanceof Player ? (Player) sender : null;
+            msg(get(plr, "prefix"), sender, msg, repl);
         }
 
         public void msg(String prefix, CommandSender sender, String msg, String... repl) {

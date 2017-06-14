@@ -203,11 +203,11 @@ public class JsonAPI {
         } else if (o instanceof Iterable || cl.isArray()) {
             sb.append('[');
             if (cl.isArray()) {
-                /*int max = Array.getLength(o);
+                int max = Array.getLength(o);
                 for (int i = 0; i < max; i++) {
                     serialize(sb, Array.get(o, i));
                     sb.append(',');
-                }*/
+                }
             } else {
                 for (Object obj : (Iterable) o) {
                     serialize(sb, obj);

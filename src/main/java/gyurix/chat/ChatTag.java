@@ -89,14 +89,23 @@ public class ChatTag {
         return fromSeveralTag(ctl);
     }
 
-    public ChatTag cloneFormat(ChatTag target) {
-        target.bold = bold;
-        target.italic = italic;
-        target.underlined = underlined;
-        target.strikethrough = strikethrough;
-        target.obfuscated = obfuscated;
-        target.color = color;
-        return target;
+    public static ChatTag fromExtraText(String extraText) {
+        String[] parts = extraText.split("\\\\\\|");
+        ArrayList<ChatTag> tags = new ArrayList<>();
+        for (String part : parts) {
+            String[] sa = part.split("\\\\-");
+            ChatTag tag = fromColoredText(SU.optimizeColorCodes(sa[0]));
+            for (int i = 1; i < sa.length; i++) {
+                if (sa[i].length() > 0)
+                    tag.setExtra(sa[i].charAt(0), SU.optimizeColorCodes(sa[i].substring(1)));
+            }
+            tags.add(tag);
+        }
+        return fromSeveralTag(tags);
+    }
+
+    public static ChatTag fromICBC(Object icbc) {
+        return JsonAPI.deserialize(ChatAPI.toJson(icbc), ChatTag.class);
     }
 
     public static ChatTag fromSeveralTag(ArrayList<ChatTag> ctl) {
@@ -107,21 +116,45 @@ public class ChatTag {
         return out;
     }
 
-    public static ChatTag fromExtraText(String extraText) {
-        extraText = SU.optimizeColorCodes(extraText);
+    public static String stripExtras(String extraText) {
         String[] parts = extraText.split("\\\\\\|");
-        ArrayList<ChatTag> tags = new ArrayList<>();
-        for (String part : parts) {
-            String[] sa = part.split("\\\\-");
-            ChatTag tag = fromColoredText(sa[0]);
-            for (int i = 1; i < sa.length; i++) {
-                if (sa[i].length() > 0) {
-                    tag.setExtra(sa[i].charAt(0), sa[i].substring(1));
-                }
-            }
-            tags.add(tag);
+        StringBuilder out = new StringBuilder();
+        for (String p : parts) {
+            out.append(p.split("\\\\-")[0]);
         }
-        return fromSeveralTag(tags);
+        return out.toString();
+    }
+
+    public ChatTag cloneFormat(ChatTag target) {
+        target.bold = bold;
+        target.italic = italic;
+        target.underlined = underlined;
+        target.strikethrough = strikethrough;
+        target.obfuscated = obfuscated;
+        target.color = color;
+        return target;
+    }
+
+    public String getFormatPrefix() {
+        StringBuilder pref = new StringBuilder();
+        if (color != null)
+            pref.append('§').append(color.id);
+        if (obfuscated)
+            pref.append("§k");
+        if (bold)
+            pref.append("§l");
+        if (strikethrough)
+            pref.append("§m");
+        if (underlined)
+            pref.append("§n");
+        if (italic)
+            pref.append("§o");
+        return pref.toString();
+    }
+
+    public boolean isSimpleText() {
+        return translate == null && selector == null && insertion == null && with == null && score == null && extra == null &&
+                !(bold == italic == underlined == strikethrough == obfuscated) && color == null && clickEvent == null && hoverEvent == null;
     }
 
     /**
@@ -162,24 +195,6 @@ public class ChatTag {
         return this;
     }
 
-    public static ChatTag fromICBC(Object icbc) {
-        return JsonAPI.deserialize(ChatAPI.toJson(icbc), ChatTag.class);
-    }
-
-    public static String stripExtras(String extraText) {
-        String[] parts = extraText.split("\\\\\\|");
-        StringBuilder out = new StringBuilder();
-        for (String p : parts) {
-            out.append(p.split("\\\\-")[0]);
-        }
-        return out.toString();
-    }
-
-    public boolean isSimpleText() {
-        return translate == null && selector == null && insertion == null && with == null && score == null && extra == null &&
-                !(bold == italic == underlined == strikethrough == obfuscated) && color == null && clickEvent == null && hoverEvent == null;
-    }
-
     public String toColoredString() {
         ArrayList<ChatTag> tags = extra == null ? Lists.newArrayList(this) : extra;
         StringBuilder out = new StringBuilder();
@@ -190,23 +205,6 @@ public class ChatTag {
             }
         }
         return SU.optimizeColorCodes(out.toString());
-    }
-
-    public String getFormatPrefix() {
-        StringBuilder pref = new StringBuilder();
-        if (color != null)
-            pref.append('§').append(color.id);
-        if (obfuscated)
-            pref.append("§k");
-        if (bold)
-            pref.append("§l");
-        if (strikethrough)
-            pref.append("§m");
-        if (underlined)
-            pref.append("§n");
-        if (italic)
-            pref.append("§o");
-        return pref.toString();
     }
 
     public String toFormatlessString() {

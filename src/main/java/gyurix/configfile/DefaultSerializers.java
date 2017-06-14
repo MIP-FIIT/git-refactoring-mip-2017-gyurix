@@ -379,7 +379,7 @@ public class DefaultSerializers {
                 String s = StringUtils.stripStart(input.stringData.replace(" ", ""), "0");
                 return m.invoke(null, s.isEmpty() ? "0" : s);
             } catch (Throwable e) {
-                System.out.println("INVALID NUMBER: " + input);
+                System.out.println("INVALID NUMBER: " + fixClass.getName() + " - " + input);
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 try {
                     return m.invoke(null, "0");
@@ -405,7 +405,7 @@ public class DefaultSerializers {
             if (co != null && co.compress())
                 input = input.decompress();
             try {
-                if (fixClass.isEnum()) {
+                if (fixClass.isEnum() || fixClass.getSuperclass() != null && fixClass.getSuperclass().isEnum()) {
                     if (input.stringData == null || input.stringData.equals(""))
                         return null;
                     for (Object en : fixClass.getEnumConstants()) {
@@ -462,7 +462,7 @@ public class DefaultSerializers {
 
         public ConfigData toData(Object obj, Type... parameters) {
             Class c = Primitives.wrap(obj.getClass());
-            if (c.isEnum() || ArrayUtils.contains(c.getInterfaces(), StringSerializable.class) || c == BigDecimal.class || c == BigInteger.class) {
+            if (c.isEnum() || c.getSuperclass() != null && c.getSuperclass().isEnum() || ArrayUtils.contains(c.getInterfaces(), StringSerializable.class) || c == BigDecimal.class || c == BigInteger.class) {
                 return new ConfigData(obj.toString());
             }
             ConfigOptions dfOptions = (ConfigOptions) c.getAnnotation(ConfigOptions.class);
@@ -494,7 +494,8 @@ public class DefaultSerializers {
                     Object o = f.get(obj);
                     if (o != null && !o.toString().matches(dffValue)) {
                         String cn = ConfigSerialization.calculateClassName(Primitives.wrap(f.getType()), o.getClass());
-                        if (f.getType() == Class.class || f.getType().getName().startsWith("java.lang.reflect."))
+                        Class check = f.getType().isArray() ? f.getType().getComponentType() : f.getType();
+                        if (check == Class.class || check.getName().startsWith("java.lang.reflect."))
                             continue;
                         String fn = f.getName();
                         Type t = f.getGenericType();
@@ -508,7 +509,6 @@ public class DefaultSerializers {
                         out.mapData.put(new ConfigData(fn, comment), value);
                     }
                 } catch (Throwable e) {
-                    SU.error(SU.cs, e, "SpigotLib", "gyurix");
                 }
             }
             return out;

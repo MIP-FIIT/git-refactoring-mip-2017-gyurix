@@ -10,7 +10,6 @@ import gyurix.configfile.ConfigFile;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
-import gyurix.enchant.EnchantAPI;
 import gyurix.inventory.CustomGUI;
 import gyurix.map.MapPacketCanceler;
 import gyurix.nbt.NBTApi;
@@ -21,9 +20,10 @@ import gyurix.protocol.manager.ProtocolImpl;
 import gyurix.protocol.manager.ProtocolLegacyImpl;
 import gyurix.protocol.utils.WrapperFactory;
 import gyurix.scoreboard.ScoreboardAPI;
-import gyurix.spigotlib.Config.PlayerFile;
+import gyurix.spigotlib.Config.*;
 import gyurix.spigotlib.GlobalLangFile.PluginLang;
 import gyurix.spigotutils.BackendType;
+import gyurix.spigotutils.ItemUtils;
 import gyurix.spigotutils.TPSMeter;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
@@ -77,7 +77,7 @@ import static gyurix.economy.EconomyAPI.VaultHookType.*;
 import static gyurix.economy.EconomyAPI.vaultHookType;
 import static gyurix.protocol.Reflection.ver;
 import static gyurix.spigotlib.Config.PlayerFile.*;
-import static gyurix.spigotlib.Config.allowAllPermsForAuthor;
+import static gyurix.spigotlib.Config.*;
 import static gyurix.spigotlib.Items.enchants;
 import static gyurix.spigotlib.SU.*;
 import static gyurix.spigotutils.ServerVersion.*;
@@ -91,7 +91,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.1";
+    public static final String version = "6.3";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -124,7 +124,16 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void load() throws Throwable {
-        cs.sendMessage("§2[§aStartup§2]§e Loading configuration and language file...");
+        cs.sendMessage("§a\n" +
+                "           ___          _                _      __   _  _     \n" +
+                "          / __\\  _ __  (_)  __ _   ___  | |_   / /  (_)| |__  \n" +
+                "          \\  \\  | '_ \\ | | / _` | / _ \\ | __| / /   | || '_ \\ \n" +
+                "          _\\  \\ | |_) || || (_| || (_) || |_ / /___ | || |_) |\n" +
+                "          \\___/ | .__/ |_| \\__, | \\___/  \\__|\\____/ |_||_.__/ \n" +
+                "                |_|        |___/                              \n" +
+                "\n" +
+                "                   §eVersion:§a " + version + "       §eCoded by:§a gyuriX\n ");
+        cs.sendMessage("§2[§aStartup§2]§e Loading §aconfiguration§e and §alanguage file§e...");
         saveResources(this, "lang.yml", "config.yml", "items.yml");
         kf = new ConfigFile(getResource("config.yml"));
         kf.load(new File(dir + File.separator + "config.yml"));
@@ -132,7 +141,7 @@ public class Main extends JavaPlugin implements Listener {
         kf.save();
         lang = GlobalLangFile.loadLF("spigotlib", getResource("lang.yml"), dir + File.separator + "lang.yml");
 
-        cs.sendMessage("§2[§aStartup§2]§e Loading enchants file...");
+        cs.sendMessage("§2[§aStartup§2]§e Loading §aenchants file§e...");
         itemf = new ConfigFile(new File(dir + File.separator + "items.yml"));
         itemf.data.deserialize(Items.class);
         boolean saveIf = false;
@@ -145,32 +154,33 @@ public class Main extends JavaPlugin implements Listener {
         if (saveIf)
             itemf.save();
         if (backend == BackendType.FILE) {
-            cs.sendMessage("§2[§aStartup§2]§e Loading §cFILE§e backend for §cplayer file§e...");
+            cs.sendMessage("§2[§aStartup§2]§e Loading §aFILE§e backend for §aplayer data storage§e...");
             pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
         } else if (backend == BackendType.MYSQL) {
-            cs.sendMessage("§2[§aStartup§2]§e Loading §cMySQL§e backend for §cplayer file§e...");
+            cs.sendMessage("§2[§aStartup§2]§e Loading §aMySQL§e backend for §aplayer data storage§e...");
             mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
             pf = new ConfigFile(mysql, mysql.table, "key", "value");
             loadPlayerConfig(null);
         }
-        cs.sendMessage("§2[§aStartup§2]§e Loading ReflectionAPI...");
+        cs.sendMessage("§2[§aStartup§2]§e Loading §aReflectionAPI§e...");
         Reflection.init();
-        cs.sendMessage("§2[§aStartup§2]§e Loading AnimationAPI...");
+        cs.sendMessage("§2[§aStartup§2]§e Loading §aAnimationAPI§e...");
         AnimationAPI.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
-        //if (ver.isAbove(v1_8)) {
-        cs.sendMessage("§2[§aStartup§2]§e The server version is compatible (§c" + ver + "§e), starting PacketAPI, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI, CommandAPI...");
-        WrapperFactory.init();
-        PacketInType.init();
-        PacketOutType.init();
-        startPacketAPI();
-        ChatAPI.init();
-        NBTApi.init();
-        /*} else {
-            cs.sendMessage("§2[§aStartup§2]§e Found§c INCOMPATIBLE SERVER VERSION: §e" + ver + "§c, so the following features was NOT active, so they WILL NOT work:" +
-                    " §ePacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI§c. The other features might work. For additional help contact the plugins developer, §cgyuriX§e!");
-        }*/
-        cs.sendMessage("§2[§aStartup§2]§e Preparing PlaceholderAPI and Vault hooks...");
+        if (!forceReducedMode && ver.isAbove(v1_7)) {
+            cs.sendMessage("§2[§aStartup§2]§e Starting SpigotLib in §afully compatible§e mode, starting " +
+                    "PacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI...");
+            WrapperFactory.init();
+            PacketInType.init();
+            PacketOutType.init();
+            startPacketAPI();
+            ChatAPI.init();
+            NBTApi.init();
+        } else {
+            cs.sendMessage("§2[§aStartup§2]§e Starting SpigotLib in §csemi compatible mode§e, skipping the load of " +
+                    "PacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI.");
+        }
+        cs.sendMessage("§2[§aStartup§2]§e Preparing §aPlaceholderAPI§e and §aVault§e hooks...");
         VariableAPI.phaHook = pm.getPlugin("PlaceholderAPI") != null && Config.phaHook;
     }
 
@@ -248,13 +258,10 @@ public class Main extends JavaPlugin implements Listener {
                     }
                     return true;
                 case "vars":
-                    if (args.length == 0) {
+                    if (args.length == 0)
                         lang.msg(sender, "vars", "vars", StringUtils.join(new TreeSet<>(VariableAPI.handlers.keySet()), ", "));
-                    } else {
-                        String f = lang.get(plr, "vars.fillformat");
-                        StringBuilder filled = new StringBuilder();
+                    else
                         lang.msg(sender, "vars.filled", "result", fullMsg);
-                    }
                     return true;
                 case "perm":
                     if (args.length == 0) {
@@ -293,7 +300,7 @@ public class Main extends JavaPlugin implements Listener {
                     try {
                         page = Integer.valueOf(args[args.length - 1]);
                         pageChange = true;
-                    } catch (Throwable e) {
+                    } catch (Throwable ignored) {
                     }
                     if (page < 1)
                         page = 1;
@@ -318,29 +325,30 @@ public class Main extends JavaPlugin implements Listener {
                     sender.sendMessage("§6§lPlayerFileViewer - page " + page + " of " + txt.length + "\n§f" + txt[page - 1]);
                     return true;
                 case "reload":
-                    if (args[0].equals("config")) {
-                        kf.reload();
-                        kf.data.deserialize(Config.class);
-                        lang.msg(sender, "reload.config");
-                        return true;
-                    } else if (args[0].equals("lf")) {
-                        GlobalLangFile.unloadLF(lang);
-                        saveResources(this, "lang.yml");
-                        lang = GlobalLangFile.loadLF("spigotlib", getResource("lang.yml"), getDataFolder() + File.separator + "lang.yml");
-                        lang.msg(sender, "reload.lf");
-                        return true;
-                    } else if (args[0].equals("pf")) {
-                        if (backend == BackendType.FILE) {
-                            pf.reload();
-                        } else {
-                            pf.data.mapData = new LinkedHashMap<>();
-                            for (Player pl : Bukkit.getOnlinePlayers()) {
-                                loadPlayerConfig(pl.getUniqueId());
+                    switch (args[0]) {
+                        case "config":
+                            kf.reload();
+                            kf.data.deserialize(Config.class);
+                            lang.msg(sender, "reload.config");
+                            return true;
+                        case "lf":
+                            GlobalLangFile.unloadLF(lang);
+                            saveResources(this, "lang.yml");
+                            lang = GlobalLangFile.loadLF("spigotlib", getResource("lang.yml"), getDataFolder() + File.separator + "lang.yml");
+                            lang.msg(sender, "reload.lf");
+                            return true;
+                        case "pf":
+                            if (backend == BackendType.FILE) {
+                                pf.reload();
+                            } else {
+                                pf.data.mapData = new LinkedHashMap<>();
+                                for (Player pl : Bukkit.getOnlinePlayers()) {
+                                    loadPlayerConfig(pl.getUniqueId());
+                                }
+                                loadPlayerConfig(null);
                             }
-                            loadPlayerConfig(null);
-                        }
-                        lang.msg(sender, "reload.pf");
-                        return true;
+                            lang.msg(sender, "reload.pf");
+                            return true;
                     }
                     lang.msg(sender, "invalidcmd");
                     return true;
@@ -413,17 +421,17 @@ public class Main extends JavaPlugin implements Listener {
                 case "item":
                     if (args.length == 0) {
                         for (Player p : pls)
-                            lang.msg(sender, p == sender ? "item.own" : "item.player", "name", p.getName(), "item", itemToString(p.getItemInHand()));
+                            lang.msg(sender, p == sender ? "item.own" : "item.player", "name", p.getName(), "item", ItemUtils.itemToString(p.getItemInHand()));
                         return true;
                     }
                     boolean give = fullMsg.startsWith("give ");
                     if (give)
                         fullMsg = fullMsg.substring(5);
-                    ItemStack is = stringToItemStack(fullMsg);
-                    fullMsg = itemToString(is);
+                    ItemStack is = ItemUtils.stringToItemStack(fullMsg);
+                    fullMsg = ItemUtils.itemToString(is);
                     if (give)
                         for (Player p : pls) {
-                            addItem(p.getInventory(), is, is.getMaxStackSize());
+                            ItemUtils.addItem(p.getInventory(), is, is.getMaxStackSize());
                             lang.msg(sender, "item.give", "player", p.getName(), "item", fullMsg);
                         }
                     else
@@ -532,10 +540,13 @@ public class Main extends JavaPlugin implements Listener {
         TPSMeter.meter.cancel(true);
         if (tp != null) {
             log(this, "§4[§cShutdown§4]§e Stopping PacketAPI...");
-            tp.close();
+            try {
+                tp.close();
+            } catch (Throwable e) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
         }
         log(this, "§4[§cShutdown§4]§e Stopping AnimationAPI...");
-        //AnimationAPI.sch.shutdownNow();
         if (ver.isAbove(v1_8)) {
             log(this, "§4[§cShutdown§4]§e Stopping ScoreboardAPI...");
             for (Player p : Bukkit.getOnlinePlayers()) {
@@ -550,35 +561,35 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void onEnable() {
-        if (Reflection.ver.isAbove(v1_10))
-            SU.pm.registerEvents(new EnchantAPI(), this);
         cm = new CustomCommandMap();
-        pm.registerEvents(tp, this);
-        if (schedulePacketAPI) {
-            sch.scheduleSyncDelayedTask(this, new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        tp.init();
-                        cs.sendMessage("§2[§aStartup§2]§a Initialized PacketAPI.");
-                    } catch (Throwable e) {
-                        cs.sendMessage("§cFailed to initialize PacketAPI.");
-                        error(cs, e, "SpigotLib", "gyurix");
+        if (!forceReducedMode && Reflection.ver.isAbove(v1_7)) {
+            pm.registerEvents(tp, this);
+            if (schedulePacketAPI) {
+                sch.scheduleSyncDelayedTask(this, new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            tp.init();
+                            cs.sendMessage("§2[§aStartup§2]§a Initialized PacketAPI.");
+                        } catch (Throwable e) {
+                            cs.sendMessage("§cFailed to initialize PacketAPI.");
+                            error(cs, e, "SpigotLib", "gyurix");
+                        }
                     }
-                }
-            });
+                });
+            }
+            cs.sendMessage("§2[§aStartup§2]§e Initializing §aoffline player manager§e...");
+            initOfflinePlayerManager();
         }
-        cs.sendMessage("§2[§aStartup§2]§e Initializing offline player manager...");
-        initOfflinePlayerManager();
         pm.registerEvents(this, this);
         try {
             BungeeAPI.enabled = Config.BungeeAPI.forceEnable || srv.spigot().getConfig().getBoolean("settings.bungeecord");
             if (BungeeAPI.enabled) {
-                cs.sendMessage("§2[§aStartup§2]§e Starting BungeeAPI...");
+                cs.sendMessage("§2[§aStartup§2]§e Starting §aBungeeAPI§e...");
                 msg.registerOutgoingPluginChannel(this, "BungeeCord");
                 msg.registerIncomingPluginChannel(this, "BungeeCord", new BungeeAPI());
             } else {
-                cs.sendMessage("§2[§aStartup§2]§c Your server is not connected to a BungeeCord server, so the BungeeAPI will not be enabled.");
+                cs.sendMessage("§2[§aStartup§2]§e Your server is §cnot connected§e to a BungeeCord server, §cskipping BungeeAPI§e load...");
             }
         } catch (Throwable e) {
             cs.sendMessage("§2[§aStartup§2]§c BungeeCord related features are not supported by your server core");
@@ -593,32 +604,31 @@ public class Main extends JavaPlugin implements Listener {
         }
         vault = pm.getPlugin("Vault") != null;
         if (!vault)
-            cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is not present, skipping hook...");
+            cs.sendMessage("§2[§aStartup§2]§e The plugin §aVault§e is not present, skipping hook...");
         else {
             if (vaultHookType == NONE) {
-                cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, but the hook is disabled in config, so skipping hook...");
+                cs.sendMessage("§2[§aStartup§2]§e The plugin §aVault§e is present, but the hook is disabled in config, so skipping hook...");
             }
             if (vaultHookType == USER) {
-                cs.sendMessage("§2[§aStartup§2]§e The plugin §cVault§e is present, hooking to it as §cEconomy USER§e...");
+                cs.sendMessage("§2[§aStartup§2]§e The plugin §aVault§e is present, hooking to it as §aEconomy USER§e...");
                 RegisteredServiceProvider<Economy> rspEcon = srv.getServicesManager().getRegistration(Economy.class);
                 if (rspEcon != null)
                     econ = rspEcon.getProvider();
                 if (EconomyAPI.migrate) {
-                    log(this, "§bMigrating economy data from old Economy " + econ.getName() + "... ");
+                    SU.cs.sendMessage("§2[§aStartup§2]§e Migrating economy data from old Economy " + econ.getName() + "... ");
                     vaultHookType = NONE;
                     for (OfflinePlayer op : Bukkit.getOfflinePlayers()) {
                         EconomyAPI.setBalance(op.getUniqueId(), new BigDecimal(econ.getBalance(op)));
-                        System.out.println("Done player " + op.getName());
+                        log(this, "Done player " + op.getName());
                     }
                     vaultHookType = PROVIDER;
                     EconomyAPI.migrate = false;
-                    log(this, "§bFinished data migration, please restart the server!");
+                    log(this, "Finished data migration, please restart the server!");
                     setEnabled(false);
                     return;
                 }
             }
         }
-        cs.sendMessage("§2[§aStartup§2]§e Scheduling §cTpsMeter§e startup...");
         sch.scheduleSyncDelayedTask(this, new Runnable() {
             @Override
             public void run() {
@@ -635,6 +645,7 @@ public class Main extends JavaPlugin implements Listener {
                     if (rspChat != null)
                         chat = (Chat) rspChat.getProvider();
                 }
+                cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
                 Config.tpsMeter.start();
                 cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
             }
@@ -686,7 +697,7 @@ public class Main extends JavaPlugin implements Listener {
             try {
                 Thread.sleep(2000);
                 loadPlayerConfig(id);
-            } catch (InterruptedException err) {
+            } catch (InterruptedException ignored) {
             }
         }
     }
@@ -719,9 +730,8 @@ public class Main extends JavaPlugin implements Listener {
         try {
             File oldConf = new File(dir + File.separator + "config.yml");
             File backupConf = new File(dir + File.separator + "config.yml.bak");
-            if (backupConf.exists()) {
+            if (backupConf.exists())
                 backupConf.delete();
-            }
             oldConf.renameTo(backupConf);
             File oldLang = new File(dir + File.separator + "lang.yml");
             File backupLang = new File(dir + File.separator + "lang.yml.bak");
