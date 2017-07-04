@@ -11,7 +11,6 @@ import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
 import gyurix.inventory.CustomGUI;
-import gyurix.map.MapPacketCanceler;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
@@ -19,7 +18,10 @@ import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.manager.ProtocolImpl;
 import gyurix.protocol.manager.ProtocolLegacyImpl;
 import gyurix.protocol.utils.WrapperFactory;
+import gyurix.scoreboard.PlayerBars;
 import gyurix.scoreboard.ScoreboardAPI;
+import gyurix.scoreboard.ScoreboardBar;
+import gyurix.sign.SignGUI;
 import gyurix.spigotlib.Config.*;
 import gyurix.spigotlib.GlobalLangFile.PluginLang;
 import gyurix.spigotutils.BackendType;
@@ -87,11 +89,14 @@ public class Main extends JavaPlugin implements Listener {
      * The UUID of the plugins author for being able to grant him full plugin, if allowed in the config
      */
     public static final UUID author = UUID.fromString("877c9660-b0da-4dcb-8f68-9146340f2f68");
+    /**
+     * The list of SpigotLib subcommands used for tab completion.
+     */
     public static final String[] commands = {"chm", "abm", "sym", "title", "vars", "perm", "lang", "save", "reload", "velocity", "setamount", "item"};
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.3";
+    public static final String version = "6.4.2";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -99,7 +104,6 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Tells if the server was fully enabled, or not yet. If not yet, then the players are automatically kicked to prevent any damage caused by too early joins.
      */
-    public static boolean fullyEnabled, schedulePacketAPI;
     public static ConfigFile kf, itemf;
     public static PluginLang lang;
     public static Main pl;
@@ -124,15 +128,6 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void load() throws Throwable {
-        cs.sendMessage("§a\n" +
-                "           ___          _                _      __   _  _     \n" +
-                "          / __\\  _ __  (_)  __ _   ___  | |_   / /  (_)| |__  \n" +
-                "          \\  \\  | '_ \\ | | / _` | / _ \\ | __| / /   | || '_ \\ \n" +
-                "          _\\  \\ | |_) || || (_| || (_) || |_ / /___ | || |_) |\n" +
-                "          \\___/ | .__/ |_| \\__, | \\___/  \\__|\\____/ |_||_.__/ \n" +
-                "                |_|        |___/                              \n" +
-                "\n" +
-                "                   §eVersion:§a " + version + "       §eCoded by:§a gyuriX\n ");
         cs.sendMessage("§2[§aStartup§2]§e Loading §aconfiguration§e and §alanguage file§e...");
         saveResources(this, "lang.yml", "config.yml", "items.yml");
         kf = new ConfigFile(getResource("config.yml"));
@@ -164,18 +159,24 @@ public class Main extends JavaPlugin implements Listener {
         }
         cs.sendMessage("§2[§aStartup§2]§e Loading §aReflectionAPI§e...");
         Reflection.init();
+        if (Reflection.ver.isAbove(v1_8))
+            tp = new ProtocolImpl();
+        else
+            tp = new ProtocolLegacyImpl();
         cs.sendMessage("§2[§aStartup§2]§e Loading §aAnimationAPI§e...");
         AnimationAPI.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
-        if (!forceReducedMode && ver.isAbove(v1_7)) {
+        if (!forceReducedMode) {
             cs.sendMessage("§2[§aStartup§2]§e Starting SpigotLib in §afully compatible§e mode, starting " +
-                    "PacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI...");
+                    "Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI...");
             WrapperFactory.init();
             PacketInType.init();
             PacketOutType.init();
-            startPacketAPI();
             ChatAPI.init();
             NBTApi.init();
+            if (ver.isAbove(v1_8))
+                for (Player p : Bukkit.getOnlinePlayers())
+                    ScoreboardAPI.playerJoin(p);
         } else {
             cs.sendMessage("§2[§aStartup§2]§e Starting SpigotLib in §csemi compatible mode§e, skipping the load of " +
                     "PacketAPI, Offline player management, ChatAPI, TitleAPI, NBTApi, ScoreboardAPI.");
@@ -484,6 +485,8 @@ public class Main extends JavaPlugin implements Listener {
             sch = srv.getScheduler();
             js = new ScriptEngineManager().getEngineByName("JavaScript");
             dir = getDataFolder();
+            pluginsF = Reflection.getField(pm.getClass(), "plugins");
+            lookupNamesF = Reflection.getField(pm.getClass(), "lookupNames");
         } catch (Throwable e) {
             log(this, "§cFailed to get default Bukkit managers :-( The plugin is shutting down...");
             error(cs, e, "SpigotLib", "gyurix");
@@ -510,19 +513,16 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     public void onDisable() {
-        log(this, "§4[§cShutdown§4]§e Disabling plugins depending on SpigotLib...");
+        log(this, "§4[§cShutdown§4]§e Collecting plugins depending on SpigotLib...");
         ArrayList<Plugin> depend = new ArrayList<>();
         for (Plugin p : pm.getPlugins()) {
             PluginDescriptionFile pdf = p.getDescription();
-            if (pdf.getDepend() != null && pdf.getDepend().contains("SpigotLib") || pdf.getSoftDepend() != null && pdf.getSoftDepend().contains("SpigotLib")) {
-                log(this, "§4[§cShutdown§4]§e Disabling plugin §f" + p.getName() + "§e...");
-                disablePlugin(p);
+            if (pdf.getDepend() != null && pdf.getDepend().contains("SpigotLib") || pdf.getSoftDepend() != null && pdf.getSoftDepend().contains("SpigotLib"))
                 depend.add(p);
-            }
         }
         log(this, "§4[§cShutdown§4]§e Saving players...");
         if (backend == BackendType.FILE)
-            pf.save();
+            pf.saveNoAsync();
         else if (backend == BackendType.MYSQL) {
             ArrayList<String> list = new ArrayList<>();
             for (String s : pf.getStringKeyList()) {
@@ -547,12 +547,19 @@ public class Main extends JavaPlugin implements Listener {
             }
         }
         log(this, "§4[§cShutdown§4]§e Stopping AnimationAPI...");
-        if (ver.isAbove(v1_8)) {
+        AnimationAPI.stopRunningAnimations(this);
+        if (!forceReducedMode && ver.isAbove(v1_8)) {
             log(this, "§4[§cShutdown§4]§e Stopping ScoreboardAPI...");
             for (Player p : Bukkit.getOnlinePlayers()) {
-                ScoreboardAPI.setSidebar(p, null);
-                ScoreboardAPI.setTabbar(p, null);
-                ScoreboardAPI.setNametagBar(p, null);
+                PlayerBars pbs = ScoreboardAPI.sidebars.remove(p.getName());
+                for (ScoreboardBar sb : pbs.loaded)
+                    sb.unload(p);
+                pbs = ScoreboardAPI.nametags.remove(p.getName());
+                for (ScoreboardBar sb : pbs.loaded)
+                    sb.unload(p);
+                pbs = ScoreboardAPI.tabbars.remove(p.getName());
+                for (ScoreboardBar sb : pbs.loaded)
+                    sb.unload(p);
             }
         }
         log(this, "§4[§cShutdown§4]§e Stopping CommandAPI...");
@@ -563,21 +570,6 @@ public class Main extends JavaPlugin implements Listener {
     public void onEnable() {
         cm = new CustomCommandMap();
         if (!forceReducedMode && Reflection.ver.isAbove(v1_7)) {
-            pm.registerEvents(tp, this);
-            if (schedulePacketAPI) {
-                sch.scheduleSyncDelayedTask(this, new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            tp.init();
-                            cs.sendMessage("§2[§aStartup§2]§a Initialized PacketAPI.");
-                        } catch (Throwable e) {
-                            cs.sendMessage("§cFailed to initialize PacketAPI.");
-                            error(cs, e, "SpigotLib", "gyurix");
-                        }
-                    }
-                });
-            }
             cs.sendMessage("§2[§aStartup§2]§e Initializing §aoffline player manager§e...");
             initOfflinePlayerManager();
         }
@@ -645,17 +637,13 @@ public class Main extends JavaPlugin implements Listener {
                     if (rspChat != null)
                         chat = (Chat) rspChat.getProvider();
                 }
+                if (!forceReducedMode)
+                    startPacketAPI();
                 cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
                 Config.tpsMeter.start();
                 cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
             }
         }, 1);
-        sch.scheduleSyncDelayedTask(this, new Runnable() {
-            @Override
-            public void run() {
-                fullyEnabled = true;
-            }
-        }, Config.earlyJoinProtection);
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -667,7 +655,8 @@ public class Main extends JavaPlugin implements Listener {
             if (Config.BungeeAPI.uuidOnJoin)
                 BungeeAPI.requestUUID(plr.getName());
         }
-        ScoreboardAPI.playerJoin(plr);
+        if (!forceReducedMode && ver.isAbove(v1_8))
+            ScoreboardAPI.playerJoin(plr);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -677,17 +666,19 @@ public class Main extends JavaPlugin implements Listener {
         savePlayerConfig(uid);
         unloadPlayerConfig(uid);
         AnimationAPI.stopRunningAnimations(plr);
-        if (ver.isAbove(v1_8))
+        if (!forceReducedMode && ver.isAbove(v1_8))
             ScoreboardAPI.playerLeave(plr);
+        SignGUI sg = SignGUI.openSignGUIs.remove(plr.getName());
+        if (sg != null)
+            sg.cancel();
     }
 
     @EventHandler
     public void onPluginUnload(PluginDisableEvent e) {
         Plugin pl = e.getPlugin();
-        if (tp != null) {
-            tp.unregisterIncomingListener(pl);
-            tp.unregisterOutgoingListener(pl);
-        }
+        AnimationAPI.stopRunningAnimations(pl);
+        tp.unregisterIncomingListener(pl);
+        tp.unregisterOutgoingListener(pl);
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -756,16 +747,12 @@ public class Main extends JavaPlugin implements Listener {
 
     public void startPacketAPI() {
         cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-        if (Reflection.ver.isAbove(v1_8))
-            tp = new ProtocolImpl();
-        else
-            tp = new ProtocolLegacyImpl();
-        tp.registerOutgoingListener(this, new MapPacketCanceler(), PacketOutType.Map);
         try {
             tp.init();
+            SU.pm.registerEvents(tp, this);
         } catch (Throwable e) {
-            schedulePacketAPI = true;
-            cs.sendMessage("§2[§aStartup§2]§c Scheduled PacketAPI initialization, because you are using late bind.");
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            cs.sendMessage("§2[§aStartup§2]§c Failed to start PacketAPI.");
         }
     }
 

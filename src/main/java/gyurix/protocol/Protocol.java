@@ -13,11 +13,10 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Protocol implements Listener {
     private static final HashMap<PacketInListener, PacketInType> inListenerTypes = new HashMap<>();
-    private static final ConcurrentHashMap<PacketInType, ArrayList<PacketInListener>> inListeners = new ConcurrentHashMap<>();
+    private static final HashMap<PacketInType, ArrayList<PacketInListener>> inListeners = new HashMap<>();
     private static final HashMap<PacketOutListener, PacketOutType> outListenerTypes = new HashMap<>();
     private static final HashMap<PacketOutType, ArrayList<PacketOutListener>> outListeners = new HashMap<>();
     private static final String pa = "§5[§dPacketAPI§5] §e";

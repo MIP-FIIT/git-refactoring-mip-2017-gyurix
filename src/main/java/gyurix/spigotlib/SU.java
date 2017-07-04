@@ -19,15 +19,14 @@ import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
-import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
@@ -49,11 +48,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.logging.Logger;
+
+import static gyurix.commands.CustomCommandMap.knownCommands;
 
 /**
  * SpigotLib utilities class
@@ -125,56 +127,16 @@ public final class SU {
      * True if Vault is found on the server
      */
     public static boolean vault;
-    private static Field entityF, pingF;
+    static Field pluginsF, lookupNamesF;
+    private static Field entityF;
     private static Constructor entityPlayerC, playerInterractManagerC;
     private static Method getBukkitEntityM, loadDataM, saveDataM;
+    private static Field pingF;
     private static Object worldServer, mcServer;
 
     @Deprecated
     public static int addItem(Inventory inv, ItemStack is, int maxStack) {
         return ItemUtils.addItem(inv, is, maxStack);
-    }
-
-    /**
-     * Disables a plugin
-     *
-     * @param p - The unloadable plugin
-     */
-    public static void disablePlugin(Plugin p) {
-        pm.disablePlugin(p);
-        try {
-            Field lookupNamesField = pm.getClass().getDeclaredField("lookupNames");
-            lookupNamesField.setAccessible(true);
-            Map names = (Map) lookupNamesField.get(pm);
-            Iterator<Entry<String, Plugin>> it = names.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, Plugin> e = it.next();
-                if (e.getValue() == p)
-                    it.remove();
-            }
-
-            Field commandMapField = Bukkit.getPluginManager().getClass().getDeclaredField("commandMap");
-            commandMapField.setAccessible(true);
-            SimpleCommandMap commandMap = (SimpleCommandMap) commandMapField.get(pm);
-
-            Field knownCommandsField = SimpleCommandMap.class.getDeclaredField("knownCommands");
-            knownCommandsField.setAccessible(true);
-            Map<String, Command> commands = (Map<String, Command>) knownCommandsField.get(commandMap);
-            Iterator<Entry<String, Command>> it2 = commands.entrySet().iterator();
-            while (it2.hasNext()) {
-                Entry<String, Command> e = it2.next();
-                Command cmd = e.getValue();
-                if (cmd instanceof PluginCommand) {
-                    PluginCommand c = (PluginCommand) cmd;
-                    if (c.getPlugin() == p) {
-                        c.unregister(commandMap);
-                        it2.remove();
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -187,6 +149,8 @@ public final class SU {
      * @param author - The author name, which will be searched in the error report
      */
     public static void error(CommandSender sender, Throwable err, String plugin, String author) {
+        if (Config.silentErrors)
+            return;
         StringBuilder report = new StringBuilder();
         report.append("§4§l").append(plugin).append(" - ERROR REPORT - ")
                 .append(err.getClass().getSimpleName());
@@ -827,7 +791,25 @@ public final class SU {
      */
     public static void unloadPlugin(Plugin p) {
         try {
+            String pn = p.getName();
+            for (Plugin p2 : pm.getPlugins()) {
+                PluginDescriptionFile pdf = p2.getDescription();
+                if (pdf.getDepend() != null && pdf.getDepend().contains(pn) || pdf.getSoftDepend() != null && pdf.getSoftDepend().contains(pn))
+                    unloadPlugin(p2);
+            }
+            pm.disablePlugin(p);
+            ((List) pluginsF.get(pm)).remove(p);
+            ((Map) lookupNamesF.get(pm)).remove(pn);
+            for (Iterator it = knownCommands.entrySet().iterator(); it.hasNext(); ) {
+                Entry entry = (Entry) it.next();
+                if ((entry.getValue() instanceof PluginCommand)) {
+                    PluginCommand c = (PluginCommand) entry.getValue();
+                    if (c.getPlugin() == p)
+                        it.remove();
+                }
+            }
             ((URLClassLoader) p.getClass().getClassLoader()).close();
+            System.gc();
         } catch (Throwable e) {
             error(cs, e, "SpigotLib", "gyurix");
         }

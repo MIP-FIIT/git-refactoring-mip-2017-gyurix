@@ -233,7 +233,7 @@ public class JsonAPI {
                 sb.append('}');
             }
         } else {
-            if (cl.getName().startsWith("java.")) {
+            if (cl.getName().startsWith("java.") || cl.getName().startsWith("sun.") || cl.getName().startsWith("org.apache.")) {
                 sb.append('\"').append(escape(o.toString())).append('\"');
                 return;
             }

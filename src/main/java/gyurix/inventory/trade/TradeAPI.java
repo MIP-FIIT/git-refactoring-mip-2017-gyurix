@@ -1,5 +1,6 @@
 package gyurix.inventory.trade;
 
+import com.google.common.collect.Lists;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
@@ -26,8 +27,7 @@ public class TradeAPI implements Listener {
      */
     public static final ItemStack air = new ItemStack(Material.AIR);
     private static Class cmrCl = Reflection.getOBCClass("inventory.CraftMerchantRecipe");
-    private static Constructor cmrC = Reflection.getConstructor(cmrCl,
-            ItemStack.class, int.class, int.class, boolean.class);
+    private static Constructor cmrC = Reflection.getConstructor(cmrCl, ItemStack.class, int.class, int.class, boolean.class);
     private static Class humanCl = Reflection.getNMSClass("EntityHuman");
     private static Class imc = Reflection.getNMSClass("IMerchant");
     private static Field ingredientsF = Reflection.getField(MerchantRecipe.class, "ingredients");
@@ -86,23 +86,7 @@ public class TradeAPI implements Listener {
      * @return The opened TradeGUI
      */
     public static MerchantInventory openGUI(final Player plr, String title, MerchantRecipe... recipes) {
-        try {
-            plr.closeInventory();
-            Object nmsPlr = EntityUtils.getNMSEntity(plr);
-            IMerchantHook imh = new IMerchantHook(nmsPlr, title);
-            Object im = Proxy.newProxyInstance(nmsPlr.getClass().getClassLoader(), new Class[]{imc}, imh);
-            ArrayList<Object> mrl = imh.offers;
-            for (MerchantRecipe r : recipes) {
-                Object cmr = cmrC.newInstance(r.getResult(), r.getUses(), r.getMaxUses(), false);
-                ingredientsF.set(cmr, ingredientsF.get(r));
-                mrl.add(toMinecraftM.invoke(cmr));
-            }
-            openTradeM.invoke(nmsPlr, im);
-            return (MerchantInventory) plr.getOpenInventory().getTopInventory();
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-        }
-        return null;
+        return openGUI(plr, title, Lists.newArrayList(recipes));
     }
 
     /**
@@ -115,7 +99,6 @@ public class TradeAPI implements Listener {
      */
     public static MerchantInventory openGUI(final Player plr, String title, Iterable<MerchantRecipe> recipes) {
         try {
-            plr.closeInventory();
             Object nmsPlr = EntityUtils.getNMSEntity(plr);
             IMerchantHook imh = new IMerchantHook(nmsPlr, title);
             Object im = Proxy.newProxyInstance(nmsPlr.getClass().getClassLoader(), new Class[]{imc}, imh);

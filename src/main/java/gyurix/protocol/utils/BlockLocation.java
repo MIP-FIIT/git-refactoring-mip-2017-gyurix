@@ -14,8 +14,8 @@ import java.lang.reflect.Method;
 
 public class BlockLocation implements WrappedData, StringSerializable {
     public static final BlockLocation notDefined = new BlockLocation(0, 0, 0);
-    private static final Class cl = Reflection.getNMSClass("BlockPosition");
     private static final Class baseCl = Reflection.getNMSClass("BaseBlockPosition");
+    private static final Class cl = Reflection.getNMSClass("BlockPosition");
     private static final Constructor con = Reflection.getConstructor(cl, int.class, int.class, int.class);
     private static final Method getX = Reflection.getMethod(Reflection.ver.isAbove(ServerVersion.v1_9) ? cl : baseCl, "getX");
     private static final Method getY = Reflection.getMethod(Reflection.ver.isAbove(ServerVersion.v1_9) ? cl : baseCl, "getY");
@@ -65,8 +65,12 @@ public class BlockLocation implements WrappedData, StringSerializable {
         }
     }
 
-    public BlockLocation clone() {
-        return new BlockLocation(x, y, z);
+    public Block getBlock(World w) {
+        return w.getBlockAt(x, y, z);
+    }
+
+    public Location getLocation(World w) {
+        return new Location(w, x, y, z);
     }
 
     @Override
@@ -76,23 +80,19 @@ public class BlockLocation implements WrappedData, StringSerializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || obj.getClass() != BlockLocation.class)
+        if (!(obj instanceof BlockLocation))
             return false;
         BlockLocation bl = (BlockLocation) obj;
         return bl.x == x && bl.y == y && bl.z == z;
     }
 
+    public BlockLocation clone() {
+        return new BlockLocation(x, y, z);
+    }
+
     @Override
     public String toString() {
         return x + " " + y + ' ' + z;
-    }
-
-    public Block getBlock(World w) {
-        return w.getBlockAt(x, y, z);
-    }
-
-    public Location getLocation(World w) {
-        return new Location(w, x, y, z);
     }
 
     public boolean isDefined() {

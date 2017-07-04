@@ -7,6 +7,7 @@ import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.apache.commons.codec.binary.Base64;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
@@ -86,9 +87,8 @@ public class ConfigData implements Comparable<ConfigData> {
     }
 
     public static ConfigData serializeObject(Object obj, boolean className, Type... parameters) {
-        if (obj == null) {
+        if (obj == null)
             return null;
-        }
         Class c = Primitives.wrap(obj.getClass());
         if (c.isArray())
             parameters = new Type[]{c.getComponentType()};
@@ -96,12 +96,12 @@ public class ConfigData implements Comparable<ConfigData> {
         ConfigData cd = parameters == null ? s.toData(obj) : s.toData(obj, parameters);
         if (cd.stringData != null && cd.stringData.startsWith("‼"))
             cd.stringData = '\\' + cd.stringData;
-        if (className) {
-            String prefix = '‼' + ConfigSerialization.getAlias(obj.getClass());
+        if (className && !c.isEnum() && !c.getSuperclass().isEnum()) {
+            StringBuilder prefix = new StringBuilder('‼' + ConfigSerialization.getAlias(obj.getClass()));
             for (Type t : parameters) {
-                prefix = prefix + '-' + ConfigSerialization.getAlias((Class) t);
+                prefix.append('-').append(ConfigSerialization.getAlias((Class) t));
             }
-            prefix += '‼';
+            prefix.append('‼');
             cd.stringData = prefix + cd.stringData;
         }
         return cd;
@@ -161,7 +161,7 @@ public class ConfigData implements Comparable<ConfigData> {
     }
 
     @Override
-    public int compareTo(ConfigData o) {
+    public int compareTo(@Nonnull ConfigData o) {
         return toString().compareTo(o.toString());
     }
 
@@ -236,6 +236,10 @@ public class ConfigData implements Comparable<ConfigData> {
         return out;
     }
 
+    public boolean isEmpty() {
+        return (stringData == null || stringData.isEmpty()) && listData == null && mapData == null && objectData == null;
+    }
+
     public void saveToMySQL(ArrayList<String> l, String dbTable, String args, String key) {
         DefaultSerializers.leftPad = 16;
         ConfigData cd = objectData == null ? this : serializeObject(objectData, types);
@@ -255,16 +259,14 @@ public class ConfigData implements Comparable<ConfigData> {
 
     public String toUncompressedString() {
         StringBuilder out = new StringBuilder();
-        if (objectData != null) {
+        if (objectData != null)
             return serializeObject(objectData, types).toString();
-        }
-        if (stringData != null && !stringData.isEmpty()) {
+        if (stringData != null && !stringData.isEmpty())
             out.append(escape(stringData));
-        }
         if (mapData != null) {
             for (Entry<ConfigData, ConfigData> d : mapData.entrySet()) {
                 String value = d.getValue().toString();
-                if (value == null)
+                if (value.isEmpty())
                     continue;
                 if (d.getKey().comment != null)
                     out.append("\n#").append(d.getKey().comment.replace("\n", "\n#"));
@@ -280,9 +282,7 @@ public class ConfigData implements Comparable<ConfigData> {
         if (listData != null) {
             for (ConfigData d : listData) {
                 String data = d.toString();
-                if (data == null)
-                    data = "";
-                else if (data.startsWith("\n  "))
+                if (data.startsWith("\n  "))
                     data = data.substring(3);
                 if (d.comment != null)
                     out.append("\n#").append(d.comment.replace("\n", "\n#"));
@@ -290,7 +290,7 @@ public class ConfigData implements Comparable<ConfigData> {
             }
         }
         if (out.length() == 0)
-            return null;
+            return "";
         return out.toString();
     }
 

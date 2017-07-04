@@ -88,8 +88,8 @@ public class SidebarLine {
         String user = team.players.iterator().next();
         bar.currentData.scores.remove(user);
         for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
-            e.getValue().scores.put(user, number);
-            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(CHANGE, bar.currentData.barname, user, number));
+            e.getValue().scores.remove(user);
+            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(REMOVE, bar.currentData.barname, user, number));
         }
         hidden = true;
         return true;
@@ -117,7 +117,7 @@ public class SidebarLine {
         bar.currentData.scores.put(user, number);
         for (Map.Entry<String, BarData> e : bar.active.entrySet()) {
             e.getValue().scores.put(user, number);
-            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(REMOVE, bar.currentData.barname, user, 0));
+            SU.tp.sendPacket(Bukkit.getPlayer(e.getKey()), new PacketPlayOutScoreboardScore(CHANGE, bar.currentData.barname, user, number));
         }
         hidden = false;
         return true;

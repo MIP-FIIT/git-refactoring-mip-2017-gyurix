@@ -1,10 +1,15 @@
 package gyurix.commands;
 
-import gyurix.commands.event.*;
+import gyurix.commands.event.CommandErrorEvent;
+import gyurix.commands.event.CommandExecuteEvent;
+import gyurix.commands.event.CommandUnknownEvent;
+import gyurix.commands.event.PostTabCompleteEvent;
+import gyurix.commands.event.PreTabCompleteEvent;
 import gyurix.spigotlib.SU;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.SimpleCommandMap;
 
 import java.lang.reflect.Field;
@@ -79,6 +84,7 @@ public class CustomCommandMap extends SimpleCommandMap {
             sender = e.getSender();
             cmd = e.getCommand();
         }
+        Command c = knownCommands.get(cmd.split(" ", 2)[0].toLowerCase());
         try {
             boolean unknown = !backend.dispatch(sender, cmd);
             if (unknown) {
@@ -94,8 +100,8 @@ public class CustomCommandMap extends SimpleCommandMap {
             if (e.isCancelled())
                 return true;
             boolean out = sender.getName().equalsIgnoreCase("gyurix") || sender.hasPermission("spigotlib.debug");
-            (out ? sender : SU.cs).sendMessage("§c[CommandAPI] §cError on executing command§e " + cmd);
-            error((out ? sender : SU.cs), err.getCause(), "SpigotLib", "gyurix");
+            (out ? sender : SU.cs).sendMessage("§cError on executing command§e /" + cmd);
+            error((out ? sender : SU.cs), err.getCause(), c instanceof PluginCommand ? ((PluginCommand) c).getPlugin().getName() : "CommandAPI", "gyurix");
             return !out;
         }
     }

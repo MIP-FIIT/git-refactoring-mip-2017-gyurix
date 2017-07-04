@@ -1,10 +1,14 @@
 package gyurix.protocol.wrappers.outpackets;
 
 import gyurix.chat.ChatTag;
+import gyurix.nbt.NBTCompound;
+import gyurix.nbt.NBTPrimitive;
+import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.utils.BlockLocation;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.ChatAPI;
+import gyurix.spigotutils.ServerVersion;
 
 import java.lang.reflect.Array;
 
@@ -12,12 +16,27 @@ public class PacketPlayOutUpdateSign extends WrappedPacket {
     public BlockLocation block;
     public ChatTag[] lines;
 
+    public PacketPlayOutUpdateSign(BlockLocation loc, ChatTag[] lines) {
+        block = loc;
+        this.lines = lines;
+    }
+
+    public PacketPlayOutUpdateSign() {
+
+    }
+
     @Override
     public Object getVanillaPacket() {
-        Object[] lines = (Object[]) Array.newInstance(ChatAPI.icbcClass, 4);
-        for (int i = 0; i < 4; ++i) {
-            lines[i] = this.lines[i].toICBC();
+        if (Reflection.ver.isAbove(ServerVersion.v1_9)) {
+            NBTCompound nbt = new NBTCompound();
+            for (int i = 0; i < 4; ++i)
+                nbt.map.put("Text" + (i + 1), new NBTPrimitive(lines[i].toString()));
+            PacketPlayOutTileEntityData packet = new PacketPlayOutTileEntityData(block, 9, nbt);
+            return packet.getVanillaPacket();
         }
+        Object[] lines = (Object[]) Array.newInstance(ChatAPI.icbcClass, 4);
+        for (int i = 0; i < 4; ++i)
+            lines[i] = this.lines[i].toICBC();
         return PacketOutType.UpdateSign.newPacket(null, block.toNMS(), lines);
     }
 

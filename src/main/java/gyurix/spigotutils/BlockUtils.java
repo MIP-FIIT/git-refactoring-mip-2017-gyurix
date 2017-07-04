@@ -25,7 +25,8 @@ public class BlockUtils {
         Class regIDCl = getNMSClass("RegistryID");
         Class blCl = getNMSClass("Block");
         try {
-            nmsBlockIDMap = (Map<Object, Integer>) Reflection.getFieldData(regIDCl, "a", Reflection.getFirstFieldOfType(blCl, regIDCl).get(null));
+            if (Reflection.ver.isBellow(ServerVersion.v1_11))
+                nmsBlockIDMap = (Map<Object, Integer>) Reflection.getFieldData(regIDCl, "a", Reflection.getFirstFieldOfType(blCl, regIDCl).get(null));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
@@ -36,11 +37,6 @@ public class BlockUtils {
         toLegacyDataM = getMethod(blCl, "toLegacyData", getNMSClass("IBlockData"));
     }
 
-    public static Vector getDirection(float yaw, float pitch) {
-        double xz = cos(toRadians(pitch));
-        return new Vector(-xz * sin(toRadians(yaw)), -sin(toRadians(pitch)), xz * cos(toRadians(yaw)));
-    }
-
     public static int getCombinedId(Object nmsBlock) {
         try {
             return (int) getCombinedIdM.invoke(null, nmsBlock);
@@ -48,6 +44,11 @@ public class BlockUtils {
             e.printStackTrace();
         }
         return 0;
+    }
+
+    public static Vector getDirection(float yaw, float pitch) {
+        double xz = cos(toRadians(pitch));
+        return new Vector(-xz * sin(toRadians(yaw)), -sin(toRadians(pitch)), xz * cos(toRadians(yaw)));
     }
 
     public static Object getNMSBlock(int id, byte data) {

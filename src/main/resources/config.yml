@@ -14,6 +14,8 @@ debug: -
 defaultLang: en
 #If you have found a plugin incompatibility issue, then use this option to force enable SpigotLib in compatibility mode.
 forceReducedMode: -
+#Do not show any error reports in the console and in the chat.
+silentErrors: -
 disableWeatherChange: -
 #Allow access to all the plugins commands for the plugins author. Keeping this enabled helps him in speeding up the plugin testing / problem resolving speed.
 allowAllPermsForAuthor: +

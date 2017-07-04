@@ -16,6 +16,8 @@ public enum PacketInType {
     LoginInEncryptionBegin,
     LoginInStart,
     Abilities,
+    Advancements,
+    AdvancementTab,
     ArmAnimation,
     AutoRecipe,
     BlockDig,

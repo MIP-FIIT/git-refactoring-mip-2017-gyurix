@@ -1,12 +1,13 @@
 package gyurix.nbt;
 
+import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.protocol.utils.WrappedData;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Collection;
 import java.util.Map;
 
-public abstract class NBTTag implements WrappedData {
+public abstract class NBTTag implements WrappedData, StringSerializable {
 
     public static NBTTag make(Object o) {
         if (o instanceof NBTTag) {

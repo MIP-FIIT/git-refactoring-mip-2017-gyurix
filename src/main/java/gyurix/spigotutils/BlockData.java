@@ -1,7 +1,6 @@
 package gyurix.spigotutils;
 
 import gyurix.configfile.ConfigSerialization.StringSerializable;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -148,12 +147,7 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
      * @return The conversion result
      */
     public ItemStack toItem() {
-        ItemStack is = Config.blocks.get(this);
-        if (is == null)
-            is = Config.blocks.get(new BlockData(id));
-        if (is == null)
-            is = new ItemStack(id, 1, data);
-        return is;
+        return new ItemStack(id, 1, data);
     }
 }
 

@@ -47,8 +47,8 @@ public class Command implements StringSerializable {
         customCommands.put("BUNGEE", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof Entity) {
+                    Entity plr = (Entity) cs;
                     executeBungeeCommands(new String[]{text}, plr.getName());
                 }
                 return true;
@@ -80,8 +80,8 @@ public class Command implements StringSerializable {
         customCommands.put("DAMAGE", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof LivingEntity) {
+                    LivingEntity plr = (LivingEntity) cs;
                     plr.damage(Double.valueOf(text));
                     return true;
                 }
@@ -91,8 +91,8 @@ public class Command implements StringSerializable {
         customCommands.put("ECON", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof Entity) {
+                    Entity plr = (Entity) cs;
                     String[] data = text.split(" ", 2);
                     return data.length != 0 && (data.length == 1 ? EconomyAPI.addBalance(plr.getUniqueId(), new BigDecimal(data[0])) :
                             EconomyAPI.addBalance(plr.getUniqueId(), data[0], new BigDecimal(data[1])));
@@ -103,8 +103,8 @@ public class Command implements StringSerializable {
         customCommands.put("ECONSET", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof Entity) {
+                    Entity plr = (Entity) cs;
                     String[] data = text.split(" ", 2);
                     return data.length != 0 && (data.length == 1 ? EconomyAPI.setBalance(plr.getUniqueId(), new BigDecimal(data[0])) :
                             EconomyAPI.setBalance(plr.getUniqueId(), data[0], new BigDecimal(data[1])));
@@ -115,8 +115,8 @@ public class Command implements StringSerializable {
         customCommands.put("EXPLOSION", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof Entity) {
+                    Entity plr = (Entity) cs;
                     Location loc = plr.getLocation();
                     plr.getWorld().createExplosion(loc.getX(), loc.getY(), loc.getZ(), Float.valueOf(text), false, false);
                 }
@@ -172,8 +172,8 @@ public class Command implements StringSerializable {
         customCommands.put("HP", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof LivingEntity) {
+                    LivingEntity plr = (LivingEntity) cs;
                     plr.setHealth(Math.min(Double.valueOf(text), plr.getMaxHealth()));
                     return true;
                 }
@@ -200,8 +200,8 @@ public class Command implements StringSerializable {
         customCommands.put("MAXHP", new CustomCommandHandler() {
             @Override
             public boolean handle(CommandSender cs, String text, Object... args) {
-                if (cs instanceof Player) {
-                    Player plr = (Player) cs;
+                if (cs instanceof LivingEntity) {
+                    LivingEntity plr = (LivingEntity) cs;
                     plr.setMaxHealth(Double.valueOf(text));
                     return true;
                 }
@@ -474,11 +474,22 @@ public class Command implements StringSerializable {
         if (plns == null || list == null)
             return false;
         for (String pln : plns) {
-            Player p = Bukkit.getPlayerExact(pln);
+            Entity p = Bukkit.getPlayerExact(pln);
             if (p == null)
                 continue;
             for (Command c : list)
                 c.execute(p, args);
+        }
+        return true;
+    }
+
+    public static boolean executeAll(Iterable<Entity> pls, Entity plr, ArrayList<Command> list, Object... args) {
+        if (list == null || pls == null)
+            return false;
+        for (Entity p : pls) {
+            if (p != plr)
+                for (Command c : list)
+                    c.execute(p, args);
         }
         return true;
     }
@@ -489,17 +500,6 @@ public class Command implements StringSerializable {
         if (delay < 0)
             return executeNow(sender, args);
         SU.sch.scheduleSyncDelayedTask(Main.pl, new DelayedCommandExecutor(this, sender, args), delay);
-        return true;
-    }
-
-    public static boolean executeAll(Iterable<Player> pls, Player plr, ArrayList<Command> list, Object... args) {
-        if (list == null || pls == null)
-            return false;
-        for (Player p : pls) {
-            if (p != plr)
-                for (Command c : list)
-                    c.execute(p, args);
-        }
         return true;
     }
 

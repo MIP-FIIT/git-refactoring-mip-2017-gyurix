@@ -1,9 +1,7 @@
 package gyurix.configfile;
 
 import com.google.gson.internal.Primitives;
-import gyurix.configfile.ConfigSerialization.ConfigOptions;
-import gyurix.configfile.ConfigSerialization.Serializer;
-import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.configfile.ConfigSerialization.*;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
@@ -36,6 +34,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static gyurix.configfile.ConfigData.serializeObject;
+import static gyurix.configfile.ConfigSerialization.*;
 import static gyurix.protocol.Reflection.newInstance;
 
 public class DefaultSerializers {
@@ -43,50 +42,50 @@ public class DefaultSerializers {
     public static int leftPad;
 
     public static void init() {
-        ConfigSerialization.serializers.put(String.class, new StringSerializer());
-        ConfigSerialization.serializers.put(Class.class, new ClassSerializer());
-        ConfigSerialization.serializers.put(UUID.class, new UUIDSerializer());
-        ConfigSerialization.serializers.put(ConfigData.class, new ConfigDataSerializer());
+        serializers.put(String.class, new StringSerializer());
+        serializers.put(Class.class, new ClassSerializer());
+        serializers.put(UUID.class, new UUIDSerializer());
+        serializers.put(ConfigData.class, new ConfigDataSerializer());
 
         NumberSerializer numberSerializer = new NumberSerializer();
-        ConfigSerialization.serializers.put(Byte.class, numberSerializer);
-        ConfigSerialization.serializers.put(Short.class, numberSerializer);
-        ConfigSerialization.serializers.put(Integer.class, numberSerializer);
-        ConfigSerialization.serializers.put(Long.class, numberSerializer);
-        ConfigSerialization.serializers.put(Float.class, numberSerializer);
-        ConfigSerialization.serializers.put(Double.class, numberSerializer);
-        ConfigSerialization.serializers.put(Boolean.class, new BooleanSerializer());
-        ConfigSerialization.serializers.put(Character.class, new CharacterSerializer());
-        ConfigSerialization.serializers.put(Array.class, new ArraySerializer());
-        ConfigSerialization.serializers.put(Collection.class, new CollectionSerializer());
-        ConfigSerialization.serializers.put(Map.class, new MapSerializer());
-        ConfigSerialization.serializers.put(Object.class, new ObjectSerializer());
-        ConfigSerialization.serializers.put(Pattern.class, new PatternSerializer());
-        ConfigSerialization.serializers.put(SimpleDateFormat.class, new SimpleDateFormatSerializer());
+        serializers.put(Byte.class, numberSerializer);
+        serializers.put(Short.class, numberSerializer);
+        serializers.put(Integer.class, numberSerializer);
+        serializers.put(Long.class, numberSerializer);
+        serializers.put(Float.class, numberSerializer);
+        serializers.put(Double.class, numberSerializer);
+        serializers.put(Boolean.class, new BooleanSerializer());
+        serializers.put(Character.class, new CharacterSerializer());
+        serializers.put(Array.class, new ArraySerializer());
+        serializers.put(Collection.class, new CollectionSerializer());
+        serializers.put(Map.class, new MapSerializer());
+        serializers.put(Object.class, new ObjectSerializer());
+        serializers.put(Pattern.class, new PatternSerializer());
+        serializers.put(SimpleDateFormat.class, new SimpleDateFormatSerializer());
 
-        ConfigSerialization.aliases.put(String.class, "str");
-        ConfigSerialization.aliases.put(UUID.class, "uuid");
-        ConfigSerialization.aliases.put(Byte.class, "b");
-        ConfigSerialization.aliases.put(Short.class, "s");
-        ConfigSerialization.aliases.put(Integer.class, "i");
-        ConfigSerialization.aliases.put(Long.class, "l");
-        ConfigSerialization.aliases.put(Float.class, "f");
-        ConfigSerialization.aliases.put(Double.class, "d");
-        ConfigSerialization.aliases.put(Boolean.class, "bool");
-        ConfigSerialization.aliases.put(Character.class, "c");
-        ConfigSerialization.aliases.put(Array.class, "[]");
-        ConfigSerialization.aliases.put(Collection.class, "{}");
-        ConfigSerialization.aliases.put(List.class, "{L}");
-        ConfigSerialization.aliases.put(Set.class, "{S}");
-        ConfigSerialization.aliases.put(LinkedHashSet.class, "{LS}");
-        ConfigSerialization.aliases.put(TreeSet.class, "{TS}");
-        ConfigSerialization.aliases.put(Map.class, "<>");
-        ConfigSerialization.aliases.put(LinkedHashMap.class, "<L>");
-        ConfigSerialization.aliases.put(TreeMap.class, "<T>");
-        ConfigSerialization.aliases.put(Object.class, "?");
-        ConfigSerialization.interfaceBasedClasses.put(List.class, ArrayList.class);
-        ConfigSerialization.interfaceBasedClasses.put(Set.class, HashSet.class);
-        ConfigSerialization.interfaceBasedClasses.put(Map.class, HashMap.class);
+        aliases.put(String.class, "str");
+        aliases.put(UUID.class, "uuid");
+        aliases.put(Byte.class, "b");
+        aliases.put(Short.class, "s");
+        aliases.put(Integer.class, "i");
+        aliases.put(Long.class, "l");
+        aliases.put(Float.class, "f");
+        aliases.put(Double.class, "d");
+        aliases.put(Boolean.class, "bool");
+        aliases.put(Character.class, "c");
+        aliases.put(Array.class, "[]");
+        aliases.put(Collection.class, "{}");
+        aliases.put(List.class, "{L}");
+        aliases.put(Set.class, "{S}");
+        aliases.put(LinkedHashSet.class, "{LS}");
+        aliases.put(TreeSet.class, "{TS}");
+        aliases.put(Map.class, "<>");
+        aliases.put(LinkedHashMap.class, "<L>");
+        aliases.put(TreeMap.class, "<T>");
+        aliases.put(Object.class, "?");
+        interfaceBasedClasses.put(List.class, ArrayList.class);
+        interfaceBasedClasses.put(Set.class, HashSet.class);
+        interfaceBasedClasses.put(Map.class, HashMap.class);
     }
 
     public static class ArraySerializer implements Serializer {
@@ -110,7 +109,7 @@ public class DefaultSerializers {
                 }
                 return ar;
             } else {
-                String[] sd = input.stringData.split("\\;");
+                String[] sd = input.stringData.split(";");
                 Object ar = Array.newInstance(cl, sd.length);
                 int i = 0;
                 for (String d : sd) {
@@ -201,7 +200,7 @@ public class DefaultSerializers {
                     for (ConfigData d : input.listData) {
                         col.add(d.deserialize(cl, types));
                     }
-                } else if (!input.stringData.isEmpty()) {
+                } else if (input.stringData != null && !input.stringData.isEmpty()) {
                     for (String s : input.stringData.split("[;,] *"))
                         col.add(new ConfigData(s).deserialize(cl, types));
                 }
@@ -478,7 +477,6 @@ public class DefaultSerializers {
             for (Field f : Reflection.getAllFields(c)) {
                 try {
                     String dffValue = dfValue;
-                    boolean serialize = dfSerialize;
                     boolean compress = false;
                     comment = "";
                     ConfigOptions options = f.getAnnotation(ConfigOptions.class);
@@ -489,10 +487,10 @@ public class DefaultSerializers {
                         comment = options.comment();
                         compress = options.compress();
                     }
-                    if (!serialize)
+                    if (!dfSerialize)
                         continue;
                     Object o = f.get(obj);
-                    if (o != null && !o.toString().matches(dffValue)) {
+                    if (o != null && !o.toString().matches(dffValue) && !((o instanceof Iterable) && !((Iterable) o).iterator().hasNext())) {
                         String cn = ConfigSerialization.calculateClassName(Primitives.wrap(f.getType()), o.getClass());
                         Class check = f.getType().isArray() ? f.getType().getComponentType() : f.getType();
                         if (check == Class.class || check.getName().startsWith("java.lang.reflect."))
@@ -508,7 +506,7 @@ public class DefaultSerializers {
                         value.compress = compress;
                         out.mapData.put(new ConfigData(fn, comment), value);
                     }
-                } catch (Throwable e) {
+                } catch (Throwable ignored) {
                 }
             }
             return out;

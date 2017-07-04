@@ -3,7 +3,8 @@ package gyurix.configfile;
 import java.lang.reflect.Type;
 
 /**
- * Created by GyuriX on 2016. 08. 04..
+ * ValueClassSelector is a special ability for keys for being able to choose the type of their values. The most common
+ * usage of this interface is in EnumMaps.
  */
 public interface ValueClassSelector {
     Class getValueClass();
