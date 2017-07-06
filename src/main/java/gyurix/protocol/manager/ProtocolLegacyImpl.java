@@ -100,6 +100,7 @@ public class ProtocolLegacyImpl extends Protocol {
         registerPlayers();
     }
 
+
     public void receivePacket(Player player, Object packet) {
         receivePacket(getChannel(player), packet);
     }

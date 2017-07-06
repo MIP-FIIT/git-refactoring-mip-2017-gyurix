@@ -13,8 +13,8 @@ import gyurix.spigotutils.EntityUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPromise;
 import org.bukkit.Bukkit;
@@ -43,12 +43,12 @@ public class ProtocolImpl extends Protocol {
     private static final Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
     private static final Class minecraftServerClass = getNMSClass("MinecraftServer");
     private static final Class serverConnectionClass = getNMSClass("ServerConnection");
-    private static Object oldH, oldChildH;
+    private static Object oldH;
     private static Field oldHChildF;
     private static Method oldHInitM;
     private ChannelFuture cf;
     private boolean closed;
-    private ChannelInboundHandlerAdapter serverChannel;
+    private ServerChannelHandler serverChannel;
 
     public ProtocolImpl() {
     }
@@ -138,16 +138,6 @@ public class ProtocolImpl extends Protocol {
         handler.pc = packetCapture;
     }
 
-    private void createServerChannelHandler() {
-        serverChannel = new ChannelInitializer() {
-            @Override
-            protected void initChannel(Channel channel) throws Exception {
-                NetworkManagerList.lastChannel.put(Thread.currentThread().getName(), channel);
-                oldHInitM.invoke(oldChildH, channel);
-            }
-        };
-    }
-
     public boolean hasInjected(Player player) {
         return hasInjected(getChannel(player));
     }
@@ -205,13 +195,12 @@ public class ProtocolImpl extends Protocol {
     }
 
     private void registerChannelHandler() throws IllegalAccessException {
-        createServerChannelHandler();
         Channel serverCh = cf.channel();
         oldH = serverCh.pipeline().get(Reflection.getClass("io.netty.bootstrap.ServerBootstrap$ServerBootstrapAcceptor"));
         oldHChildF = Reflection.getField(oldH.getClass(), "childHandler");
-        oldChildH = oldHChildF.get(oldH);
-        oldHInitM = Reflection.getMethod(oldChildH.getClass(), "initChannel", Channel.class);
+        serverChannel = new ServerChannelHandler((ChannelHandler) oldHChildF.get(oldH));
         oldHChildF.set(oldH, serverChannel);
+        oldHInitM = Reflection.getMethod(serverChannel.childHandler.getClass(), "initChannel", Channel.class);
     }
 
     private void registerPlayers() {
@@ -231,7 +220,7 @@ public class ProtocolImpl extends Protocol {
     }
 
     private void unregisterChannelHandler() throws IllegalAccessException {
-        oldHChildF.set(oldH, oldChildH);
+        oldHChildF.set(oldH, serverChannel.childHandler);
     }
 
     public static final class NewChannelHandler extends ChannelDuplexHandler {
@@ -273,8 +262,20 @@ public class ProtocolImpl extends Protocol {
                 e.printStackTrace();
             }
         }
+    }
 
+    public static class ServerChannelHandler extends ChannelInitializer {
+        public final ChannelHandler childHandler;
 
+        public ServerChannelHandler(ChannelHandler childHandler) {
+            this.childHandler = childHandler;
+        }
+
+        @Override
+        protected void initChannel(Channel channel) throws Exception {
+            NetworkManagerList.lastChannel.put(Thread.currentThread().getName(), channel);
+            oldHInitM.invoke(childHandler, channel);
+        }
     }
 
 }

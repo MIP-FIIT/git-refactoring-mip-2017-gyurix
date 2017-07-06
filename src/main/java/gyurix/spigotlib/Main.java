@@ -82,7 +82,7 @@ import static gyurix.spigotlib.Config.PlayerFile.*;
 import static gyurix.spigotlib.Config.*;
 import static gyurix.spigotlib.Items.enchants;
 import static gyurix.spigotlib.SU.*;
-import static gyurix.spigotutils.ServerVersion.*;
+import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class Main extends JavaPlugin implements Listener {
     /**
@@ -96,7 +96,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.4.2";
+    public static final String version = "6.4.3";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -163,6 +163,8 @@ public class Main extends JavaPlugin implements Listener {
             tp = new ProtocolImpl();
         else
             tp = new ProtocolLegacyImpl();
+        if (!Config.forceReducedMode)
+            startPacketAPI();
         cs.sendMessage("§2[§aStartup§2]§e Loading §aAnimationAPI§e...");
         AnimationAPI.init();
         ConfigSerialization.interfaceBasedClasses.put(ItemStack.class, Reflection.getOBCClass("inventory.CraftItemStack"));
@@ -538,7 +540,7 @@ public class Main extends JavaPlugin implements Listener {
         pf = null;
         log(this, "§4[§cShutdown§4]§e Stopping TPSMeter...");
         TPSMeter.meter.cancel(true);
-        if (tp != null) {
+        if (!forceReducedMode) {
             log(this, "§4[§cShutdown§4]§e Stopping PacketAPI...");
             try {
                 tp.close();
@@ -569,8 +571,9 @@ public class Main extends JavaPlugin implements Listener {
 
     public void onEnable() {
         cm = new CustomCommandMap();
-        if (!forceReducedMode && Reflection.ver.isAbove(v1_7)) {
+        if (!forceReducedMode) {
             cs.sendMessage("§2[§aStartup§2]§e Initializing §aoffline player manager§e...");
+            SU.pm.registerEvents(SU.tp, this);
             initOfflinePlayerManager();
         }
         pm.registerEvents(this, this);
@@ -637,8 +640,6 @@ public class Main extends JavaPlugin implements Listener {
                     if (rspChat != null)
                         chat = (Chat) rspChat.getProvider();
                 }
-                if (!forceReducedMode)
-                    startPacketAPI();
                 cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
                 Config.tpsMeter.start();
                 cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
@@ -679,6 +680,7 @@ public class Main extends JavaPlugin implements Listener {
         AnimationAPI.stopRunningAnimations(pl);
         tp.unregisterIncomingListener(pl);
         tp.unregisterOutgoingListener(pl);
+        SU.pf.data.unWrapAll();
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -749,7 +751,6 @@ public class Main extends JavaPlugin implements Listener {
         cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
         try {
             tp.init();
-            SU.pm.registerEvents(tp, this);
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             cs.sendMessage("§2[§aStartup§2]§c Failed to start PacketAPI.");

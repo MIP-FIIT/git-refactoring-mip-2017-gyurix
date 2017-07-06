@@ -40,6 +40,12 @@ public class GameProfile implements WrappedData {
         id = uid;
     }
 
+    public GameProfile(String n, UUID uid, ArrayList<Property> props) {
+        name = n;
+        id = uid;
+        properties = props;
+    }
+
     public GameProfile(Object nmsProfile) {
         try {
             id = (UUID) fid.get(nmsProfile);
@@ -114,6 +120,11 @@ public class GameProfile implements WrappedData {
 
         public Property clone() {
             return new Property(name, value, signature);
+        }
+
+        @Override
+        public String toString() {
+            return JsonAPI.serialize(this);
         }
     }
 

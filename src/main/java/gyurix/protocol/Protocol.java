@@ -101,8 +101,11 @@ public abstract class Protocol implements Listener {
 
     /**
      * Initializes the PacketAPI
+     *
+     * @throws Throwable if something failed in the initialization
      */
     public abstract void init() throws Throwable;
+
 
     /**
      * Simulates receiving the given vanilla packet from a player

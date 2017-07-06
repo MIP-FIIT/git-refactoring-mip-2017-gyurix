@@ -537,6 +537,8 @@ public class ConfigFile {
     public void mysqlLoad() {
         String q = "SELECT `" + dbKey + "`, `" + dbValue + "` FROM " + dbTable;
         try {
+            if (db == null || !db.openConnection())
+                return;
             ResultSet rs = db.querry(q);
             while (rs.next()) {
                 String k = rs.getString(dbKey);
