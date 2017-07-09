@@ -211,6 +211,23 @@ public class ConfigData implements Comparable<ConfigData> {
         }
     }
 
+    public ConfigData getUnWrapped() {
+        if (objectData != null)
+            return serializeObject(objectData, types);
+        ConfigData out = new ConfigData(stringData);
+        if (mapData != null) {
+            out.mapData = new LinkedHashMap<>();
+            for (Entry<ConfigData, ConfigData> e : mapData.entrySet())
+                out.mapData.put(e.getKey().getUnWrapped(), e.getValue().getUnWrapped());
+        }
+        if (listData != null) {
+            out.listData = new ArrayList<>();
+            for (ConfigData cd : listData)
+                out.listData.add(cd.getUnWrapped());
+        }
+        return out;
+    }
+
     public int hashCode() {
         return stringData == null ? objectData == null ? listData == null ? mapData == null ? 0 :
                 mapData.hashCode() : listData.hashCode() : objectData.hashCode() : stringData.hashCode();
@@ -260,23 +277,25 @@ public class ConfigData implements Comparable<ConfigData> {
     public String toUncompressedString() {
         StringBuilder out = new StringBuilder();
         if (objectData != null)
-            return serializeObject(objectData, types).toString();
+            return getUnWrapped().toUncompressedString();
         if (stringData != null && !stringData.isEmpty())
-            out.append(escape(stringData));
+            out.append(escape(stringData)).append('\n');
         if (mapData != null) {
             for (Entry<ConfigData, ConfigData> d : mapData.entrySet()) {
+                ConfigData v = d.getValue();
                 String value = d.getValue().toString();
                 if (value.isEmpty())
                     continue;
                 if (d.getKey().comment != null)
-                    out.append("\n#").append(d.getKey().comment.replace("\n", "\n#"));
+                    out.append("#").append(d.getKey().comment.replace("\n", "\n#")).append('\n');
+                if (v.mapData != null || v.listData != null)
+                    value = "\n" + value;
                 value = value.replace("\n", "\n  ");
-                String key = d.getKey().toString().replace("\n", "\n  ");
-                if (key.contains("\n")) {
-                    out.append("\n  > ").append(key).append("\n  : ").append(value);
-                } else {
-                    out.append("\n  ").append(key).append(": ").append(value);
-                }
+                String key = d.getKey().toString();
+                if (key.contains("\n"))
+                    out.append("> ").append(key).append("\n: ").append(value).append('\n');
+                else
+                    out.append(key).append(": ").append(value).append('\n');
             }
         }
         if (listData != null) {
@@ -289,8 +308,8 @@ public class ConfigData implements Comparable<ConfigData> {
                 out.append("\n- ").append(data);
             }
         }
-        if (out.length() == 0)
-            return "";
+        if (out.length() > 0 && out.charAt(out.length() - 1) == '\n')
+            return out.substring(0, out.length() - 1);
         return out.toString();
     }
 

@@ -8,7 +8,7 @@ import gyurix.spigotutils.TPSMeter;
 public class Config {
     public static int animationApiThreads;
     public static BungeeAPI bungee;
-    public static boolean debug;
+    public static boolean debug, purgePF;
     public static String defaultLang = "en";
     public static boolean disableWeatherChange, forceReducedMode, hideLogo;
     public static EconomyAPI economy = new EconomyAPI();

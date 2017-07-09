@@ -45,7 +45,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.server.PluginDisableEvent;
 import org.bukkit.event.server.ServiceRegisterEvent;
@@ -96,7 +96,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.4.3";
+    public static final String version = "6.5.3";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -150,10 +150,25 @@ public class Main extends JavaPlugin implements Listener {
             itemf.save();
         if (backend == BackendType.FILE) {
             cs.sendMessage("§2[§aStartup§2]§e Loading §aFILE§e backend for §aplayer data storage§e...");
+            if (Config.purgePF) {
+                Config.purgePF = false;
+                kf.save();
+                if (new File(dir + File.separator + PlayerFile.file).delete())
+                    cs.sendMessage("§2[§aStartup§2]§b Purged player file.");
+                else
+                    cs.sendMessage("§2[§aStartup§2]§c Failed to purge player file.");
+            }
             pf = new ConfigFile(new File(dir + File.separator + PlayerFile.file));
         } else if (backend == BackendType.MYSQL) {
             cs.sendMessage("§2[§aStartup§2]§e Loading §aMySQL§e backend for §aplayer data storage§e...");
-            mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid VARCHAR(40), `key` TEXT(1), `value` TEXT(1))");
+            if (Config.purgePF) {
+                Config.purgePF = false;
+                if (mysql.command("DROP TABLE " + mysql.table))
+                    cs.sendMessage("§2[§aStartup§2]§b Dropped " + mysql.table + " table.");
+                else
+                    cs.sendMessage("§2[§aStartup§2]§c Failed to drop " + mysql.table + " table.");
+            }
+            mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid TEXT, `key` LONGTEXT, `value` LONGTEXT)");
             pf = new ConfigFile(mysql, mysql.table, "key", "value");
             loadPlayerConfig(null);
         }
@@ -296,6 +311,11 @@ public class Main extends JavaPlugin implements Listener {
                     return true;
                 case "class":
                     sender.sendMessage("Classes in package " + args[0] + ": " + StringUtils.join(getClasses(args[0]), '\n'));
+                    return true;
+                case "purge":
+                    lang.msg(sender, "purge.pf");
+                    purgePF = true;
+                    kf.save();
                     return true;
                 case "pf":
                     int page = 1;
@@ -647,19 +667,6 @@ public class Main extends JavaPlugin implements Listener {
         }, 1);
     }
 
-    @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerJoin(PlayerJoinEvent e) {
-        Player plr = e.getPlayer();
-        if (BungeeAPI.running) {
-            if (Config.BungeeAPI.ipOnJoin)
-                BungeeAPI.requestIP(plr);
-            if (Config.BungeeAPI.uuidOnJoin)
-                BungeeAPI.requestUUID(plr.getName());
-        }
-        if (!forceReducedMode && ver.isAbove(v1_8))
-            ScoreboardAPI.playerJoin(plr);
-    }
-
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerLeave(PlayerQuitEvent e) {
         Player plr = e.getPlayer();
@@ -672,6 +679,19 @@ public class Main extends JavaPlugin implements Listener {
         SignGUI sg = SignGUI.openSignGUIs.remove(plr.getName());
         if (sg != null)
             sg.cancel();
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerLogin(PlayerLoginEvent e) {
+        Player plr = e.getPlayer();
+        if (BungeeAPI.running) {
+            if (Config.BungeeAPI.ipOnJoin)
+                BungeeAPI.requestIP(plr);
+            if (Config.BungeeAPI.uuidOnJoin)
+                BungeeAPI.requestUUID(plr.getName());
+        }
+        if (!forceReducedMode && ver.isAbove(v1_8))
+            ScoreboardAPI.playerJoin(plr);
     }
 
     @EventHandler

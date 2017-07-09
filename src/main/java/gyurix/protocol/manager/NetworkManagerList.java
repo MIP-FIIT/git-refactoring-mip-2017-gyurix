@@ -6,13 +6,13 @@ import io.netty.channel.Channel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by GyuriX, on 2017. 05. 16..
  */
 public class NetworkManagerList extends ArrayList {
-    public static ConcurrentHashMap<String, Channel> lastChannel = new ConcurrentHashMap<>();
+    public static ConcurrentLinkedQueue<Channel> queue = new ConcurrentLinkedQueue<Channel>();
 
     public NetworkManagerList(List backup) {
         super(backup);
@@ -21,7 +21,7 @@ public class NetworkManagerList extends ArrayList {
     @Override
     public boolean add(Object o) {
         try {
-            lastChannel.remove(Thread.currentThread().getName()).pipeline().addLast("SpigotLib", new NewChannelHandler());
+            queue.poll().pipeline().addLast("SpigotLib", new NewChannelHandler());
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }

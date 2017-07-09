@@ -1,7 +1,6 @@
 package gyurix.spigotlib;
 
 import gyurix.api.VariableAPI;
-import gyurix.api.VariableAPI.VariableHandler;
 import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigSerialization;
 import gyurix.configfile.ConfigSerialization.Serializer;
@@ -12,7 +11,6 @@ import gyurix.spigotutils.TPSMeter;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -86,233 +84,92 @@ public class ConfigHook {
     }
 
     public static void registerVariables() {
-        VariableAPI.handlers.put("eval", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String s = StringUtils.join(inside, "");
-                try {
-                    return SU.js.eval(s);
-                } catch (ScriptException e) {
-                    return "<eval:" + s + '>';
-                }
+        VariableAPI.handlers.put("eval", (plr, inside, oArgs) -> {
+            String s = StringUtils.join(inside, "");
+            try {
+                return SU.js.eval(s);
+            } catch (ScriptException e) {
+                return "<eval:" + s + '>';
             }
         });
-        VariableAPI.handlers.put("tobool", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return Boolean.valueOf(StringUtils.join(inside, ""));
-            }
+        VariableAPI.handlers.put("tobool", (plr, inside, oArgs) -> Boolean.valueOf(StringUtils.join(inside, "")));
+        VariableAPI.handlers.put("tobyte", (plr, inside, oArgs) -> (byte) Double.valueOf(StringUtils.join(inside, "")).doubleValue());
+        VariableAPI.handlers.put("toshort", (plr, inside, oArgs) -> (short) Double.valueOf(StringUtils.join(inside, "")).doubleValue());
+        VariableAPI.handlers.put("toint", (plr, inside, oArgs) -> (int) Double.valueOf(StringUtils.join(inside, "")).doubleValue());
+        VariableAPI.handlers.put("tolong", (plr, inside, oArgs) -> (long) Double.valueOf(StringUtils.join(inside, "")).doubleValue());
+        VariableAPI.handlers.put("tofloat", (plr, inside, oArgs) -> Float.valueOf(StringUtils.join(inside, "")));
+        VariableAPI.handlers.put("todouble", (plr, inside, oArgs) -> Double.valueOf(StringUtils.join(inside, "")));
+        VariableAPI.handlers.put("tostr", (plr, inside, oArgs) -> StringUtils.join(inside, ""));
+        VariableAPI.handlers.put("toarray", (plr, inside, oArgs) -> inside.toArray());
+        VariableAPI.handlers.put("substr", (plr, inside, oArgs) -> {
+            String[] s = StringUtils.join(inside, "").split(" ", 3);
+            int from = Integer.valueOf(s[0]);
+            int to = Integer.valueOf(s[1]);
+            return s[2].substring(from < 0 ? s[2].length() + from : from, to < 0 ? s[2].length() + to : to);
         });
-        VariableAPI.handlers.put("tobyte", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return (byte) Double.valueOf(StringUtils.join(inside, "")).doubleValue();
+        VariableAPI.handlers.put("splits", (plr, inside, oArgs) -> StringUtils.join(inside, "").split(" "));
+        VariableAPI.handlers.put("splitlen", (plr, inside, oArgs) -> {
+            String[] s = StringUtils.join(inside, "").split(" ", 3);
+            Integer max = Integer.valueOf(s[0]);
+            String pref = SU.unescapeText(s[1]);
+            String text = s[2];
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < text.length(); i += max) {
+                sb.append('\n').append(pref).append(text.substring(i, Math.min(text.length(), i + max)));
             }
+            return sb.length() == 0 ? "" : sb.substring(1);
         });
-        VariableAPI.handlers.put("toshort", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return (short) Double.valueOf(StringUtils.join(inside, "")).doubleValue();
-            }
+        VariableAPI.handlers.put("noout", (plr, inside, oArgs) -> "");
+        VariableAPI.handlers.put("lang", (plr, inside, oArgs) -> {
+            String s = StringUtils.join(inside, "");
+            String lang = SU.getPlayerConfig(plr).getString("lang");
+            return s.isEmpty() ? lang : GlobalLangFile.get(lang, s);
         });
-        VariableAPI.handlers.put("toint", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return (int) Double.valueOf(StringUtils.join(inside, "")).doubleValue();
-            }
+        VariableAPI.handlers.put("booltest", (plr, inside, oArgs) -> {
+            String[] s = StringUtils.join(inside, "").split(";");
+            return Boolean.valueOf(s[0]) ? s[1] : s[2];
         });
-        VariableAPI.handlers.put("tolong", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return (long) Double.valueOf(StringUtils.join(inside, "")).doubleValue();
-            }
+        VariableAPI.handlers.put("args", (plr, inside, oArgs) -> {
+            int id = Integer.valueOf(StringUtils.join(inside, ""));
+            return oArgs[id];
         });
-        VariableAPI.handlers.put("tofloat", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return Float.valueOf(StringUtils.join(inside, ""));
-            }
+        VariableAPI.handlers.put("len", (plr, inside, oArgs) -> {
+            Object o = inside.get(0);
+            return o.getClass().isArray() ? Array.getLength(o) : ((Collection) o).size();
         });
-        VariableAPI.handlers.put("todouble", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return Double.valueOf(StringUtils.join(inside, ""));
-            }
+        VariableAPI.handlers.put("iarg", (plr, inside, oArgs) -> {
+            int id = Integer.valueOf(inside.get(0).toString());
+            return inside.get(id);
         });
-        VariableAPI.handlers.put("tostr", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return StringUtils.join(inside, "");
-            }
+        VariableAPI.handlers.put("plr", (plr, inside, oArgs) -> Reflection.getData(plr, inside));
+        VariableAPI.handlers.put("obj", (plr, inside, oArgs) -> Reflection.getData(oArgs[0], inside));
+        VariableAPI.handlers.put("iobj", (plr, inside, oArgs) -> {
+            Object obj = inside.remove(0);
+            return Reflection.getData(obj, inside);
         });
-        VariableAPI.handlers.put("toarray", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return inside.toArray();
+        VariableAPI.handlers.put("dstore", (plr, inside, oArgs) -> {
+            if (inside.size() == 1) {
+                String[] s = StringUtils.join(inside, "").split(" ", 2);
+                return data.put(s[0], s[1]);
             }
+            return data.put(inside.get(0).toString(), inside.get(1));
         });
-        VariableAPI.handlers.put("substr", new VariableHandler() {
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String[] s = StringUtils.join(inside, "").split(" ", 3);
-                int from = Integer.valueOf(s[0]);
-                int to = Integer.valueOf(s[1]);
-                return s[2].substring(from < 0 ? s[2].length() + from : from, to < 0 ? s[2].length() + to : to);
-            }
+        VariableAPI.handlers.put("dget", (plr, inside, oArgs) -> data.get(StringUtils.join(inside, "")));
+        VariableAPI.handlers.put("tps", (plr, inside, oArgs) -> TPSMeter.tps);
+        VariableAPI.handlers.put("real", (plr, inside, oArgs) -> System.currentTimeMillis());
+        VariableAPI.handlers.put("formattime", (plr, inside, oArgs) -> {
+            String str = StringUtils.join(inside, "");
+            int id = str.indexOf(' ');
+            long time = Long.valueOf(str.substring(0, id));
+            String format = str.substring(id + 1);
+            return new SimpleDateFormat(format).format(time);
         });
-        VariableAPI.handlers.put("splits", new VariableHandler() {
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return StringUtils.join(inside, "").split(" ");
+        VariableAPI.handlers.put("balf", (plr, inside, oArgs) -> {
+            if (inside == null || inside.isEmpty()) {
+                return EconomyAPI.balanceTypes.get("default").format(EconomyAPI.getBalance(plr.getUniqueId()).setScale(2, BigDecimal.ROUND_HALF_UP));
             }
-        });
-        VariableAPI.handlers.put("splitlen", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String[] s = StringUtils.join(inside, "").split(" ", 3);
-                Integer max = Integer.valueOf(s[0]);
-                String pref = SU.unescapeText(s[1]);
-                String text = s[2];
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < text.length(); i += max) {
-                    sb.append('\n').append(pref).append(text.substring(i, Math.min(text.length(), i + max)));
-                }
-                return sb.length() == 0 ? "" : sb.substring(1);
-            }
-        });
-        VariableAPI.handlers.put("noout", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return "";
-            }
-        });
-        VariableAPI.handlers.put("lang", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String s = StringUtils.join(inside, "");
-                String lang = SU.getPlayerConfig(plr).getString("lang");
-                return s.isEmpty() ? lang : GlobalLangFile.get(lang, s);
-            }
-        });
-        VariableAPI.handlers.put("booltest", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String[] s = StringUtils.join(inside, "").split(";");
-                return Boolean.valueOf(s[0]) ? s[1] : s[2];
-            }
-        });
-        VariableAPI.handlers.put("args", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                int id = Integer.valueOf(StringUtils.join(inside, ""));
-                return oArgs[id];
-            }
-        });
-        VariableAPI.handlers.put("len", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                Object o = inside.get(0);
-                return o.getClass().isArray() ? Array.getLength(o) : ((Collection) o).size();
-            }
-        });
-        VariableAPI.handlers.put("iarg", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                int id = Integer.valueOf(inside.get(0).toString());
-                return inside.get(id);
-            }
-        });
-        VariableAPI.handlers.put("plr", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return Reflection.getData(plr, inside);
-            }
-        });
-        VariableAPI.handlers.put("obj", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return Reflection.getData(oArgs[0], inside);
-            }
-        });
-        VariableAPI.handlers.put("iobj", new VariableHandler() {
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                Object obj = inside.remove(0);
-                return Reflection.getData(obj, inside);
-            }
-        });
-        VariableAPI.handlers.put("dstore", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                if (inside.size() == 1) {
-                    String[] s = StringUtils.join(inside, "").split(" ", 2);
-                    return data.put(s[0], s[1]);
-                }
-                return data.put(inside.get(0).toString(), inside.get(1));
-            }
-        });
-        VariableAPI.handlers.put("dget", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return data.get(StringUtils.join(inside, ""));
-            }
-        });
-        VariableAPI.handlers.put("tps", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return TPSMeter.tps;
-            }
-        });
-        VariableAPI.handlers.put("real", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                return System.currentTimeMillis();
-            }
-        });
-        VariableAPI.handlers.put("formattime", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                String str = StringUtils.join(inside, "");
-                int id = str.indexOf(' ');
-                long time = Long.valueOf(str.substring(0, id));
-                String format = str.substring(id + 1);
-                return new SimpleDateFormat(format).format(time);
-            }
-        });
-        VariableAPI.handlers.put("balf", new VariableHandler() {
-
-            @Override
-            public Object getValue(Player plr, ArrayList<Object> inside, Object[] oArgs) {
-                if (inside == null || inside.isEmpty()) {
-                    return EconomyAPI.balanceTypes.get("default").format(EconomyAPI.getBalance(plr.getUniqueId()).setScale(2, BigDecimal.ROUND_HALF_UP));
-                }
-                String str = StringUtils.join(inside, "");
-                return EconomyAPI.balanceTypes.get(str).format(EconomyAPI.getBalance(plr.getUniqueId(), str).setScale(2, BigDecimal.ROUND_HALF_UP));
-            }
+            String str = StringUtils.join(inside, "");
+            return EconomyAPI.balanceTypes.get(str).format(EconomyAPI.getBalance(plr.getUniqueId(), str).setScale(2, BigDecimal.ROUND_HALF_UP));
         });
     }
 

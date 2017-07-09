@@ -35,6 +35,8 @@ de:
     noconsole: §cDiese Funktion kann nicht von der Konsole aus genutzt werden.
     noperm: §c§lDu hast keine Berechtigung SpigotLib-Befehle zu benutzen.
     notdone: §cTut uns leid, aber diese Funktion ist noch nicht fertig programiert.
+    purge:
+      pf: Player data will be purged on next server startup.
     perms:
       allowformat: §a<perm>
       denyformat: §c<perm>

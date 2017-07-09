@@ -630,12 +630,7 @@ public class ConfigFile {
             return true;
         } else if (file != null) {
             final String data = toString();
-            ioThread.submit(new Runnable() {
-                @Override
-                public void run() {
-                    saveDataToFile(data);
-                }
-            });
+            ioThread.submit(() -> saveDataToFile(data));
             return true;
         }
         SU.cs.sendMessage("§cFailed to save ConfigFile: §eMissing file / valid MySQL data.");

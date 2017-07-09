@@ -15,7 +15,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -27,7 +27,6 @@ import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,6 @@ public class ProtocolImpl extends Protocol {
     private static final Class serverConnectionClass = getNMSClass("ServerConnection");
     private static Object oldH;
     private static Field oldHChildF;
-    private static Method oldHInitM;
     private ChannelFuture cf;
     private boolean closed;
     private ServerChannelHandler serverChannel;
@@ -199,8 +197,7 @@ public class ProtocolImpl extends Protocol {
         oldH = serverCh.pipeline().get(Reflection.getClass("io.netty.bootstrap.ServerBootstrap$ServerBootstrapAcceptor"));
         oldHChildF = Reflection.getField(oldH.getClass(), "childHandler");
         serverChannel = new ServerChannelHandler((ChannelHandler) oldHChildF.get(oldH));
-        oldHChildF.set(oldH, serverChannel);
-        oldHInitM = Reflection.getMethod(serverChannel.childHandler.getClass(), "initChannel", Channel.class);
+        serverCh.pipeline().addFirst(serverChannel);
     }
 
     private void registerPlayers() {
@@ -220,7 +217,7 @@ public class ProtocolImpl extends Protocol {
     }
 
     private void unregisterChannelHandler() throws IllegalAccessException {
-        oldHChildF.set(oldH, serverChannel.childHandler);
+        cf.channel().pipeline().remove(ServerChannelHandler.class);
     }
 
     public static final class NewChannelHandler extends ChannelDuplexHandler {
@@ -264,17 +261,18 @@ public class ProtocolImpl extends Protocol {
         }
     }
 
-    public static class ServerChannelHandler extends ChannelInitializer {
+    public static class ServerChannelHandler extends ChannelInboundHandlerAdapter {
         public final ChannelHandler childHandler;
 
         public ServerChannelHandler(ChannelHandler childHandler) {
             this.childHandler = childHandler;
         }
 
-        @Override
-        protected void initChannel(Channel channel) throws Exception {
-            NetworkManagerList.lastChannel.put(Thread.currentThread().getName(), channel);
-            oldHInitM.invoke(childHandler, channel);
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (childHandler.getClass().getName().equals("lilypad.bukkit.connect.injector.NettyChannelInitializer"))
+                Reflection.getField(childHandler.getClass(), "oldChildHandler").set(childHandler, oldHChildF.get(oldH));
+            NetworkManagerList.queue.offer((Channel) msg);
+            ctx.fireChannelRead(msg);
         }
     }
 
