@@ -96,7 +96,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.5.3";
+    public static final String version = "6.6.1";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -163,6 +163,7 @@ public class Main extends JavaPlugin implements Listener {
             cs.sendMessage("§2[§aStartup§2]§e Loading §aMySQL§e backend for §aplayer data storage§e...");
             if (Config.purgePF) {
                 Config.purgePF = false;
+                kf.save();
                 if (mysql.command("DROP TABLE " + mysql.table))
                     cs.sendMessage("§2[§aStartup§2]§b Dropped " + mysql.table + " table.");
                 else
@@ -171,6 +172,7 @@ public class Main extends JavaPlugin implements Listener {
             mysql.command("CREATE TABLE IF NOT EXISTS " + mysql.table + " (uuid TEXT, `key` LONGTEXT, `value` LONGTEXT)");
             pf = new ConfigFile(mysql, mysql.table, "key", "value");
             loadPlayerConfig(null);
+            Bukkit.getOnlinePlayers().forEach((p) -> loadPlayerConfig(p.getUniqueId()));
         }
         cs.sendMessage("§2[§aStartup§2]§e Loading §aReflectionAPI§e...");
         Reflection.init();
@@ -414,12 +416,7 @@ public class Main extends JavaPlugin implements Listener {
                     }
                     ConfigFile kff = pf.subConfig("CONSOLE", "uuid='CONSOLE'");
                     kff.mysqlUpdate(l, null);
-                    mysql.batch(l, new Runnable() {
-                        @Override
-                        public void run() {
-                            lang.msg(sender, "migrate.end");
-                        }
-                    });
+                    mysql.batch(l, () -> lang.msg(sender, "migrate.end"));
                     backend = BackendType.MYSQL;
                     kf.save();
                     return true;
@@ -551,6 +548,10 @@ public class Main extends JavaPlugin implements Listener {
                 pf.subConfig(s, "uuid='" + s + "'").mysqlUpdate(list, null);
             }
             pf.db.batchNoAsync(list);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
         }
         log(this, "§4[§cShutdown§4]§e Unloading plugins depending on SpigotLib...");
         for (Plugin p : depend) {
@@ -644,26 +645,23 @@ public class Main extends JavaPlugin implements Listener {
                 }
             }
         }
-        sch.scheduleSyncDelayedTask(this, new Runnable() {
-            @Override
-            public void run() {
-                if (vault) {
-                    if (vaultHookType == USER) {
-                        RegisteredServiceProvider<Economy> rspEcon = srv.getServicesManager().getRegistration(Economy.class);
-                        if (rspEcon != null)
-                            econ = rspEcon.getProvider();
-                    }
-                    RegisteredServiceProvider rspPerm = srv.getServicesManager().getRegistration(Permission.class);
-                    if (rspPerm != null)
-                        perm = (Permission) rspPerm.getProvider();
-                    RegisteredServiceProvider rspChat = srv.getServicesManager().getRegistration(Chat.class);
-                    if (rspChat != null)
-                        chat = (Chat) rspChat.getProvider();
+        sch.scheduleSyncDelayedTask(this, () -> {
+            if (vault) {
+                if (vaultHookType == USER) {
+                    RegisteredServiceProvider<Economy> rspEcon = srv.getServicesManager().getRegistration(Economy.class);
+                    if (rspEcon != null)
+                        econ = rspEcon.getProvider();
                 }
-                cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
-                Config.tpsMeter.start();
-                cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
+                RegisteredServiceProvider rspPerm = srv.getServicesManager().getRegistration(Permission.class);
+                if (rspPerm != null)
+                    perm = (Permission) rspPerm.getProvider();
+                RegisteredServiceProvider rspChat = srv.getServicesManager().getRegistration(Chat.class);
+                if (rspChat != null)
+                    chat = (Chat) rspChat.getProvider();
             }
+            cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
+            Config.tpsMeter.start();
+            cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
         }, 1);
     }
 
@@ -706,13 +704,8 @@ public class Main extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPreLogin(AsyncPlayerPreLoginEvent e) {
         UUID id = e.getUniqueId();
-        if (backend == BackendType.MYSQL) {
-            try {
-                Thread.sleep(2000);
-                loadPlayerConfig(id);
-            } catch (InterruptedException ignored) {
-            }
-        }
+        if (backend == BackendType.MYSQL)
+            loadPlayerConfig(id);
     }
 
     @EventHandler

@@ -8,7 +8,7 @@ public class ConfigReader {
     final int blockLvl;
     final ConfigData key;
     final ConfigData value;
-    private boolean keyRead;
+    private boolean keyRead, noList;
 
     ConfigReader(int lvl, ConfigData data) {
         blockLvl = lvl;
@@ -20,6 +20,13 @@ public class ConfigReader {
         blockLvl = lvl;
         this.key = key;
         this.value = value;
+    }
+
+    public ConfigReader(int lvl, ConfigData value, boolean noList) {
+        blockLvl = lvl;
+        this.value = value;
+        key = null;
+        this.noList = noList;
     }
 
     public void addComment(String com) {
@@ -37,14 +44,14 @@ public class ConfigReader {
 
     public void handleInput(ArrayList<ConfigReader> readers, String line, int lvl) {
         ConfigData data = getData();
-        if (line.equals("-") || line.equals(">") || line.indexOf(':') == line.length() - 1)
+        if (!noList && line.equals("-") || line.equals(">") || line.indexOf(':') == line.length() - 1)
             line += ' ';
-        if (line.startsWith("- ")) {
+        if (!noList && line.startsWith("- ")) {
             if (data.listData == null)
                 data.listData = new ArrayList();
             ConfigData d = new ConfigData();
             data.listData.add(d);
-            ConfigReader r = new ConfigReader(lvl + 1, d);
+            ConfigReader r = new ConfigReader(lvl + 2, d, true);
             readers.add(r);
             r.handleInput(readers, line.substring(2), lvl + 2);
         } else if (line.startsWith("> ")) {

@@ -369,13 +369,10 @@ public final class SU {
             pf.data.mapData = new LinkedHashMap();
         if (PlayerFile.backend == BackendType.MYSQL && !loadedPlayers.contains(plr)) {
             loadPlayerConfig(plr);
-            sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    savePlayerConfig(plr);
-                    unloadPlayerConfig(plr);
-                }
-            }, 10);
+            sch.scheduleSyncDelayedTask(Main.pl, () -> {
+                savePlayerConfig(plr);
+                unloadPlayerConfig(plr);
+            }, 3);
         }
         return pf.subConfig(pln);
     }
@@ -551,7 +548,7 @@ public final class SU {
      * @return the convertion result, which is an ArrayList of player names
      */
     public static ArrayList<String> namesFromUUIDs(Collection<UUID> uuids) {
-        ArrayList<String> out = new ArrayList<String>();
+        ArrayList<String> out = new ArrayList<>();
         for (UUID id : uuids) {
             out.add(getName(id));
         }
@@ -565,7 +562,7 @@ public final class SU {
      * @return the convertion result, which is an ArrayList of player UUIDs
      */
     public static ArrayList<UUID> namesToUUIDs(Collection<String> names) {
-        ArrayList<UUID> out = new ArrayList<UUID>();
+        ArrayList<UUID> out = new ArrayList<>();
         for (String s : names) {
             out.add(getUUID(s));
         }

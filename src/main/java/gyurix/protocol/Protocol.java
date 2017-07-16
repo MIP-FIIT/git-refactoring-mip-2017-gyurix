@@ -5,14 +5,15 @@ import gyurix.protocol.event.PacketInEvent;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.event.PacketOutEvent;
 import gyurix.protocol.event.PacketOutType;
-import gyurix.protocol.manager.PacketCapture;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public abstract class Protocol implements Listener {
     private static final HashMap<PacketInListener, PacketInType> inListenerTypes = new HashMap<>();
@@ -72,16 +73,11 @@ public abstract class Protocol implements Listener {
     /**
      * Closes the PacketAPI
      */
-    public abstract void close() throws Throwable;
-
-    /**
-     * Returns the PacketCapturer, which captures the packets
-     * going through the given players connection
-     *
-     * @param plr - The player having PacketCapturer
-     * @return The PacketCapturer or null if there is no PacketCapturer setup
-     */
-    public abstract PacketCapture getCapturer(Player plr);
+    public void close() throws Throwable {
+        HandlerList.unregisterAll(this);
+        unregisterServerChannelHandler();
+        SU.srv.getOnlinePlayers().forEach(this::uninjectPlayer);
+    }
 
     /**
      * Returns the channel of a Player
@@ -106,6 +102,9 @@ public abstract class Protocol implements Listener {
      */
     public abstract void init() throws Throwable;
 
+    public abstract void injectPlayer(Player plr);
+
+    public abstract void printPipeline(Iterable<Map.Entry<String, ?>> pipeline);
 
     /**
      * Simulates receiving the given vanilla packet from a player
@@ -113,7 +112,9 @@ public abstract class Protocol implements Listener {
      * @param player - The sender player
      * @param packet - The sendable packet
      */
-    public abstract void receivePacket(Player player, Object packet);
+    public void receivePacket(Player player, Object packet) {
+        receivePacket(getChannel(player), packet);
+    }
 
     /**
      * Simulates receiving the given vanilla packet from a channel
@@ -169,13 +170,24 @@ public abstract class Protocol implements Listener {
             pol.add(listener);
     }
 
+    public abstract void registerServerChannelHook() throws Throwable;
+
+    public abstract void removeHandler(Object ch, String handler);
+
     /**
      * Sends the given vanilla packet to a player
      *
      * @param player - The target player
      * @param packet - The sendable packet
      */
-    public abstract void sendPacket(Player player, Object packet);
+    public void sendPacket(Player player, Object packet) {
+        Object channel = getChannel(player);
+        if (channel == null || packet == null) {
+            SU.error(SU.cs, new RuntimeException("§cFailed to send packet " + packet + " to player " + (player == null ? "null" : player.getName())), "SpigotLib", "gyurix");
+            return;
+        }
+        sendPacket(channel, packet);
+    }
 
     /**
      * Sends the given vanilla packet to a channel
@@ -185,13 +197,14 @@ public abstract class Protocol implements Listener {
      */
     public abstract void sendPacket(Object channel, Object packet);
 
-    /**
-     * Sets the PacketCapturer of a players channel
-     *
-     * @param plr           - Target player
-     * @param packetCapture - The PacketCapturer object
-     */
-    public abstract void setCapturer(Player plr, PacketCapture packetCapture);
+    public void uninjectChannel(Object ch) {
+        removeHandler(ch, "SpigotLibInit");
+        removeHandler(ch, "SpigotLib");
+    }
+
+    public void uninjectPlayer(Player player) {
+        uninjectChannel(getChannel(player));
+    }
 
     /**
      * Unregisters ALL the incoming packet listeners of a plugin
@@ -226,6 +239,8 @@ public abstract class Protocol implements Listener {
         for (PacketOutListener l : pol)
             outListeners.remove(outListenerTypes.remove(l));
     }
+
+    public abstract void unregisterServerChannelHandler() throws IllegalAccessException;
 
     /**
      * Interface used for listening to incoming packets

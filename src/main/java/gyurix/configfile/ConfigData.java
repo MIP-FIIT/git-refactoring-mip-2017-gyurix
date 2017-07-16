@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import static gyurix.configfile.DefaultSerializers.leftPad;
 import static gyurix.spigotlib.SU.utf8;
 
 public class ConfigData implements Comparable<ConfigData> {
@@ -47,7 +48,7 @@ public class ConfigData implements Comparable<ConfigData> {
 
     public static String escape(String in) {
         StringBuilder out = new StringBuilder();
-        String escSpace = "\n:->";
+        String escSpace = "\n:>";
         char prev = '\n';
         for (char c : in.toCharArray()) {
             switch (c) {
@@ -67,9 +68,6 @@ public class ConfigData implements Comparable<ConfigData> {
                     break;
                 case '\b':
                     out.append("\\b");
-                    break;
-                case '\n':
-                    out.append(escSpace.contains(String.valueOf(prev)) ? "\\n" : '\n');
                     break;
                 case '\\':
                     out.append("\\\\");
@@ -258,7 +256,7 @@ public class ConfigData implements Comparable<ConfigData> {
     }
 
     public void saveToMySQL(ArrayList<String> l, String dbTable, String args, String key) {
-        DefaultSerializers.leftPad = 16;
+        leftPad = 16;
         ConfigData cd = objectData == null ? this : serializeObject(objectData, types);
         if (cd.mapData != null) {
             if (!key.isEmpty())
@@ -271,7 +269,7 @@ public class ConfigData implements Comparable<ConfigData> {
             if (value != null)
                 l.add("INSERT INTO  `" + dbTable + "` VALUES (" + args.replace("<key>", MySQLDatabase.escape(key)).replace("<value>", MySQLDatabase.escape(value)) + ')');
         }
-        DefaultSerializers.leftPad = 0;
+        leftPad = 0;
     }
 
     public String toUncompressedString() {
@@ -290,7 +288,8 @@ public class ConfigData implements Comparable<ConfigData> {
                     out.append("#").append(d.getKey().comment.replace("\n", "\n#")).append('\n');
                 if (v.mapData != null || v.listData != null)
                     value = "\n" + value;
-                value = value.replace("\n", "\n  ");
+                if (v.mapData != null)
+                    value = value.replace("\n", "\n  ");
                 String key = d.getKey().toString();
                 if (key.contains("\n"))
                     out.append("> ").append(key).append("\n: ").append(value).append('\n');
@@ -301,11 +300,9 @@ public class ConfigData implements Comparable<ConfigData> {
         if (listData != null) {
             for (ConfigData d : listData) {
                 String data = d.toString();
-                if (data.startsWith("\n  "))
-                    data = data.substring(3);
                 if (d.comment != null)
-                    out.append("\n#").append(d.comment.replace("\n", "\n#"));
-                out.append("\n- ").append(data);
+                    out.append('#').append(d.comment.replace("\n", "\n#")).append('\n');
+                out.append("- ").append(data.replace("\n", "\n  ")).append('\n');
             }
         }
         if (out.length() > 0 && out.charAt(out.length() - 1) == '\n')

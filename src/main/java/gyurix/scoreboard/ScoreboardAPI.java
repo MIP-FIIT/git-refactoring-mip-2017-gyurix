@@ -29,6 +29,8 @@ public class ScoreboardAPI {
     }
 
     private static boolean set(Player plr, PlayerBars info, ScoreboardBar to) {
+        if (plr == null || info == null)
+            return false;
         ScoreboardBar from = info.active;
         info.active = to;
         if (from == to)

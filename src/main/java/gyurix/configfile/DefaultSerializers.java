@@ -48,41 +48,41 @@ public class DefaultSerializers {
         serializers.put(ConfigData.class, new ConfigDataSerializer());
 
         NumberSerializer numberSerializer = new NumberSerializer();
+        serializers.put(Array.class, new ArraySerializer());
+        serializers.put(Boolean.class, new BooleanSerializer());
         serializers.put(Byte.class, numberSerializer);
-        serializers.put(Short.class, numberSerializer);
+        serializers.put(Character.class, new CharacterSerializer());
+        serializers.put(Collection.class, new CollectionSerializer());
+        serializers.put(Double.class, numberSerializer);
+        serializers.put(Float.class, numberSerializer);
         serializers.put(Integer.class, numberSerializer);
         serializers.put(Long.class, numberSerializer);
-        serializers.put(Float.class, numberSerializer);
-        serializers.put(Double.class, numberSerializer);
-        serializers.put(Boolean.class, new BooleanSerializer());
-        serializers.put(Character.class, new CharacterSerializer());
-        serializers.put(Array.class, new ArraySerializer());
-        serializers.put(Collection.class, new CollectionSerializer());
         serializers.put(Map.class, new MapSerializer());
         serializers.put(Object.class, new ObjectSerializer());
         serializers.put(Pattern.class, new PatternSerializer());
+        serializers.put(Short.class, numberSerializer);
         serializers.put(SimpleDateFormat.class, new SimpleDateFormatSerializer());
 
-        aliases.put(String.class, "str");
-        aliases.put(UUID.class, "uuid");
-        aliases.put(Byte.class, "b");
-        aliases.put(Short.class, "s");
-        aliases.put(Integer.class, "i");
-        aliases.put(Long.class, "l");
-        aliases.put(Float.class, "f");
-        aliases.put(Double.class, "d");
-        aliases.put(Boolean.class, "bool");
-        aliases.put(Character.class, "c");
         aliases.put(Array.class, "[]");
+        aliases.put(Boolean.class, "bool");
+        aliases.put(Byte.class, "b");
+        aliases.put(Character.class, "c");
         aliases.put(Collection.class, "{}");
-        aliases.put(List.class, "{L}");
-        aliases.put(Set.class, "{S}");
-        aliases.put(LinkedHashSet.class, "{LS}");
-        aliases.put(TreeSet.class, "{TS}");
-        aliases.put(Map.class, "<>");
+        aliases.put(Double.class, "d");
+        aliases.put(Float.class, "f");
+        aliases.put(Integer.class, "i");
         aliases.put(LinkedHashMap.class, "<L>");
-        aliases.put(TreeMap.class, "<T>");
+        aliases.put(LinkedHashSet.class, "{LS}");
+        aliases.put(List.class, "{L}");
+        aliases.put(Long.class, "l");
+        aliases.put(Map.class, "<>");
         aliases.put(Object.class, "?");
+        aliases.put(Set.class, "{S}");
+        aliases.put(Short.class, "s");
+        aliases.put(String.class, "str");
+        aliases.put(TreeMap.class, "<T>");
+        aliases.put(TreeSet.class, "{TS}");
+        aliases.put(UUID.class, "uuid");
         interfaceBasedClasses.put(List.class, ArrayList.class);
         interfaceBasedClasses.put(Set.class, HashSet.class);
         interfaceBasedClasses.put(Map.class, HashMap.class);
@@ -146,7 +146,7 @@ public class DefaultSerializers {
         }
 
         public ConfigData toData(Object in, Type... parameters) {
-            return new ConfigData((boolean) in ? "+" : "\\-");
+            return new ConfigData((boolean) in ? "+" : "-");
         }
     }
 
