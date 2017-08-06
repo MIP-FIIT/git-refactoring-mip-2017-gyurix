@@ -1,13 +1,9 @@
 package gyurix.scoreboard;
 
-import gyurix.scoreboard.team.CollisionRule;
-import gyurix.scoreboard.team.NameTagVisibility;
-import gyurix.scoreboard.team.TeamData;
+import gyurix.scoreboard.team.*;
 import org.bukkit.Bukkit;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import static gyurix.scoreboard.ScoreboardAPI.id;
@@ -89,10 +85,12 @@ public class NametagBar extends ScoreboardBar {
     }
 
     private void updateTeam(String team, TeamData td) {
+        active.keySet().removeIf((p) -> Bukkit.getPlayerExact(p) == null);
+        loaded.keySet().removeIf((p) -> Bukkit.getPlayerExact(p) == null);
         for (Map.Entry<String, BarData> e : active.entrySet()) {
             BarData oldBar = e.getValue();
             TeamData old = oldBar.teams.get(team);
-            td.update(Bukkit.getPlayer(e.getKey()), old);
+            td.update(Bukkit.getPlayerExact(e.getKey()), old);
             oldBar.teams.put(team, td.clone());
         }
     }

@@ -2,35 +2,20 @@ package gyurix.protocol.manager;
 
 import com.google.common.collect.MapMaker;
 import com.mojang.authlib.GameProfile;
-import gyurix.protocol.Protocol;
-import gyurix.protocol.Reflection;
-import gyurix.protocol.event.PacketInEvent;
-import gyurix.protocol.event.PacketInType;
-import gyurix.protocol.event.PacketOutEvent;
+import gyurix.protocol.*;
+import gyurix.protocol.event.*;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.EntityUtils;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
+import io.netty.channel.*;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.*;
+import org.bukkit.event.player.*;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static gyurix.protocol.Reflection.*;
 import static gyurix.spigotlib.Main.pl;
@@ -52,6 +37,8 @@ public final class ProtocolImpl extends Protocol {
 
     @Override
     public Channel getChannel(Player plr) {
+        if (plr == null)
+            return null;
         Channel c = channelLookup.get(plr.getName());
         if (c == null)
             try {
@@ -59,6 +46,7 @@ public final class ProtocolImpl extends Protocol {
                 Object playerConnection = playerConnectionF.get(nmsPlayer);
                 Object networkManager = networkManagerF.get(playerConnection);
                 Channel channel = (Channel) channelF.get(networkManager);
+                SU.cs.sendMessage("Channel is " + channel);
                 channelLookup.put(plr.getName(), c = channel);
             } catch (Throwable e) {
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -85,7 +73,12 @@ public final class ProtocolImpl extends Protocol {
 
     @Override
     public void injectPlayer(final Player plr) {
-        getChannel(plr).pipeline().get(ClientChannelHook.class).player = plr;
+        Channel ch = getChannel(plr);
+        if (ch != null) {
+            ClientChannelHook cch = ch.pipeline().get(ClientChannelHook.class);
+            if (cch != null)
+                cch.player = plr;
+        }
     }
 
     @Override

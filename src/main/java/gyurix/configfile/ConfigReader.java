@@ -1,7 +1,6 @@
 package gyurix.configfile;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.*;
 
 
 public class ConfigReader {
@@ -51,7 +50,7 @@ public class ConfigReader {
                 data.listData = new ArrayList();
             ConfigData d = new ConfigData();
             data.listData.add(d);
-            ConfigReader r = new ConfigReader(lvl + 2, d, true);
+            ConfigReader r = new ConfigReader(lvl + 1, d, true);
             readers.add(r);
             r.handleInput(readers, line.substring(2), lvl + 2);
         } else if (line.startsWith("> ")) {

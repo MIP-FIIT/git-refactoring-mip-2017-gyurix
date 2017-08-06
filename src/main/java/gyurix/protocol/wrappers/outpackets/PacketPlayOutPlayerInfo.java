@@ -3,19 +3,13 @@ package gyurix.protocol.wrappers.outpackets;
 import gyurix.chat.ChatTag;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
-import gyurix.protocol.utils.GameProfile;
-import gyurix.protocol.utils.WorldType;
-import gyurix.protocol.utils.WrappedData;
+import gyurix.protocol.utils.*;
 import gyurix.protocol.wrappers.WrappedPacket;
-import gyurix.spigotlib.ChatAPI;
-import gyurix.spigotlib.SU;
+import gyurix.spigotlib.*;
 import org.bukkit.GameMode;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.reflect.*;
+import java.util.*;
 
 public class PacketPlayOutPlayerInfo extends WrappedPacket {
     public PlayerInfoAction action = PlayerInfoAction.ADD_PLAYER;
@@ -104,7 +98,8 @@ public class PacketPlayOutPlayerInfo extends WrappedPacket {
         public PlayerInfoData(Object vd) {
             try {
                 ping = pingF.getInt(vd);
-                gameMode = GameMode.valueOf(gmF.get(vd).toString());
+                Object nmsGm = gmF.get(vd);
+                gameMode = nmsGm == null ? null : GameMode.valueOf(nmsGm.toString());
                 gameProfile = new GameProfile(gpF.get(vd));
                 displayName = ChatTag.fromICBC(icbcF.get(vd));
             } catch (Throwable e) {

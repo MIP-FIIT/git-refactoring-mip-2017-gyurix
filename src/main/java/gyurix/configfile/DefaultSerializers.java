@@ -3,34 +3,14 @@ package gyurix.configfile;
 import com.google.gson.internal.Primitives;
 import gyurix.configfile.ConfigSerialization.*;
 import gyurix.protocol.Reflection;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import gyurix.spigotlib.*;
+import org.apache.commons.lang.*;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.lang.reflect.*;
+import java.math.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static gyurix.configfile.ConfigData.serializeObject;
@@ -141,8 +121,8 @@ public class DefaultSerializers {
 
     public static class BooleanSerializer implements Serializer {
         public Object fromData(ConfigData input, Class cl, Type... parameters) {
-            String s = input.stringData.toLowerCase();
-            return s.equals("+") || s.equals("true") || s.equals("yes");
+            String s = input.stringData;
+            return s != null && (s.equals("+") || s.equals("true") || s.equals("yes"));
         }
 
         public ConfigData toData(Object in, Type... parameters) {

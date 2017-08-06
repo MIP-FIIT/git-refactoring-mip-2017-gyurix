@@ -2,13 +2,10 @@ package gyurix.sign;
 
 import gyurix.chat.ChatTag;
 import gyurix.protocol.Protocol.PacketInListener;
-import gyurix.protocol.event.PacketInEvent;
-import gyurix.protocol.event.PacketInType;
+import gyurix.protocol.event.*;
 import gyurix.protocol.utils.BlockLocation;
 import gyurix.protocol.wrappers.inpackets.PacketPlayInUpdateSign;
-import gyurix.protocol.wrappers.outpackets.PacketPlayOutBlockChange;
-import gyurix.protocol.wrappers.outpackets.PacketPlayOutOpenSignEditor;
-import gyurix.protocol.wrappers.outpackets.PacketPlayOutUpdateSign;
+import gyurix.protocol.wrappers.outpackets.*;
 import gyurix.spigotlib.SU;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -76,17 +73,14 @@ public class SignGUI implements PacketInListener {
             e.setCancelled(true);
             for (int i = 0; i < 4; ++i)
                 result[i] = packet.lines[i].toColoredString();
-            SU.sch.scheduleSyncDelayedTask(pl, new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        cancel();
-                        Block b = plr.getWorld().getBlockAt(bl.x, bl.y, bl.z);
-                        tp.sendPacket(plr, new PacketPlayOutBlockChange(bl, b.getTypeId(), b.getData()));
-                        dr.done(SignGUI.this);
-                    } catch (Throwable e) {
-                        SU.error(SU.cs, e, "SignGUI", "gyurix");
-                    }
+            SU.sch.scheduleSyncDelayedTask(pl, () -> {
+                try {
+                    cancel();
+                    Block b = plr.getWorld().getBlockAt(bl.x, bl.y, bl.z);
+                    tp.sendPacket(plr, new PacketPlayOutBlockChange(bl, b.getTypeId(), b.getData()));
+                    dr.done(SignGUI.this);
+                } catch (Throwable e1) {
+                    SU.error(SU.cs, e1, "SignGUI", "gyurix");
                 }
             });
         }

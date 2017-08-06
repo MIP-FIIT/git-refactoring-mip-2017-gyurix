@@ -3,14 +3,10 @@ package gyurix.protocol.event;
 import com.google.common.collect.Lists;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
-import gyurix.spigotlib.Config;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
+import gyurix.spigotlib.*;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.lang.reflect.*;
+import java.util.*;
 
 public enum PacketOutType {
     Abilities,
@@ -72,6 +68,7 @@ public enum PacketOutType {
     ScoreboardObjective,
     ScoreboardScore,
     ScoreboardTeam,
+    SelectAdvancementTab,
     ServerDifficulty,
     SetCompression,
     SetCooldown,

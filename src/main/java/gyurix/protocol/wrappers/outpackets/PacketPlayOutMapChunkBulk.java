@@ -26,7 +26,7 @@ public class PacketPlayOutMapChunkBulk extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.MapChunkBulk.newPacket(chunkX, chunkZ, getNMSChunkMapArray(), hasSkyLight, EntityUtils.getNMSWorld(world));
+        return PacketOutType.MapChunkBulk.newPacket(chunkX, chunkZ, getNMSChunkMapArray(), hasSkyLight, world == null ? null : EntityUtils.getNMSWorld(world));
     }
 
     @Override
@@ -36,7 +36,7 @@ public class PacketPlayOutMapChunkBulk extends WrappedPacket {
         chunkZ = (int[]) d[1];
         chunkMaps = loadNMSChunkMapArray((Object[]) d[2]);
         hasSkyLight = (boolean) d[3];
-        world = EntityUtils.getBukkitWorld(d[4]);
+        world = d[4] == null ? null : EntityUtils.getBukkitWorld(d[4]);
     }
 
     public PacketPlayOutMapChunk.ChunkMap[] loadNMSChunkMapArray(Object[] ar) {

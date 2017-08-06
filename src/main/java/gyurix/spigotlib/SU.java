@@ -3,56 +3,30 @@ package gyurix.spigotlib;
 import gyurix.commands.CustomCommandMap;
 import gyurix.configfile.ConfigFile;
 import gyurix.mojang.MojangAPI;
-import gyurix.protocol.Protocol;
-import gyurix.protocol.Reflection;
+import gyurix.protocol.*;
 import gyurix.protocol.utils.GameProfile;
 import gyurix.spigotlib.Config.PlayerFile;
-import gyurix.spigotutils.BackendType;
-import gyurix.spigotutils.DualMap;
-import gyurix.spigotutils.ItemUtils;
+import gyurix.spigotutils.*;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Server;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.command.PluginCommand;
+import org.bukkit.*;
+import org.bukkit.command.*;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.ServicesManager;
+import org.bukkit.inventory.*;
+import org.bukkit.plugin.*;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import javax.script.ScriptEngine;
-import java.io.File;
-import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.io.*;
+import java.lang.reflect.*;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import static gyurix.commands.CustomCommandMap.knownCommands;
@@ -226,6 +200,30 @@ public final class SU {
             }
         }
         return s;
+    }
+
+    /**
+     * Fills variables in an iterable
+     *
+     * @param iterable - The iterable
+     * @param vars     - The variables and their values, which should be filled
+     * @return The variable filled iterable converted to an ArrayList
+     */
+    public static ArrayList<String> fillVariables(Iterable<String> iterable, Object... vars) {
+        ArrayList<String> out = new ArrayList<>();
+        iterable.forEach((s) -> {
+            String last = null;
+            for (Object v : vars) {
+                if (last == null)
+                    last = (String) v;
+                else {
+                    s = s.replace('<' + last + '>', String.valueOf(v));
+                    last = null;
+                }
+            }
+            out.add(s);
+        });
+        return out;
     }
 
     /**
@@ -788,6 +786,8 @@ public final class SU {
      */
     public static void unloadPlugin(Plugin p) {
         try {
+            if (!p.isEnabled())
+                return;
             String pn = p.getName();
             for (Plugin p2 : pm.getPlugins()) {
                 PluginDescriptionFile pdf = p2.getDescription();

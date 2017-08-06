@@ -1,30 +1,17 @@
 package gyurix.spigotutils;
 
 import com.google.common.collect.Lists;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import gyurix.spigotlib.*;
+import org.apache.commons.lang.*;
 import org.bukkit.*;
-import org.bukkit.FireworkEffect.Builder;
-import org.bukkit.FireworkEffect.Type;
-import org.bukkit.block.banner.Pattern;
-import org.bukkit.block.banner.PatternType;
+import org.bukkit.FireworkEffect.*;
+import org.bukkit.block.banner.*;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.meta.*;
-import org.bukkit.potion.PotionData;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
+import org.bukkit.potion.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
 
 import static gyurix.protocol.Reflection.ver;
@@ -78,6 +65,51 @@ public class ItemUtils {
             }
         }
         return left;
+    }
+
+    /**
+     * Adds the given lore storage meta to the given item
+     *
+     * @param is     - Modifiable item
+     * @param values - Array of storage format and values
+     * @return The modified item
+     */
+    public static ItemStack addLoreStorageMeta(ItemStack is, Object... values) {
+        if (is == null || is.getType() == Material.AIR)
+            return is;
+        is = is.clone();
+        ItemMeta meta = is.getItemMeta();
+        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+        boolean key = true;
+        int id = -1;
+        String prefix = "";
+        String suffix = "";
+        for (Object o : values) {
+            if (key) {
+                id = -1;
+                prefix = (String) o;
+                int id2 = prefix.indexOf("<value>");
+                suffix = prefix.substring(id2 + 7);
+                prefix = prefix.substring(0, id2);
+                for (int i = 0; i < lore.size(); ++i) {
+                    String s = lore.get(i);
+                    if (s.startsWith(prefix) && s.endsWith(suffix)) {
+                        id = i;
+                        break;
+                    }
+                }
+                key = false;
+                continue;
+            }
+            if (id == -1)
+                lore.add(prefix + o + suffix);
+            else
+                lore.set(id, prefix + o + suffix);
+            key = true;
+        }
+        meta.setLore(lore);
+        is.setItemMeta(meta);
+        return is;
     }
 
     /**
@@ -178,7 +210,7 @@ public class ItemUtils {
                             SkullMeta sm = (SkullMeta) is.getItemMeta();
                             sm.setOwner(String.valueOf(v));
                             is.setItemMeta(sm);
-                        } catch (Throwable e) {
+                        } catch (Throwable ignored) {
                         }
                         break;
                 }
@@ -223,6 +255,31 @@ public class ItemUtils {
                 return new BlockData(7);
             }
         }
+    }
+
+    /**
+     * Gets the given lore storage meta from the given ItemStack
+     *
+     * @param is     - The checkable ItemStack
+     * @param format - The format of the storage meta
+     * @param def    - Default value to return if the meta was not found.
+     * @return The first found compatible lore storage meta or def if not found any.
+     */
+    public static String getLoreStorageMeta(ItemStack is, String format, String def) {
+        if (is == null || is.getType() == Material.AIR || !is.hasItemMeta())
+            return def;
+        is = is.clone();
+        ItemMeta meta = is.getItemMeta();
+        if (!meta.hasLore())
+            return def;
+        int id2 = format.indexOf("<value>");
+        String prefix = format.substring(0, id2);
+        String suffix = format.substring(id2 + 7);
+        for (String s : meta.getLore()) {
+            if (s.startsWith(prefix) && s.endsWith(suffix))
+                return s.substring(prefix.length(), s.length() - suffix.length());
+        }
+        return def;
     }
 
     /**

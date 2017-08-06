@@ -4,18 +4,12 @@ package gyurix.protocol.utils;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.json.JsonAPI;
 import gyurix.protocol.Reflection;
-import gyurix.spigotlib.ChatAPI;
-import gyurix.spigotlib.SU;
+import gyurix.spigotlib.*;
 import gyurix.spigotutils.ServerVersion;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.UUID;
 
 public class DataWatcher implements WrappedData, StringSerializable {
     private static Constructor con;
@@ -77,6 +71,8 @@ public class DataWatcher implements WrappedData, StringSerializable {
 
     public DataWatcher(Object nmsData) {
         try {
+            if (nmsData == null)
+                return;
             if (nmsData instanceof Iterable) {
                 for (WrappedItem wi : wrapNMSItems((Iterable<Object>) nmsData))
                     map.put(wi.id, wi.data);

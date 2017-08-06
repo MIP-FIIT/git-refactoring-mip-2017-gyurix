@@ -1,27 +1,21 @@
 package gyurix.api;
 
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
+import com.google.common.io.*;
 import gyurix.commands.Command;
 import gyurix.json.JsonAPI;
-import gyurix.spigotlib.Config;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
+import gyurix.spigotlib.*;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Created by gyurix on 20/12/2015.
  */
 public class BungeeAPI implements PluginMessageListener {
-    public static boolean running, enabled;
+    public static boolean enabled, schedulePacketAPI;
     private static HashMap<UUID, String> ips = new HashMap<>();
     private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     private static HashMap<String, Integer> playerCounts = new HashMap<>();
@@ -378,65 +372,34 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean start() {
-        if (running || !enabled)
+        if (!enabled)
             return false;
         if (Config.BungeeAPI.servers > 0) {
-            serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestServerNames();
-                }
-            }, 0, Config.BungeeAPI.servers);
+            serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
         }
         if (Config.BungeeAPI.currentServerName > 0) {
-            currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestCurrentServerName();
-                }
-            }, 0, Config.BungeeAPI.currentServerName);
+            currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
         }
         if (Config.BungeeAPI.playerCount > 0) {
-            playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestPlayerCount(servers);
-                    requestPlayerCount("ALL");
-                }
+            playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
+                requestPlayerCount(servers);
+                requestPlayerCount("ALL");
             }, 2, Config.BungeeAPI.playerCount);
         }
         if (Config.BungeeAPI.playerList > 0) {
-            playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestPlayerList(servers);
-                    requestPlayerList("ALL");
-                }
+            playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
+                requestPlayerList(servers);
+                requestPlayerList("ALL");
             }, 2, Config.BungeeAPI.playerList);
         }
         if (Config.BungeeAPI.uuidAll > 0) {
-            uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestUUID(totalPlayerList());
-                }
-            }, 4, Config.BungeeAPI.uuidAll);
+            uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
         }
         if (Config.BungeeAPI.serverIP > 0) {
-            serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestServerIP(servers);
-                }
-            }, 4, Config.BungeeAPI.serverIP);
+            serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestServerIP(servers), 4, Config.BungeeAPI.serverIP);
         }
         if (Config.BungeeAPI.ipOnJoin) {
-            SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
-                @Override
-                public void run() {
-                    requestIP((Collection<Player>) Bukkit.getOnlinePlayers());
-                }
-            }, 4);
+            SU.sch.scheduleSyncDelayedTask(Main.pl, () -> requestIP((Collection<Player>) Bukkit.getOnlinePlayers()), 4);
         }
         return true;
     }
@@ -552,52 +515,51 @@ public class BungeeAPI implements PluginMessageListener {
 
     @Override
     public void onPluginMessageReceived(String channel, final Player player, byte[] bytes) {
-        if (!channel.equals("BungeeCord"))
-            return;
-        ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
-        String sub = in.readUTF();
-        UUID uid = player.getUniqueId();
-        if (Config.debug)
-            System.out.println("Received plugin message from player " + player.getName() + ": " + sub + " " + new String(bytes));
-        switch (sub) {
-            case "CommandExecution":
-                final Command[] commands = JsonAPI.deserialize(in.readUTF(), Command[].class);
-                SU.sch.scheduleSyncDelayedTask(Main.pl, new Runnable() {
-                    @Override
-                    public void run() {
+        try {
+            if (!channel.equals("BungeeCord"))
+                return;
+            ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
+            String sub = in.readUTF();
+            UUID uid = player.getUniqueId();
+            if (Config.debug)
+                System.out.println("Received plugin message from player " + player.getName() + ": " + sub + " " + new String(bytes));
+            switch (sub) {
+                case "CommandExecution":
+                    final Command[] commands = JsonAPI.deserialize(in.readUTF(), Command[].class);
+                    SU.sch.scheduleSyncDelayedTask(Main.pl, () -> {
                         for (Command c : commands) {
                             c.execute(player);
                         }
-                    }
-                });
-                return;
-            case "IP":
-                ips.put(uid, in.readUTF());
-                ports.put(uid, in.readInt());
-                return;
-            case "PlayerCount":
-                playerCounts.put(in.readUTF(), in.readInt());
-                return;
-            case "PlayerList":
-                players.put(in.readUTF(), in.readUTF().split(", "));
-                return;
-            case "GetServers":
-                servers = in.readUTF().split(", ");
-                return;
-            case "GetServer":
-                serverName = in.readUTF();
-                return;
-            case "UUID":
-                uuids.put(player.getName(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
-                return;
-            case "UUIDOther":
-                uuids.put(in.readUTF(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
-                return;
-            case "ServerIP":
-                String server = in.readUTF();
-                serverIps.put(server, in.readUTF());
-                serverPorts.put(server, in.readShort());
-                return;
+                    });
+                    return;
+                case "IP":
+                    ips.put(uid, in.readUTF());
+                    ports.put(uid, in.readInt());
+                    return;
+                case "PlayerCount":
+                    playerCounts.put(in.readUTF(), in.readInt());
+                    return;
+                case "PlayerList":
+                    players.put(in.readUTF(), in.readUTF().split(", "));
+                    return;
+                case "GetServers":
+                    servers = in.readUTF().split(", ");
+                    return;
+                case "GetServer":
+                    serverName = in.readUTF();
+                    return;
+                case "UUID":
+                    uuids.put(player.getName(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
+                    return;
+                case "UUIDOther":
+                    uuids.put(in.readUTF(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
+                    return;
+                case "ServerIP":
+                    String server = in.readUTF();
+                    serverIps.put(server, in.readUTF());
+                    serverPorts.put(server, in.readShort());
+            }
+        } catch (Throwable ignored) {
         }
     }
 }

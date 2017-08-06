@@ -1,17 +1,15 @@
 package gyurix.api;
 
-import gyurix.spigotlib.Config;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
+import gyurix.spigotlib.*;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class VariableAPI {
+    private static final HashSet<String> errorVars = new HashSet<>();
+    private static final HashSet<String> missingHandlers = new HashSet<>();
     public static final ArrayList<Object> emptyList = new ArrayList<>();
     public static final HashMap<String, VariableHandler> handlers = new HashMap();
     public static boolean phaHook;
@@ -77,16 +75,25 @@ public class VariableAPI {
 
     private static Object handle(String var, Player plr, ArrayList<Object> inside, Object[] oArgs) {
         VariableHandler vh = handlers.get(var);
-        if (vh == null)
-            SU.log(Main.pl, "§cMissing handler for variable §f" + var + "§c!");
+        if (vh == null) {
+            if (missingHandlers.add(var))
+                SU.log(Main.pl, "§cMissing handler for variable §f" + var + "§c!");
+            return "<" + var + ">";
+        }
         try {
             return vh.getValue(plr, inside, oArgs);
         } catch (Throwable e) {
-            SU.log(Main.pl, "§cError on calculating variable §f" + var + "§c!");
-            if (Config.debug)
+            if (errorVars.add(var)) {
+                SU.log(Main.pl, "§cError on calculating variable §f" + var + "§c!");
                 SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            }
             return '<' + var + '>';
         }
+    }
+
+    public static void init() {
+        if (VariableAPI.phaHook)
+            new PHAHook();
     }
 
     public interface VariableHandler {

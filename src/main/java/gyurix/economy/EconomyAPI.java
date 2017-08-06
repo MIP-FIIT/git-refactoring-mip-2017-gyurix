@@ -1,14 +1,12 @@
 package gyurix.economy;
 
 import gyurix.configfile.ConfigSerialization.ConfigOptions;
-import gyurix.spigotlib.Config;
-import gyurix.spigotlib.SU;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import gyurix.spigotlib.*;
+import org.bukkit.*;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.UUID;
+import java.text.DecimalFormat;
+import java.util.*;
 
 public class EconomyAPI {
     public static HashMap<String, BalanceData> balanceTypes = new HashMap<>();
@@ -274,9 +272,10 @@ public class EconomyAPI {
 
     public static class BalanceData {
         public BigDecimal defaultValue;
-        public String name = "";
-        public String prefix = "";
-        public String suffix = "";
+        public String name;
+        public String prefix = "", prefixPlural;
+        public String suffix = "", format, suffixPlural;
+        public boolean useKMBT;
 
         public BalanceData() {
         }
@@ -295,7 +294,33 @@ public class EconomyAPI {
         }
 
         public String format(BigDecimal amount) {
-            return prefix + amount + suffix;
+            if (amount == null)
+                amount = new BigDecimal(0);
+            boolean pl = !(amount.compareTo(new BigDecimal(-1)) >= 0 && amount.compareTo(new BigDecimal(1)) <= 0);
+            String pf = prefixPlural == null ? prefix : pl ? prefixPlural : prefix;
+            String sf = suffixPlural == null ? suffix : pl ? suffixPlural : suffix;
+            String f = useKMBT ? getKMBT(amount) : format == null ? amount.toString() : new DecimalFormat(format).format(amount);
+            return pf + f + sf;
+        }
+
+        private String getKMBT(BigDecimal amount) {
+            BigDecimal t = new BigDecimal(1000_000_000_000L);
+            BigDecimal b = new BigDecimal(1000_000_000L);
+            BigDecimal m = new BigDecimal(1000_000L);
+            BigDecimal k = new BigDecimal(1000L);
+            if (amount.compareTo(t) > -1) {
+                return amount.divide(t, BigDecimal.ROUND_DOWN).longValue() + "T";
+            }
+            if (amount.compareTo(b) > -1) {
+                return amount.divide(b, BigDecimal.ROUND_DOWN).longValue() + "B";
+            }
+            if (amount.compareTo(m) > -1) {
+                return amount.divide(m, BigDecimal.ROUND_DOWN).longValue() + "M";
+            }
+            if (amount.compareTo(k) > -1) {
+                return amount.divide(k, BigDecimal.ROUND_DOWN).longValue() + "K";
+            }
+            return amount.toString();
         }
     }
 

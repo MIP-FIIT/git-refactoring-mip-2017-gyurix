@@ -4,12 +4,8 @@ import com.mysql.jdbc.Connection;
 import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.spigotlib.SU;
 
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.sql.*;
+import java.util.concurrent.*;
 
 /**
  * Class representing a MySQL database connection and containing the required methods and utils
@@ -114,7 +110,7 @@ public class MySQLDatabase {
 
     public boolean openConnection() {
         try {
-            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true", username, password);
+            con = (Connection) DriverManager.getConnection("jdbc:mysql://" + host + "/" + database + "?autoReconnect=true&useSSL=true", username, password);
             con.setAutoReconnect(true);
             con.setConnectTimeout(timeout);
         } catch (Throwable e) {

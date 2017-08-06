@@ -1,19 +1,13 @@
 package gyurix.protocol;
 
 import com.google.common.collect.Lists;
-import gyurix.protocol.event.PacketInEvent;
-import gyurix.protocol.event.PacketInType;
-import gyurix.protocol.event.PacketOutEvent;
-import gyurix.protocol.event.PacketOutType;
+import gyurix.protocol.event.*;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
+import org.bukkit.event.*;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public abstract class Protocol implements Listener {
     private static final HashMap<PacketInListener, PacketInType> inListenerTypes = new HashMap<>();
@@ -113,7 +107,12 @@ public abstract class Protocol implements Listener {
      * @param packet - The sendable packet
      */
     public void receivePacket(Player player, Object packet) {
-        receivePacket(getChannel(player), packet);
+        Object channel = getChannel(player);
+        if (channel == null || packet == null) {
+            SU.error(SU.cs, new RuntimeException("§cFailed to receive packet " + packet + " from player " + (player == null ? "null" : player.getName())), "SpigotLib", "gyurix");
+            return;
+        }
+        receivePacket(channel, packet);
     }
 
     /**

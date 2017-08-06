@@ -32,9 +32,11 @@ public class TimeUtils {
      */
     public static String getTime(Player plr, Long time) {
         time /= 1000;
-        if (time == null || time <= 0 || time >= Long.MAX_VALUE / 1000) {
+        if (time == null || time >= Long.MAX_VALUE / 1000) {
             return Main.lang.get(plr, "time.never");
         }
+        if (time < 0)
+            time = 0L;
         int w = (int) (time / 604800);
         int d = (int) (time % 604800 / 86400);
         int h = (int) (time % 86400 / 3600);
@@ -63,6 +65,7 @@ public class TimeUtils {
      * @return The entered time in long
      */
     public static long toTime(Player plr, String in) {
+        in = in.replace(" ", "").replace(",", "");
         long out = 0;
         long cur = 0;
         HashMap<String, Long> multipliers = new HashMap<>();

@@ -3,82 +3,53 @@ package gyurix.spigotlib;
 import com.google.common.collect.Lists;
 import gyurix.animation.AnimationAPI;
 import gyurix.api.BungeeAPI;
-import gyurix.api.VariableAPI;
+import gyurix.api.*;
 import gyurix.commands.CustomCommandMap;
-import gyurix.configfile.ConfigData;
-import gyurix.configfile.ConfigFile;
-import gyurix.configfile.ConfigSerialization;
-import gyurix.configfile.DefaultSerializers;
+import gyurix.configfile.*;
 import gyurix.economy.EconomyAPI;
 import gyurix.inventory.CustomGUI;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.Reflection;
-import gyurix.protocol.event.PacketInType;
-import gyurix.protocol.event.PacketOutType;
-import gyurix.protocol.manager.ProtocolImpl;
-import gyurix.protocol.manager.ProtocolLegacyImpl;
+import gyurix.protocol.event.*;
+import gyurix.protocol.manager.*;
 import gyurix.protocol.utils.WrapperFactory;
-import gyurix.scoreboard.PlayerBars;
-import gyurix.scoreboard.ScoreboardAPI;
-import gyurix.scoreboard.ScoreboardBar;
+import gyurix.scoreboard.*;
 import gyurix.sign.SignGUI;
 import gyurix.spigotlib.Config.*;
 import gyurix.spigotlib.GlobalLangFile.PluginLang;
-import gyurix.spigotutils.BackendType;
-import gyurix.spigotutils.ItemUtils;
-import gyurix.spigotutils.TPSMeter;
+import gyurix.spigotutils.*;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
+import org.apache.commons.lang.*;
+import org.bukkit.*;
+import org.bukkit.command.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
-import org.bukkit.event.player.PlayerLoginEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.server.PluginDisableEvent;
-import org.bukkit.event.server.ServiceRegisterEvent;
-import org.bukkit.event.server.ServiceUnregisterEvent;
+import org.bukkit.event.*;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.*;
+import org.bukkit.event.server.*;
 import org.bukkit.event.weather.WeatherChangeEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.*;
 import org.bukkit.permissions.PermissionAttachmentInfo;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
-import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.*;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 import javax.script.ScriptEngineManager;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.*;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static gyurix.economy.EconomyAPI.VaultHookType.*;
 import static gyurix.economy.EconomyAPI.vaultHookType;
 import static gyurix.protocol.Reflection.ver;
-import static gyurix.spigotlib.Config.PlayerFile.*;
+import static gyurix.spigotlib.Config.PlayerFile.backend;
+import static gyurix.spigotlib.Config.PlayerFile.mysql;
 import static gyurix.spigotlib.Config.*;
 import static gyurix.spigotlib.Items.enchants;
 import static gyurix.spigotlib.SU.*;
@@ -96,7 +67,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "6.6.1";
+    public static final String version = "7.0pre";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -107,6 +78,7 @@ public class Main extends JavaPlugin implements Listener {
     public static ConfigFile kf, itemf;
     public static PluginLang lang;
     public static Main pl;
+    private static boolean schedulePacketAPI;
 
     public static ArrayList<Class> getClasses(String packageName) {
         ArrayList<Class> classes = new ArrayList();
@@ -646,6 +618,8 @@ public class Main extends JavaPlugin implements Listener {
             }
         }
         sch.scheduleSyncDelayedTask(this, () -> {
+            if (!Config.forceReducedMode && schedulePacketAPI)
+                startPacketAPI();
             if (vault) {
                 if (vaultHookType == USER) {
                     RegisteredServiceProvider<Economy> rspEcon = srv.getServicesManager().getRegistration(Economy.class);
@@ -661,6 +635,8 @@ public class Main extends JavaPlugin implements Listener {
             }
             cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
             Config.tpsMeter.start();
+            cs.sendMessage("§2[§aStartup§2]§e Starting PlaceholderAPI hook...");
+            VariableAPI.init();
             cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");
         }, 1);
     }
@@ -679,17 +655,18 @@ public class Main extends JavaPlugin implements Listener {
             sg.cancel();
     }
 
-    @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerLogin(PlayerLoginEvent e) {
-        Player plr = e.getPlayer();
-        if (BungeeAPI.running) {
-            if (Config.BungeeAPI.ipOnJoin)
-                BungeeAPI.requestIP(plr);
-            if (Config.BungeeAPI.uuidOnJoin)
-                BungeeAPI.requestUUID(plr.getName());
+    public void startPacketAPI() {
+        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
+        try {
+            tp.init();
+        } catch (Throwable e) {
+            if (schedulePacketAPI) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                cs.sendMessage("§2[§aStartup§2]§c Failed to start PacketAPI.");
+            }
+            schedulePacketAPI = true;
+            cs.sendMessage("§2[§aStartup§2]§e Scheduled PacketAPI startup.");
         }
-        if (!forceReducedMode && ver.isAbove(v1_8))
-            ScoreboardAPI.playerJoin(plr);
     }
 
     @EventHandler
@@ -760,14 +737,12 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public void startPacketAPI() {
-        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-        try {
-            tp.init();
-        } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            cs.sendMessage("§2[§aStartup§2]§c Failed to start PacketAPI.");
-        }
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerLogin(PlayerLoginEvent e) {
+        Player plr = e.getPlayer();
+
+        if (!forceReducedMode && ver.isAbove(v1_8))
+            ScoreboardAPI.playerJoin(plr);
     }
 
     @EventHandler
