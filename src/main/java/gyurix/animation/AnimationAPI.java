@@ -1,26 +1,17 @@
 package gyurix.animation;
 
 import gyurix.animation.Animation.AnimationSerializer;
-import gyurix.animation.effects.BlinkEffect;
-import gyurix.animation.effects.FlameEffect;
-import gyurix.animation.effects.FramesEffect;
-import gyurix.animation.effects.RainbowEffect;
-import gyurix.animation.effects.ScrollerEffect;
+import gyurix.animation.effects.*;
 import gyurix.api.VariableAPI;
 import gyurix.api.VariableAPI.VariableHandler;
 import gyurix.configfile.ConfigSerialization;
-import gyurix.spigotlib.Config;
-import gyurix.spigotlib.Main;
-import gyurix.spigotlib.SU;
+import gyurix.spigotlib.*;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.*;
+import java.util.concurrent.*;
 
 public final class AnimationAPI {
     protected static final ScheduledExecutorService pool = Executors.newScheduledThreadPool(Config.animationApiThreads);
@@ -41,12 +32,8 @@ public final class AnimationAPI {
     public static AnimationRunnable runAnimation(Plugin pl, Animation a, String name, Player plr, AnimationUpdateListener listener) {
         if (pl == null || a == null || plr == null || listener == null)
             return null;
-        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.get(pl);
-        if (map == null)
-            runningAnimations.put(pl, map = new HashMap<>());
-        HashSet<AnimationRunnable> ars = map.get(plr.getName());
-        if (ars == null)
-            map.put(plr.getName(), ars = new HashSet<>());
+        HashMap<String, HashSet<AnimationRunnable>> map = runningAnimations.computeIfAbsent(pl, k -> new HashMap<>());
+        HashSet<AnimationRunnable> ars = map.computeIfAbsent(plr.getName(), k -> new HashSet<>());
         AnimationRunnable ar = new AnimationRunnable(pl, a, name, plr, listener);
         ars.add(ar);
         return ar;
