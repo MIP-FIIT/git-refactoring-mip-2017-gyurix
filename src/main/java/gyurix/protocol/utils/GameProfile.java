@@ -4,6 +4,7 @@ import com.google.common.collect.Multimap;
 import gyurix.json.JsonAPI;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.ServerVersion;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -51,9 +52,12 @@ public class GameProfile implements WrappedData {
             id = (UUID) fid.get(nmsProfile);
             name = (String) fname.get(nmsProfile);
             legacy = flegacy.getBoolean(nmsProfile);
-            for (Object obj : ((Multimap) fproperties.get(nmsProfile)).values())
-                properties.add(new Property(obj));
-
+            if (Reflection.ver.isAbove(ServerVersion.v1_8))
+                for (Object obj : ((Multimap) fproperties.get(nmsProfile)).values())
+                    properties.add(new Property(obj));
+            else
+                for (Object obj : ((net.minecraft.util.com.google.common.collect.Multimap) fproperties.get(nmsProfile)).values())
+                    properties.add(new Property(obj));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
@@ -64,7 +68,8 @@ public class GameProfile implements WrappedData {
         out.demo = demo;
         out.legacy = legacy;
         for (Property p : properties)
-            out.properties.add(p.clone());
+            if (p != null)
+                out.properties.add(p.clone());
         return out;
     }
 
@@ -74,8 +79,10 @@ public class GameProfile implements WrappedData {
             Object o = con.newInstance(id, name);
             flegacy.set(o, legacy);
             Multimap m = (Multimap) fproperties.get(o);
-            for (Property p : properties)
-                m.put(p.name, p.toNMS());
+            for (Property p : properties) {
+                if (p != null)
+                    m.put(p.name, p.toNMS());
+            }
             return o;
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");

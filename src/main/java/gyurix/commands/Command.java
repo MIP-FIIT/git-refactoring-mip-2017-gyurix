@@ -1,18 +1,26 @@
 package gyurix.commands;
 
-import gyurix.api.*;
+import gyurix.api.BungeeAPI;
+import gyurix.api.TitleAPI;
+import gyurix.api.VariableAPI;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.economy.EconomyAPI;
-import gyurix.spigotlib.*;
+import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.ChatAPI.ChatMessageType;
+import gyurix.spigotlib.Main;
+import gyurix.spigotlib.SU;
 import org.bukkit.*;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.potion.*;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import static gyurix.api.BungeeAPI.executeBungeeCommands;
 import static gyurix.api.BungeeAPI.executeServerCommands;
@@ -127,6 +135,37 @@ public class Command implements StringSerializable {
                 return true;
             }
             return false;
+        });
+        customCommands.put("FORCE", (cs, text, args) -> {
+            String[] d = text.split(" ", 2);
+            if (d.length < 2)
+                return false;
+            if (d[0].equalsIgnoreCase("console")) {
+                Bukkit.dispatchCommand(SU.cs, d[1]);
+                return true;
+            }
+            Player p = Bukkit.getPlayer(d[0]);
+            if (p == null)
+                return false;
+            p.chat(d[1]);
+            return true;
+        });
+        customCommands.put("OPFORCE", (cs, text, args) -> {
+            String[] d = text.split(" ", 2);
+            if (d.length < 2)
+                return false;
+            if (d[0].equalsIgnoreCase("console")) {
+                Bukkit.dispatchCommand(SU.cs, d[1]);
+                return true;
+            }
+            Player p = Bukkit.getPlayer(d[0]);
+            if (p == null)
+                return false;
+            boolean was = p.isOp();
+            p.setOp(true);
+            p.chat(d[1]);
+            p.setOp(was);
+            return true;
         });
         customCommands.put("KICK", (cs, text, args) -> {
             if (cs instanceof Player) {
@@ -362,7 +401,7 @@ public class Command implements StringSerializable {
         return true;
     }
 
-    public static boolean executeAll(Iterable<Entity> pls, Entity plr, ArrayList<Command> list, Object... args) {
+    public static boolean executeAll(Iterable<? extends Entity> pls, Entity plr, ArrayList<Command> list, Object... args) {
         if (list == null || pls == null)
             return false;
         for (Entity p : pls) {

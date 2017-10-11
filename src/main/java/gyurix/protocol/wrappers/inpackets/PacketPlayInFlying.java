@@ -1,11 +1,14 @@
 package gyurix.protocol.wrappers.inpackets;
 
+import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.wrappers.WrappedPacket;
+import gyurix.spigotutils.ServerVersion;
 
 public class PacketPlayInFlying extends WrappedPacket {
     public boolean hasLook;
     public boolean hasPos;
+    public double headY;
     public boolean onGround;
     public float pitch;
     public double x;
@@ -15,7 +18,9 @@ public class PacketPlayInFlying extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Flying.newPacket(x, y, z, yaw, pitch, onGround, hasPos, hasLook);
+        return Reflection.ver.isAbove(ServerVersion.v1_8)?
+                PacketInType.Flying.newPacket(x, y, z, yaw, pitch, onGround, hasPos, hasLook):
+                PacketInType.Flying.newPacket(x, y, z, headY,yaw, pitch, onGround, hasPos, hasLook);
     }
 
     @Override
@@ -24,11 +29,15 @@ public class PacketPlayInFlying extends WrappedPacket {
         x = (Double) data[0];
         y = (Double) data[1];
         z = (Double) data[2];
-        yaw = (Float) data[3];
-        pitch = (Float) data[4];
-        onGround = (Boolean) data[5];
-        hasPos = (Boolean) data[6];
-        hasLook = (Boolean) data[7];
+        int start = 2;
+        if (Reflection.ver.isBellow(ServerVersion.v1_7)) {
+            headY = (Double) data[++start];
+        }
+        yaw = (Float) data[start + 1];
+        pitch = (Float) data[start + 2];
+        onGround = (Boolean) data[start + 3];
+        hasPos = (Boolean) data[start + 4];
+        hasLook = (Boolean) data[start + 5];
     }
 }
 

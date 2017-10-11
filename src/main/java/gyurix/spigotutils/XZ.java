@@ -12,7 +12,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 
 /**
- * Created by GyuriX on 2016. 08. 13..
+ * An utility class for storing an X and Z coordinate pair
  */
 public class XZ implements StringSerializable, Comparable<XZ>, WrappedData {
     @ConfigSerialization.ConfigOptions(serialize = false)

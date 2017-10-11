@@ -609,6 +609,7 @@ public final class SU {
             else if (c == '\u7777') {
                 formatArchive = newFormat.toString();
             } else if (c == '\u7778') {
+                oldFormat.setLength(0);
                 newFormat.setLength(0);
                 newFormat.append(formatArchive);
                 formatChange.setLength(0);

@@ -11,8 +11,17 @@ import org.bukkit.inventory.ItemStack;
  * Class used for storing the data of a block, or an item
  */
 public class BlockData implements StringSerializable, Comparable<BlockData> {
+    /**
+     * True if the BlockData can be applied to any subtype of the block
+     */
     public boolean anydata = true;
+    /**
+     * The requested subtype of the block
+     */
     public short data;
+    /**
+     * The requested type of the block
+     */
     public int id;
 
     /**
@@ -100,6 +109,10 @@ public class BlockData implements StringSerializable, Comparable<BlockData> {
         return bd.id == id && (bd.data == data || bd.anydata || anydata);
     }
 
+    /**
+     * Makes a copy of the BlockData, storing all it's parameters
+     * @return The copy of the BlockData
+     */
     public BlockData clone() {
         return anydata ? new BlockData(id) : new BlockData(id, data);
     }

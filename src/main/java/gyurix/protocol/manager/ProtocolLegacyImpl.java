@@ -105,7 +105,7 @@ public final class ProtocolLegacyImpl extends Protocol {
     @Override
     public void registerServerChannelHook() throws Throwable {
         Channel serverCh = cf.channel();
-        oldH = serverCh.pipeline().get(Reflection.getClass("io.netty.bootstrap.ServerBootstrap$ServerBootstrapAcceptor"));
+        oldH = serverCh.pipeline().get(Reflection.getUtilClass("io.netty.bootstrap.ServerBootstrap$ServerBootstrapAcceptor"));
         oldHChildF = Reflection.getField(oldH.getClass(), "childHandler");
         serverCh.pipeline().addFirst("SpigotLibServer", new ServerChannelHook((ChannelHandler) oldHChildF.get(oldH)));
     }

@@ -4,6 +4,7 @@ import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.configfile.PostLoadable;
 import gyurix.spigotutils.BlockData;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ public class Items implements PostLoadable {
      * The map containing all the item names (in keys) and their corresponding item types (values)
      */
     @ConfigOptions(serialize = false)
-    public static HashMap<String, BlockData> nameAliases = new HashMap<>();
+    public static HashMap<String, ItemStack> nameAliases = new HashMap<>();
     /**
      * The in config editable item type (key), item name aliases (value) map.
      */
@@ -48,7 +49,7 @@ public class Items implements PostLoadable {
         for (Entry<BlockData, ArrayList<String>> e : names.entrySet()) {
             BlockData bd = e.getKey();
             for (String s : e.getValue()) {
-                nameAliases.put(s, bd);
+                nameAliases.put(s, bd.toItem());
             }
         }
     }

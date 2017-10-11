@@ -13,7 +13,7 @@ public class DualMap<K, V> implements Map<K, V> {
         return values.get(value);
     }
 
-    public K removeValue(Object value) {
+    public K removeValue(V value) {
         K key = values.remove(value);
         keys.remove(key);
         return key;
@@ -32,7 +32,7 @@ public class DualMap<K, V> implements Map<K, V> {
     }
 
     public boolean containsValue(Object value) {
-        return values.containsKey(value);
+        return values.containsKey((V) value);
     }
 
     public V get(Object key) {

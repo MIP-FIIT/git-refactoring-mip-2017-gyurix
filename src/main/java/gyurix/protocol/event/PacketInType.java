@@ -3,6 +3,7 @@ package gyurix.protocol.event;
 import com.google.common.collect.Lists;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
+import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 

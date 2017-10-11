@@ -37,9 +37,9 @@ economy:
       suffix: $
   migrate: -
   vaultHookType: USER
-packetAPI: -
+#Automatically hook to PlaceholderAPI if it's added to the server
 phaHook: +
-playerFile: 
+playerFile:
   backend: FILE
   file: players.yml
   mysql: 
@@ -49,7 +49,12 @@ playerFile:
     table: PlayerData
     timeout: 10000
     username: root
-skinAPI: -
-tpsMeter: 
+tpsMeter:
+  #Toggle on/off the TPS meter
+  enabled: +
+  #Update the servers tps metrics result in every here configured milliseconds
   checkTime: 10000
+  #The tps limit, if the servers tps is bellow this value, then you will see a warning in the console
   limit: 15
+  #Amount of detected 0 TPS before crash is reported
+  reportCrashAfter: 4

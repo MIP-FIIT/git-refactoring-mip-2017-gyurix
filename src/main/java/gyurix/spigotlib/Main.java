@@ -3,46 +3,70 @@ package gyurix.spigotlib;
 import com.google.common.collect.Lists;
 import gyurix.animation.AnimationAPI;
 import gyurix.api.BungeeAPI;
-import gyurix.api.*;
+import gyurix.api.VariableAPI;
 import gyurix.commands.CustomCommandMap;
-import gyurix.configfile.*;
+import gyurix.configfile.ConfigData;
+import gyurix.configfile.ConfigFile;
+import gyurix.configfile.ConfigSerialization;
+import gyurix.configfile.DefaultSerializers;
 import gyurix.economy.EconomyAPI;
 import gyurix.inventory.CustomGUI;
 import gyurix.nbt.NBTApi;
 import gyurix.protocol.Reflection;
-import gyurix.protocol.event.*;
-import gyurix.protocol.manager.*;
+import gyurix.protocol.event.PacketInType;
+import gyurix.protocol.event.PacketOutType;
+import gyurix.protocol.manager.ProtocolImpl;
+import gyurix.protocol.manager.ProtocolLegacyImpl;
 import gyurix.protocol.utils.WrapperFactory;
-import gyurix.scoreboard.*;
+import gyurix.scoreboard.PlayerBars;
+import gyurix.scoreboard.ScoreboardAPI;
+import gyurix.scoreboard.ScoreboardBar;
 import gyurix.sign.SignGUI;
 import gyurix.spigotlib.Config.*;
 import gyurix.spigotlib.GlobalLangFile.PluginLang;
-import gyurix.spigotutils.*;
+import gyurix.spigotutils.BackendType;
+import gyurix.spigotutils.ItemUtils;
+import gyurix.spigotutils.TPSMeter;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
-import org.apache.commons.lang.*;
-import org.bukkit.*;
-import org.bukkit.command.*;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
-import org.bukkit.event.inventory.*;
-import org.bukkit.event.player.*;
-import org.bukkit.event.server.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import org.bukkit.event.server.ServiceRegisterEvent;
+import org.bukkit.event.server.ServiceUnregisterEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
-import org.bukkit.inventory.*;
-import org.bukkit.permissions.PermissionAttachmentInfo;
-import org.bukkit.plugin.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
 import javax.script.ScriptEngineManager;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static gyurix.economy.EconomyAPI.VaultHookType.*;
@@ -55,6 +79,9 @@ import static gyurix.spigotlib.Items.enchants;
 import static gyurix.spigotlib.SU.*;
 import static gyurix.spigotutils.ServerVersion.v1_8;
 
+/**
+ * Main SpigotLib plugin class containing all the command handlers, loaders and delegators needed for starting up the API
+ */
 public class Main extends JavaPlugin implements Listener {
     /**
      * The UUID of the plugins author for being able to grant him full plugin, if allowed in the config
@@ -67,7 +94,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "7.0pre";
+    public static final String version = "7.0";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -262,22 +289,17 @@ public class Main extends JavaPlugin implements Listener {
                         String allowperm = lang.get(plr, "perms.allowformat");
                         StringBuilder sb = new StringBuilder();
                         for (Player p : pls) {
-                            Set<PermissionAttachmentInfo> perms = p.getEffectivePermissions();
-                            for (PermissionAttachmentInfo perm : perms) {
+                            p.getEffectivePermissions().forEach((permInfo) -> {
                                 sb.append('\n');
-                                for (Entry<String, Boolean> e : perm.getAttachment().getPermissions().entrySet()) {
-                                    if (e.getValue())
-                                        sb.append('\n').append(allowperm.replace("<perm>", e.getKey()));
-                                    else
-                                        sb.append('\n').append(denyperm.replace("<perm>", e.getKey()));
-                                }
-                            }
-                            sender.sendMessage(f.replace("<perms>", sb.toString()));
+                                permInfo.getAttachment().getPermissions().forEach((perm, value) ->
+                                        sb.append('\n').append(SU.fillVariables(value ? allowperm : denyperm, "perm", perm)));
+                            });
+                            sender.sendMessage(SU.fillVariables(f, "player", p.getName(), "<perms>", sb.toString()));
                         }
                         return true;
                     }
                     for (Player p : pls)
-                        lang.msg(sender, p.hasPermission(args[0]) ? "perms.yes" : "perms.no", "perm", args[0]);
+                        lang.msg(sender, p.hasPermission(args[0]) ? "perms.yes" : "perms.no", "player", p.getName(), "perm", args[0]);
                     return true;
                 case "debug":
                     Config.debug = !Config.debug;
@@ -322,6 +344,10 @@ public class Main extends JavaPlugin implements Listener {
                     sender.sendMessage("§6§lPlayerFileViewer - page " + page + " of " + txt.length + "\n§f" + txt[page - 1]);
                     return true;
                 case "reload":
+                    if (args.length == 0) {
+                        lang.msg(sender, "reload");
+                        return true;
+                    }
                     switch (args[0]) {
                         case "config":
                             kf.reload();
@@ -352,6 +378,7 @@ public class Main extends JavaPlugin implements Listener {
                 case "save":
                     if (args.length == 0) {
                         lang.msg(sender, "save");
+                        return true;
                     }
                     if (args[0].equals("pf")) {
                         if (backend == BackendType.FILE)
@@ -531,8 +558,10 @@ public class Main extends JavaPlugin implements Listener {
             unloadPlugin(p);
         }
         pf = null;
-        log(this, "§4[§cShutdown§4]§e Stopping TPSMeter...");
-        TPSMeter.meter.cancel(true);
+        if (TPSMeter.meter != null) {
+            log(this, "§4[§cShutdown§4]§e Stopping TPSMeter...");
+            TPSMeter.meter.cancel(true);
+        }
         if (!forceReducedMode) {
             log(this, "§4[§cShutdown§4]§e Stopping PacketAPI...");
             try {
@@ -655,18 +684,12 @@ public class Main extends JavaPlugin implements Listener {
             sg.cancel();
     }
 
-    public void startPacketAPI() {
-        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
-        try {
-            tp.init();
-        } catch (Throwable e) {
-            if (schedulePacketAPI) {
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
-                cs.sendMessage("§2[§aStartup§2]§c Failed to start PacketAPI.");
-            }
-            schedulePacketAPI = true;
-            cs.sendMessage("§2[§aStartup§2]§e Scheduled PacketAPI startup.");
-        }
+    @EventHandler(priority = EventPriority.LOW)
+    public void onPlayerLogin(PlayerLoginEvent e) {
+        Player plr = e.getPlayer();
+
+        if (!forceReducedMode && ver.isAbove(v1_8))
+            ScoreboardAPI.playerJoin(plr);
     }
 
     @EventHandler
@@ -737,12 +760,18 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW)
-    public void onPlayerLogin(PlayerLoginEvent e) {
-        Player plr = e.getPlayer();
-
-        if (!forceReducedMode && ver.isAbove(v1_8))
-            ScoreboardAPI.playerJoin(plr);
+    public void startPacketAPI() {
+        cs.sendMessage("§2[§aStartup§2]§e Starting PacketAPI...");
+        try {
+            tp.init();
+        } catch (Throwable e) {
+            if (schedulePacketAPI) {
+                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                cs.sendMessage("§2[§aStartup§2]§c Failed to start PacketAPI.");
+            }
+            schedulePacketAPI = true;
+            cs.sendMessage("§2[§aStartup§2]§e Scheduled PacketAPI startup.");
+        }
     }
 
     @EventHandler

@@ -6,8 +6,7 @@ import gyurix.protocol.utils.BlockLocation;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotutils.ServerVersion;
 
-public class PacketPlayInTabComplete
-        extends WrappedPacket {
+public class PacketPlayInTabComplete extends WrappedPacket {
     public boolean assumeCommand;
     public BlockLocation block;
     public String text;
@@ -26,7 +25,7 @@ public class PacketPlayInTabComplete
         if (Reflection.ver.isAbove(ServerVersion.v1_10)) {
             assumeCommand = (boolean) data[1];
             block = data[2] == null ? null : new BlockLocation(data[2]);
-        } else
+        } else if (Reflection.ver.isAbove(ServerVersion.v1_8))
             block = data[1] == null ? null : new BlockLocation(data[1]);
     }
 }

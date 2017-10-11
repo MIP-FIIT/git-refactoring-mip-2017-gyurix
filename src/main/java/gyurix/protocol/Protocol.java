@@ -1,13 +1,19 @@
 package gyurix.protocol;
 
 import com.google.common.collect.Lists;
-import gyurix.protocol.event.*;
+import gyurix.protocol.event.PacketInEvent;
+import gyurix.protocol.event.PacketInType;
+import gyurix.protocol.event.PacketOutEvent;
+import gyurix.protocol.event.PacketOutType;
 import gyurix.spigotlib.SU;
 import org.bukkit.entity.Player;
-import org.bukkit.event.*;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class Protocol implements Listener {
     private static final HashMap<PacketInListener, PacketInType> inListenerTypes = new HashMap<>();
@@ -24,9 +30,8 @@ public abstract class Protocol implements Listener {
      * @param event - The packet event
      */
     public static void dispatchPacketInEvent(PacketInEvent event) {
-        String pn = event.getPacket().getClass().getSimpleName();
         if (event.getType() == null) {
-            SU.cs.sendMessage(pa + "Missing in packet type:§c " + pn + "§e.");
+            SU.cs.sendMessage(pa + "Missing in packet type:§c " + event.getPacket().getClass().getName() + "§e.");
             return;
         }
         ArrayList<PacketInListener> ll = inListeners.get(event.getType());
@@ -47,9 +52,8 @@ public abstract class Protocol implements Listener {
      * @param event - The packet event
      */
     public static void dispatchPacketOutEvent(PacketOutEvent event) {
-        String pn = event.getPacket().getClass().getSimpleName();
         if (event.getType() == null) {
-            SU.cs.sendMessage(pa + "Missing out packet type:§c " + pn + "§e.");
+            SU.cs.sendMessage(pa + "Missing out packet type:§c " + event.getPacket().getClass().getName() + "§e.");
             return;
         }
         ArrayList<PacketOutListener> ll = outListeners.get(event.getType());

@@ -3,10 +3,14 @@ package gyurix.protocol.event;
 import com.google.common.collect.Lists;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
-import gyurix.spigotlib.*;
+import gyurix.spigotlib.Config;
+import gyurix.spigotlib.Main;
+import gyurix.spigotlib.SU;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public enum PacketOutType {
     Abilities,
@@ -115,15 +119,16 @@ public enum PacketOutType {
         Class cl = packet.getClass();
         while (cl != null && cl != Object.class) {
             String cn = cl.getName();
-            while (cn.contains("$")) {
+            PacketOutType type = packets.get(cl);
+            if (type != null)
+                return type;
+            if (cl == null && cn.contains("$")) {
                 try {
                     cl = Class.forName(cn.substring(0, cn.indexOf("$")));
-                    cn = cl.getName();
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                } catch (ClassNotFoundException ignored) {
                 }
             }
-            PacketOutType type = packets.get(cl);
+            type = packets.get(cl);
             if (type != null)
                 return type;
             cl = cl.getSuperclass();

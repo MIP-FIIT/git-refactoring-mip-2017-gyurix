@@ -8,7 +8,7 @@ import java.util.HashMap;
  */
 public class NullUtils {
     public static Boolean from0(boolean data) {
-        return data == false ? null : data;
+        return !data ? null : data;
     }
 
     public static Float from0(float data) {

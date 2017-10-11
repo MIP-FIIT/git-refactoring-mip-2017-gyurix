@@ -13,6 +13,10 @@ import java.util.concurrent.TimeUnit;
 
 public class TPSMeter implements Runnable {
     /**
+     * Make TPS meter toggleable in the config
+     */
+    public static boolean enabled = true;
+    /**
      * Update the servers tps metrics result in every here configured milliseconds
      */
     public static long checkTime = 10000;
@@ -42,6 +46,7 @@ public class TPSMeter implements Runnable {
     /**
      * Amount of detected 0 TPS in a row.
      */
+    @ConfigOptions(serialize = false)
     public static int zeroTpsCount = 0;
 
     @Override
@@ -88,12 +93,7 @@ public class TPSMeter implements Runnable {
 
     public void start() {
         meter = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(this, checkTime, checkTime, TimeUnit.MILLISECONDS);
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.pl, new Runnable() {
-            @Override
-            public void run() {
-                ++ticks;
-            }
-        }, 0, 1);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(Main.pl, () -> ++ticks, 0, 1);
     }
 
 }

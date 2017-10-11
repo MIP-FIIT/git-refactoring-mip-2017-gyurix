@@ -11,30 +11,32 @@ import org.bukkit.util.Vector;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static gyurix.protocol.Reflection.*;
+import static gyurix.protocol.Reflection.getMethod;
+import static gyurix.protocol.Reflection.getNMSClass;
 import static java.lang.Math.*;
 
 /**
  * Created by GyuriX on 2016. 07. 13..
  */
 public class BlockUtils {
-    private static final Method getBlockByIdM, getBlockIdM, fromLegacyDataM, toLegacyDataM, getCombinedIdM;
+    private static Method getBlockByIdM, getBlockIdM, fromLegacyDataM, toLegacyDataM, getCombinedIdM;
     private static Map<Object, Integer> nmsBlockIDMap;
 
     static {
-        Class regIDCl = getNMSClass("RegistryID");
-        Class blCl = getNMSClass("Block");
         try {
-            if (Reflection.ver.isBellow(ServerVersion.v1_11))
+            Class regIDCl = getNMSClass("RegistryID");
+            Class blCl = getNMSClass("Block");
+            if (Reflection.ver.isBellow(ServerVersion.v1_11) && Reflection.ver.isAbove(ServerVersion.v1_8))
                 nmsBlockIDMap = (Map<Object, Integer>) Reflection.getFieldData(regIDCl, "a", Reflection.getFirstFieldOfType(blCl, regIDCl).get(null));
+
+            getBlockByIdM = getMethod(blCl, "getById", int.class);
+            getBlockIdM = getMethod(blCl, "getId", blCl);
+            getCombinedIdM = getMethod(blCl, "getCombinedId", getNMSClass("IBlockData"));
+            fromLegacyDataM = getMethod(blCl, "fromLegacyData", int.class);
+            toLegacyDataM = getMethod(blCl, "toLegacyData", getNMSClass("IBlockData"));
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
-        getBlockByIdM = getMethod(blCl, "getById", int.class);
-        getBlockIdM = getMethod(blCl, "getId", blCl);
-        getCombinedIdM = getMethod(blCl, "getCombinedId", getNMSClass("IBlockData"));
-        fromLegacyDataM = getMethod(blCl, "fromLegacyData", int.class);
-        toLegacyDataM = getMethod(blCl, "toLegacyData", getNMSClass("IBlockData"));
     }
 
     public static int getCombinedId(Object nmsBlock) {

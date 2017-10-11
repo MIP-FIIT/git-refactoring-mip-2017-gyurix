@@ -42,6 +42,7 @@ public enum Direction implements WrappedData {
     public static void main(String[] args) {
     }
 
+
     public float getPitch() {
         return pitch;
     }

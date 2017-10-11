@@ -1,9 +1,11 @@
 package gyurix.protocol.wrappers.outpackets;
 
+import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.utils.BlockLocation;
 import gyurix.protocol.utils.Direction;
 import gyurix.protocol.wrappers.WrappedPacket;
+import gyurix.spigotutils.ServerVersion;
 
 import java.util.UUID;
 
@@ -19,16 +21,23 @@ public class PacketPlayOutSpawnEntityPainting extends WrappedPacket {
 
     @Override
     public Object getVanillaPacket() {
-        return PacketOutType.SpawnEntityPainting.newPacket(entityId, entityUUID, location.toNMS(), facing.toNMS(), title);
+        return Reflection.ver.isAbove(ServerVersion.v1_9)?
+                PacketOutType.SpawnEntityPainting.newPacket(entityId, entityUUID, location.toNMS(), facing.toNMS(), title):
+                PacketOutType.SpawnEntityPainting.newPacket(entityId, location.toNMS(), facing.toNMS(), title);
     }
 
     @Override
     public void loadVanillaPacket(Object packet) {
         Object[] d = PacketOutType.SpawnEntityPainting.getPacketData(packet);
         entityId = (int) d[0];
-        entityUUID = (UUID) d[1];
-        location = new BlockLocation(d[2]);
-        facing = Direction.valueOf(d[3].toString());
-        title = (String) d[4];
+        int id=1;
+        if (Reflection.ver.isAbove(ServerVersion.v1_9))
+        {
+            entityUUID = (UUID) d[1];
+            id=2;
+        }
+        location = new BlockLocation(d[id]);
+        facing = Direction.valueOf(d[id+1].toString().toUpperCase());
+        title = (String) d[id+2];
     }
 }

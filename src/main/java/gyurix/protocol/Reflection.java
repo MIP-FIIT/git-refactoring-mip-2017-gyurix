@@ -4,6 +4,7 @@ import com.google.common.primitives.Primitives;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.ServerVersion;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import sun.reflect.ReflectionFactory;
@@ -11,15 +12,12 @@ import sun.reflect.ReflectionFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static gyurix.spigotutils.ServerVersion.*;
-import static org.apache.commons.lang.ArrayUtils.*;
+import static org.apache.commons.lang.ArrayUtils.EMPTY_CLASS_ARRAY;
+import static org.apache.commons.lang.ArrayUtils.EMPTY_OBJECT_ARRAY;
 
 public class Reflection {
     public static final Map<Class, Field[]> allFieldCache = (Map) Collections.synchronizedMap(new WeakHashMap<>());
@@ -128,8 +126,9 @@ public class Reflection {
             return c;
         } catch (Throwable e) {
         }
-        if (Config.debug)
-            SU.cs.sendMessage(ra + "Class §f" + className + "§e was not found.");
+        if (Config.debug) {
+            SU.error(SU.cs, new Throwable("Class §f" + className + "§e was not found."), "SpigotLib", "gyurix");
+        }
         return null;
     }
 
@@ -167,7 +166,7 @@ public class Reflection {
                     continue;
                 }
                 for (String name : String.valueOf(o).split("\\.")) {
-                    if (input == EMPTY_OBJECT_ARRAY) {
+                    if (input.length == 0) {
                         Field f = getField(ocl, name);
                         if (f != null) {
                             obj = f.get(obj);
@@ -264,7 +263,7 @@ public class Reflection {
     }
 
     public static Method getMethod(Class cl, String name, Class... args) {
-        if (cl == null || name == null)
+        if (cl == null || name == null || ArrayUtils.contains(args, null))
             return null;
         String originalClassName = cl.getName();
         if (args.length == 0) {
@@ -299,8 +298,11 @@ public class Reflection {
 
     public static Class getNMSClass(String className) {
         String newName = nmsRenames.get(className);
-        if (newName != null)
+        if (newName != null) {
             className = newName;
+            if (className.contains("."))
+                return getClass(className);
+        }
         return getClass("net.minecraft.server." + version + className);
     }
 
@@ -347,6 +349,13 @@ public class Reflection {
         } catch (Throwable ignored) {
         }
         SU.cs.sendMessage("§2[§aStartup§2]§e Detected server version:§a " + ver + "§e (§f" + version + "§e) - §f" + Bukkit.getServer().getVersion());
+        if (Reflection.ver == v1_7) {
+            nmsRenames.put("PacketLoginOutSetCompression", "org.spigotmc.ProtocolInjector$PacketLoginCompression");
+            nmsRenames.put("PacketPlayOutTitle", "org.spigotmc.ProtocolInjector$PacketTitle");
+            nmsRenames.put("PacketPlayOutPlayerListHeaderFooter", "org.spigotmc.ProtocolInjector$PacketTabHeader");
+            nmsRenames.put("PacketPlayOutResourcePackSend", "org.spigotmc.ProtocolInjector$PacketPlayResourcePackSend");
+            nmsRenames.put("PacketPlayInResourcePackStatus", "org.spigotmc.ProtocolInjector$PacketPlayResourcePackStatus");
+        }
         if (!version.equals("v1_8_R1")) {
             nmsRenames.put("PacketPlayInLook", "PacketPlayInFlying$PacketPlayInLook");
             nmsRenames.put("PacketPlayInPosition", "PacketPlayInFlying$PacketPlayInPosition");

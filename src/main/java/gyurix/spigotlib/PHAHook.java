@@ -4,6 +4,10 @@ import gyurix.api.VariableAPI;
 import me.clip.placeholderapi.*;
 import org.bukkit.entity.Player;
 
+/**
+ * PlaceholderAPI %sl_% placeholder hook, used for making plugins using PlaceholderAPI instead of SpigotLib's
+ * PlaceholderAPI compatible with SpigotLib PlaceholderAPI placeholders.
+ */
 public class PHAHook extends PlaceholderHook {
     public PHAHook() {
         PlaceholderAPI.registerPlaceholderHook("sl", this);

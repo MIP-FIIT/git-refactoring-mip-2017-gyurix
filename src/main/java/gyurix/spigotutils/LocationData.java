@@ -110,6 +110,14 @@ public class LocationData implements StringSerializable {
         return this;
     }
 
+    public double dist(LocationData loc) {
+        return Math.sqrt((loc.x - x) * (loc.x - x) + (loc.y - y) * (loc.y - y) + (loc.z - z) * (loc.z - z));
+    }
+
+    public double distNoY(LocationData loc) {
+        return Math.sqrt((loc.x - x) * (loc.x - x) + (loc.z - z) * (loc.z - z));
+    }
+
     public Block getBlock() {
         if (!isAvailable()) {
             return null;

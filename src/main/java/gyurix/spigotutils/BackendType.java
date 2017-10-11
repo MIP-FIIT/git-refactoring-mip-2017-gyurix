@@ -1,7 +1,7 @@
 package gyurix.spigotutils;
 
 /**
- * Created by GyuriX on 2016.01.06..
+ * Types of player data backend
  */
 public enum BackendType {
     FILE, MYSQL

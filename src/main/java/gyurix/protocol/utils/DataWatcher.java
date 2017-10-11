@@ -6,6 +6,7 @@ import gyurix.json.JsonAPI;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.*;
 import gyurix.spigotutils.ServerVersion;
+import net.minecraft.server.v1_12_R1.DataWatcherRegistry;
 
 import java.lang.reflect.*;
 import java.util.*;

@@ -3,6 +3,8 @@ package gyurix.protocol.wrappers.inpackets;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.wrappers.WrappedPacket;
+import gyurix.spigotutils.ServerVersion;
+import org.bukkit.Difficulty;
 
 import java.lang.reflect.Method;
 
@@ -12,10 +14,13 @@ public class PacketPlayInSettings extends WrappedPacket {
     public String locale;
     public int skinParts;
     public int viewDistance;
+    public Difficulty difficulty;
 
     @Override
     public Object getVanillaPacket() {
-        return PacketInType.Settings.newPacket(locale, viewDistance, chatVisibility.toVanillaChatVisibility(), chatColors, skinParts);
+        return Reflection.ver.isAbove(ServerVersion.v1_8) ?
+                PacketInType.Settings.newPacket(locale, viewDistance, chatVisibility.toVanillaChatVisibility(), chatColors, skinParts) :
+                PacketInType.Settings.newPacket(locale, viewDistance, chatVisibility.toVanillaChatVisibility(), chatColors, difficulty, (skinParts & 1) == 1);
     }
 
     @Override
@@ -25,7 +30,13 @@ public class PacketPlayInSettings extends WrappedPacket {
         viewDistance = (Integer) data[1];
         chatVisibility = data[2] == null ? ChatVisibility.FULL : ChatVisibility.valueOf(data[2].toString());
         chatColors = (Boolean) data[3];
-        skinParts = (Integer) data[4];
+        if (Reflection.ver.isAbove(ServerVersion.v1_8))
+            skinParts = (Integer) data[4];
+        else {
+            if (data[4] != null)
+                difficulty = Difficulty.valueOf(data[4].toString());
+            skinParts = ((Boolean) data[5]) ? 1 : 0;
+        }
     }
 
     public enum ChatVisibility {

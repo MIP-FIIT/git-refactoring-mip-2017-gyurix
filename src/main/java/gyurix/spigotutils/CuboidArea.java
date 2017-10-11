@@ -13,15 +13,37 @@ import static gyurix.spigotlib.SU.rand;
 import static java.lang.Integer.MIN_VALUE;
 
 /**
- * Created by GyuriX on 2016.05.15..
+ * Class representing a CuboidArea, with a first and second block location and
+ * with or without world parameter
  */
 public class CuboidArea implements StringSerializable, Cloneable {
-    public BlockLocation pos1, pos2;
+    /**
+     * The first position of this CuboidArea, containing the minX, minY and minZ coordinates
+     */
+    public BlockLocation pos1;
+    /**
+     * The second position of this CuboidArea, containing the maxX, maxY and maxZ coordinates
+     */
+    public BlockLocation pos2;
+    /**
+     * The world of this CuboidArea, might be null, if it's not defined
+     */
     public String world;
 
+    /**
+     * Constructs a new not properly set up CuboidArea
+     */
     public CuboidArea() {
     }
 
+    /**
+     * Constructs a new CuboidArea from the given String
+     * @param in - The String from which the CuboidArea should be constructed
+     *           Accepted input String formats:
+     *           world
+     *           minX minY minZ maxX maxY maxZ
+     *           world minX minY minZ maxX maxY maxZ
+     */
     public CuboidArea(String in) {
         try {
             String[] d = in.split(" ", 7);
@@ -42,6 +64,10 @@ public class CuboidArea implements StringSerializable, Cloneable {
         }
     }
 
+    /**
+     * Fix the min and max points for ensuring that the pos1 contains the minX, minY and minZ, while
+     * the pos2 contains the maxX, maxY and maxZ and they does not contain these informations oppositely
+     */
     public void fix() {
         int tmp;
         if (pos1.x > pos2.x) {
@@ -61,12 +87,22 @@ public class CuboidArea implements StringSerializable, Cloneable {
         }
     }
 
+    /**
+     * Construct a new CuboidArea from a WorldEdit selection
+     * @param sel - The WorldEdit selection
+     * @param saveWorld - True if not only the min, and max points, but also
+     *                    the World should be saved
+     */
     public CuboidArea(Selection sel, boolean saveWorld) {
         this(sel);
         if (saveWorld)
             world = sel.getWorld().getName();
     }
 
+    /**
+     * Construct a new CuboidArea from a WorldEdit selection WITHOUT saving the world of it
+     * @param sel - The WorldEdit selection
+     */
     public CuboidArea(Selection sel) {
         pos1 = new BlockLocation(sel.getMinimumPoint());
         pos2 = new BlockLocation(sel.getMaximumPoint());
@@ -90,12 +126,20 @@ public class CuboidArea implements StringSerializable, Cloneable {
         this.pos2 = pos2;
     }
 
+    /**
+     * Makes a clone of this CuboidArea and fixes it's pos1 and pos2 using the @see fix method
+     * @return The cloned and fixed version of this CuboidArea
+     */
     public CuboidArea cloneFixed() {
         CuboidArea area = clone();
         area.fix();
         return area;
     }
 
+    /**
+     * Makes a clone of the CuboidArea by keeping all of it's properties
+     * @return The cloned version of this CuboidArea
+     */
     public CuboidArea clone() {
         return new CuboidArea(world, pos1.clone(), pos2.clone());
     }
@@ -199,6 +243,10 @@ public class CuboidArea implements StringSerializable, Cloneable {
         return (pos2.x - pos1.x + 1) * (pos2.y - pos1.y + 1) * (pos2.z - pos1.z + 1);
     }
 
+    /**
+     * Converts this CuboidArea to an @see UnlimitedYArea
+     * @return The conversion result
+     */
     public UnlimitedYArea toUnlimitedYArea() {
         return new UnlimitedYArea(pos1 == null ? MIN_VALUE : pos1.x, pos1 == null ? MIN_VALUE : pos1.z, pos2 == null ? MIN_VALUE : pos2.x, pos2 == null ? MIN_VALUE : pos2.z);
     }

@@ -22,7 +22,17 @@ public class PacketPlayInBlockPlace extends WrappedPacket {
     @Override
     public Object getVanillaPacket() {
         Object[] d;
-        if (Reflection.ver.isBellow(ServerVersion.v1_8)) {
+        if (Reflection.ver == ServerVersion.v1_7) {
+            d = new Object[8];
+            d[0] = location.x;
+            d[1] = location.y;
+            d[2] = location.z;
+            d[3] = face == null ? 255 : face.ordinal();
+            d[4] = itemStack == null ? null : itemStack.toNMS();
+            d[5] = cursorX;
+            d[6] = cursorY;
+            d[7] = cursorZ;
+        } else if (Reflection.ver == ServerVersion.v1_8) {
             d = new Object[7];
             d[0] = location.toNMS();
             d[1] = face == null ? 255 : face.ordinal();
@@ -43,13 +53,19 @@ public class PacketPlayInBlockPlace extends WrappedPacket {
     public void loadVanillaPacket(Object packet) {
         Object[] data = PacketInType.BlockPlace.getPacketData(packet);
         if (Reflection.ver.isBellow(ServerVersion.v1_8)) {
-            location = new BlockLocation(data[0]);
-            face = Direction.get((Integer) data[1]);
-            itemStack = data[2] == null ? null : new ItemStackWrapper(data[2]);
-            cursorX = (Float) data[3];
-            cursorY = (Float) data[4];
-            cursorZ = (Float) data[5];
-            timestamp = (Long) data[6];
+            int st = 1;
+            if (Reflection.ver == ServerVersion.v1_8) {
+                location = new BlockLocation(data[0]);
+            } else {
+                location = new BlockLocation((int) data[0], (int) data[1], (int) data[2]);
+                st = 3;
+            }
+            face = Direction.get((Integer) data[st]);
+            itemStack = data[st + 1] == null ? null : new ItemStackWrapper(data[st + 1]);
+            cursorX = (Float) data[st + 2];
+            cursorY = (Float) data[st + 3];
+            cursorZ = (Float) data[st + 4];
+            timestamp = Reflection.ver.isAbove(ServerVersion.v1_8) ? (Long) data[st + 5] : System.currentTimeMillis();
         } else {
             hand = HandType.valueOf(data[0].toString());
             timestamp = (Long) data[1];

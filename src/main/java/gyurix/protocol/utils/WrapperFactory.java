@@ -21,8 +21,8 @@ public class WrapperFactory {
             wrap.put(Reflection.getNMSClass("BaseBlockPosition"), BlockLocation.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("DataWatcher"), DataWatcher.class.getConstructor(Object.class));
             enumWrap.put(Reflection.getNMSClass("EnumDirection"), Direction.class.getMethod("valueOf", String.class));
-            wrap.put(Reflection.getClass("com.mojang.authlib.GameProfile"), GameProfile.class.getConstructor(Object.class));
-            wrap.put(Reflection.getClass("com.mojang.authlib.properties.Property"), Property.class.getConstructor(Object.class));
+            wrap.put(Reflection.getUtilClass("com.mojang.authlib.GameProfile"), GameProfile.class.getConstructor(Object.class));
+            wrap.put(Reflection.getUtilClass("com.mojang.authlib.properties.Property"), Property.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("ItemStack"), ItemStackWrapper.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("Vec3D"), Vector.class.getConstructor(Object.class));
             wrap.put(Reflection.getNMSClass("Vector3f"), Rotation.class.getConstructor(Object.class));

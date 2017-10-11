@@ -3,11 +3,15 @@ package gyurix.configfile;
 import com.google.gson.internal.Primitives;
 import gyurix.configfile.ConfigSerialization.*;
 import gyurix.protocol.Reflection;
-import gyurix.spigotlib.*;
-import org.apache.commons.lang.*;
+import gyurix.spigotlib.Config;
+import gyurix.spigotlib.Main;
+import gyurix.spigotlib.SU;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.lang.reflect.*;
-import java.math.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -380,6 +384,10 @@ public class DefaultSerializers {
 
     public static class ObjectSerializer implements Serializer {
         public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
+            if (Thread.currentThread().getStackTrace().length>50){
+                SU.cs.sendMessage("§ePossible infinite loop - "+fixClass.getName());
+                return null;
+            }
             ConfigOptions co = (ConfigOptions) fixClass.getAnnotation(ConfigOptions.class);
             if (co != null && co.compress())
                 input = input.decompress();
@@ -440,6 +448,10 @@ public class DefaultSerializers {
         }
 
         public ConfigData toData(Object obj, Type... parameters) {
+            if (Thread.currentThread().getStackTrace().length>50){
+                SU.cs.sendMessage("§ePossible infinite loop - "+obj.getClass().getName());
+                return null;
+            }
             Class c = Primitives.wrap(obj.getClass());
             if (c.isEnum() || c.getSuperclass() != null && c.getSuperclass().isEnum() || ArrayUtils.contains(c.getInterfaces(), StringSerializable.class) || c == BigDecimal.class || c == BigInteger.class) {
                 return new ConfigData(obj.toString());
@@ -477,6 +489,8 @@ public class DefaultSerializers {
                             continue;
                         String fn = f.getName();
                         Type t = f.getGenericType();
+                        if (Config.debug)
+                            SU.cs.sendMessage("§bSerialize object - §e" + o.getClass().getName());
                         ConfigData value = serializeObject(o, !cn.isEmpty(),
                                 t instanceof ParameterizedType ?
                                         ((ParameterizedType) t).getActualTypeArguments() :

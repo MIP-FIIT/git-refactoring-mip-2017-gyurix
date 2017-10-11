@@ -4,6 +4,7 @@ import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketInType;
 import gyurix.protocol.wrappers.WrappedPacket;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.ServerVersion;
 
 import java.lang.reflect.Method;
 
@@ -22,7 +23,7 @@ public class PacketPlayInEntityAction
     public void loadVanillaPacket(Object packet) {
         Object[] d = PacketInType.EntityAction.getPacketData(packet);
         entityId = (Integer) d[0];
-        action = PlayerAction.valueOf(d[1].toString());
+        action = Reflection.ver.isAbove(ServerVersion.v1_8) ? PlayerAction.valueOf(d[1].toString()) : PlayerAction.values()[((Integer) d[1]) - 1];
         jumpBoost = (Integer) d[2];
     }
 

@@ -25,7 +25,7 @@ public final class ProtocolImpl extends Protocol {
             playerConnectionF = getField(getNMSClass("EntityPlayer"), "playerConnection"),
             networkManagerF = getField(getNMSClass("PlayerConnection"), "networkManager"),
             channelF = getField(getNMSClass("NetworkManager"), "channel");
-    private static final Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
+    private static final Map<String, Channel> channelLookup = new HashMap<>();
     private static final Class minecraftServerClass = getNMSClass("MinecraftServer");
     private static final Class serverConnectionClass = getNMSClass("ServerConnection");
     private static Object oldH;

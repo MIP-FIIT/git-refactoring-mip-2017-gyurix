@@ -1,17 +1,30 @@
 package gyurix.spigotutils;
 
 import com.google.common.collect.Lists;
-import gyurix.spigotlib.*;
-import org.apache.commons.lang.*;
+import gyurix.spigotlib.Main;
+import gyurix.spigotlib.SU;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
-import org.bukkit.FireworkEffect.*;
-import org.bukkit.block.banner.*;
+import org.bukkit.FireworkEffect.Builder;
+import org.bukkit.FireworkEffect.Type;
+import org.bukkit.block.banner.Pattern;
+import org.bukkit.block.banner.PatternType;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.*;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.*;
-import org.bukkit.potion.*;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 
 import static gyurix.protocol.Reflection.ver;
@@ -242,17 +255,17 @@ public class ItemUtils {
      * @param name the case insensitive material name of the item or the numeric id of the item.
      * @return the numeric id of the requested item or 1, if the given name is incorrect or null
      */
-    public static BlockData getId(String name) {
+    public static ItemStack getItem(String name) {
         try {
-            BlockData bd = nameAliases.get(name.toLowerCase());
+            ItemStack bd = nameAliases.get(name.toLowerCase());
             if (bd != null)
-                return bd.clone();
-            return new BlockData(Material.valueOf(name.toUpperCase()).getId());
+                return bd;
+            return new ItemStack(Material.valueOf(name.toUpperCase()));
         } catch (Throwable e) {
             try {
-                return new BlockData(Integer.valueOf(name));
+                return new ItemStack(Integer.valueOf(name));
             } catch (Throwable e2) {
-                return new BlockData(7);
+                return new ItemStack(7);
             }
         }
     }
@@ -506,22 +519,20 @@ public class ItemUtils {
             return null;
         String[] parts = in.split(" ");
         String[] idParts = parts[0].split(":");
-        BlockData bd = getId(idParts[0]);
-        int amount = 1;
+        ItemStack out = getItem(idParts[0]);
         int st = 1;
         try {
-            bd.data = Short.valueOf(idParts[1]);
-        } catch (Throwable e) {
+            out.setDurability(Short.valueOf(idParts[1]));
+        } catch (Throwable ignored) {
         }
 
         try {
-            amount = Short.valueOf(parts[1]);
+            out.setAmount(Short.valueOf(parts[1]));
             st = 2;
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
 
         int l = parts.length;
-        ItemStack out = new ItemStack(bd.id, amount, bd.data);
         ItemMeta meta = out.getItemMeta();
         ArrayList<String[]> remaining = new ArrayList<>();
         for (int i = st; i < l; i++) {
