@@ -71,6 +71,7 @@ If you are able to, please translate this plugin to your language! In translatio
 Before complaining about something doesn't work, please CONTACT ME.
 
 **Skype:** gyurixdev
+
 **Email:** barathgy@gmail.com
 
 ##​License
