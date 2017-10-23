@@ -94,7 +94,7 @@ public class Main extends JavaPlugin implements Listener {
     /**
      * Current version of the plugin, stored here to not be able to be abused so easily by server owners, by changing the plugin.yml file
      */
-    public static final String version = "7.0";
+    public static final String version = "7.0.2";
     /**
      * Data directory of the plugin (plugins/SpigotLib folder)
      */
@@ -662,8 +662,10 @@ public class Main extends JavaPlugin implements Listener {
                 if (rspChat != null)
                     chat = (Chat) rspChat.getProvider();
             }
-            cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
-            Config.tpsMeter.start();
+            if (TPSMeter.enabled) {
+                cs.sendMessage("§2[§aStartup§2]§e Starting TPSMeter...");
+                Config.tpsMeter.start();
+            }
             cs.sendMessage("§2[§aStartup§2]§e Starting PlaceholderAPI hook...");
             VariableAPI.init();
             cs.sendMessage("§2[§aStartup§2]§a Started SpigotLib §e" + version + "§a properly.");

@@ -259,7 +259,7 @@ public class ItemUtils {
         try {
             ItemStack bd = nameAliases.get(name.toLowerCase());
             if (bd != null)
-                return bd;
+                return bd.clone();
             return new ItemStack(Material.valueOf(name.toUpperCase()));
         } catch (Throwable e) {
             try {
