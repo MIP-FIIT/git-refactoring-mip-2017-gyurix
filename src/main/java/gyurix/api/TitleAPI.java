@@ -15,17 +15,17 @@ import java.util.Collection;
 public class TitleAPI {
 
     /**
-     * @param plrs
+     * Clears the title message for the given collection of players
+     *
+     * @param players - The collection of players whose title bar should be cleared
      */
-    public static void clear(Collection<? extends Player> plrs) {
+    public static void clear(Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TitleAction.CLEAR, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players)
             SU.tp.sendPacket(p, packet);
-        }
     }
 
     /**
-     *
      * @param plrs
      */
     public static void clear(Player... plrs) {
@@ -36,7 +36,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param plrs
      */
     public static void reset(Collection<? extends Player> plrs) {
@@ -47,7 +46,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param plrs
      */
     public static void reset(Player... plrs) {
@@ -58,7 +56,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param title
      * @param subtitle
      * @param fadeIn
@@ -73,7 +70,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param title
      * @param subtitle
      * @param fadeIn
@@ -88,7 +84,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param fadein
      * @param show
      * @param fadeout
@@ -115,7 +110,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param subtitle
      * @param plrs
      */
@@ -138,7 +132,6 @@ public class TitleAPI {
     }
 
     /**
-     *
      * @param title
      * @param plrs
      */
