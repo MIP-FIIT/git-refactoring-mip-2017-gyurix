@@ -20,7 +20,8 @@ import java.util.UUID;
 import static gyurix.spigotlib.Config.debug;
 
 /**
- * Created by gyurix on 20/12/2015.
+ * BungeeAPI is the implementation of the
+ * <a href=https://www.spigotmc.org/wiki/bukkit-bungee-plugin-messaging-channel/>Spigot - Bungee communication protocol</a>
  */
 public class BungeeAPI implements PluginMessageListener {
     public static boolean enabled, schedulePacketAPI;
