@@ -25,22 +25,23 @@ public class ItemStackWrapper implements WrappedData {
     @ConfigOptions(serialize = false)
     private static final Object cmnObj;
     private static final Method getType, nmsCopy, saveStack, getItem, getID;
-    private static final Class nmsClass = getNMSClass("ItemStack");
+    private static final Class nmsClass;
     private static final Field itemName;
     private static Method createStack;
 
     static {
         Class nmsItem = getNMSClass("Item");
+        nmsClass = getNMSClass("ItemStack");
         Class nbt = getNMSClass("NBTTagCompound");
         Class obc = Reflection.getOBCClass("inventory.CraftItemStack");
         Class cmn = Reflection.getOBCClass("util.CraftMagicNumbers");
         cmnObj = getFieldData(cmn, "INSTANCE");
         createStack = Reflection.getMethod(nmsItem, "createStack", nbt);
         if (createStack == null)
-            createStack = Reflection.getMethod(nmsItem, "load", nbt);
-        saveStack = Reflection.getMethod(nmsItem, "save", nbt);
+            createStack = Reflection.getMethod(nmsClass, "load", nbt);
+        saveStack = Reflection.getMethod(nmsClass, "save", nbt);
         nmsCopy = Reflection.getMethod(obc, "asNMSCopy", ItemStack.class);
-        bukkitStack = Reflection.getConstructor(obc, nmsItem);
+        bukkitStack = Reflection.getConstructor(obc, nmsClass);
         getType = Reflection.getMethod(cmn, "getMaterialFromInternalName", String.class);
         getItem = Reflection.getMethod(cmn, "getItem", Material.class);
         getID = Reflection.getMethod(nmsItem, "getId", nmsItem);

@@ -74,10 +74,11 @@ public class SpigotLibCommands implements CommandExecutor, TabCompleter {
                     lang.msg(sender, "help", "version", version);
                     return true;
                 case "nbt": {
-                    String nms = new ConfigData(new ItemStackWrapper(plr.getItemInHand())).toString();
+                    String nms = new ConfigData(new ItemStackWrapper(plr.getItemInHand()).nbtData).toString();
                     sender.sendMessage(nms);
                     plr.setItemInHand(null);
-                    SU.sch.scheduleSyncDelayedTask(Main.pl, () -> plr.setItemInHand(new ItemStackWrapper(new ConfigFile(nms).data.deserialize(NBTCompound.class)).toBukkitStack()), 10);
+                    SU.sch.scheduleSyncDelayedTask(Main.pl, () -> plr.setItemInHand(
+                            new ItemStackWrapper(new ConfigFile(nms).data.deserialize(NBTCompound.class)).toBukkitStack()), 10);
                     return true;
                 }
                 case "cmd":
