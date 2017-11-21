@@ -23,11 +23,12 @@ public enum NBTTagType {
     Long(long.class),
     Float(float.class),
     Double(double.class),
-    String(String.class),
     ByteArray(byte[].class),
-    Compound(Map.class, NBTCompound.class, String.class, NBTTag.class),
+    String(String.class),
     List(List.class, NBTList.class, NBTTag.class),
-    IntArray(int[].class);
+    Compound(Map.class, NBTCompound.class, String.class, NBTTag.class),
+    IntArray(int[].class),
+    LongArray(long[].class);
     private static final HashMap<Class, NBTTagType> classes = new HashMap<>();
     @Getter
     private static final Field nmsListTypeField;

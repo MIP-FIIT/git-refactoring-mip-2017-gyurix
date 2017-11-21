@@ -8,7 +8,6 @@ import gyurix.nbt.NBTCompound;
 import gyurix.protocol.utils.ItemStackWrapper;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.GlobalLangFile;
-import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.BackendType;
 import gyurix.spigotutils.ItemUtils;
@@ -76,9 +75,9 @@ public class SpigotLibCommands implements CommandExecutor, TabCompleter {
                 case "nbt": {
                     String nms = new ConfigData(new ItemStackWrapper(plr.getItemInHand()).nbtData).toString();
                     sender.sendMessage(nms);
-                    plr.setItemInHand(null);
-                    SU.sch.scheduleSyncDelayedTask(Main.pl, () -> plr.setItemInHand(
-                            new ItemStackWrapper(new ConfigFile(nms).data.deserialize(NBTCompound.class)).toBukkitStack()), 10);
+                    ItemStackWrapper isw = new ItemStackWrapper(new ConfigFile(nms).data.deserialize(NBTCompound.class));
+                    sender.sendMessage("After load:\n" + new ConfigData(isw));
+                    plr.setItemInHand(isw.toBukkitStack());
                     return true;
                 }
                 case "cmd":

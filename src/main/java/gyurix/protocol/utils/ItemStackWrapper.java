@@ -24,10 +24,10 @@ public class ItemStackWrapper implements WrappedData {
     private static final Constructor bukkitStack;
     @ConfigOptions(serialize = false)
     private static final Object cmnObj;
-    private static final Method getType, nmsCopy, saveStack, getItem, getID;
+    private static final Method getType, nmsCopy, saveStack, getItem, getID, convertStack;
     private static final Class nmsClass;
     private static final Field itemName;
-    private static Method createStack;
+    private static Constructor createStack;
 
     static {
         Class nmsItem = getNMSClass("Item");
@@ -36,9 +36,8 @@ public class ItemStackWrapper implements WrappedData {
         Class obc = Reflection.getOBCClass("inventory.CraftItemStack");
         Class cmn = Reflection.getOBCClass("util.CraftMagicNumbers");
         cmnObj = getFieldData(cmn, "INSTANCE");
-        createStack = Reflection.getMethod(nmsItem, "createStack", nbt);
-        if (createStack == null)
-            createStack = Reflection.getMethod(nmsClass, "load", nbt);
+        createStack = Reflection.getConstructor(nmsClass, nbt);
+        convertStack = Reflection.getMethod(nmsClass, "convertStack");
         saveStack = Reflection.getMethod(nmsClass, "save", nbt);
         nmsCopy = Reflection.getMethod(obc, "asNMSCopy", ItemStack.class);
         bukkitStack = Reflection.getConstructor(obc, nmsClass);
@@ -172,7 +171,8 @@ public class ItemStackWrapper implements WrappedData {
 
     public ItemStack toBukkitStack() {
         try {
-            return (ItemStack) bukkitStack.newInstance(toNMS());
+            Object nms = toNMS();
+            return (ItemStack) bukkitStack.newInstance(nms);
         } catch (Throwable e) {
             e.printStackTrace();
             return null;
@@ -182,7 +182,9 @@ public class ItemStackWrapper implements WrappedData {
     @Override
     public Object toNMS() {
         try {
-            return createStack.invoke(Reflection.newInstance(nmsClass), nbtData.toNMS());
+            Object nms = createStack.newInstance(nbtData.toNMS());
+            convertStack.invoke(nms);
+            return nms;
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
