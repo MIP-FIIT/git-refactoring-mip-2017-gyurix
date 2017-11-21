@@ -1,12 +1,20 @@
 package gyurix.api;
 
-import gyurix.spigotlib.*;
+import gyurix.spigotlib.Main;
+import gyurix.spigotlib.PHAHook;
+import gyurix.spigotlib.SU;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
+/**
+ * VariableAPI - Used for advanced placeholder filling in Strings
+ */
 public class VariableAPI {
     private static final HashSet<String> errorVars = new HashSet<>();
     private static final HashSet<String> missingHandlers = new HashSet<>();
