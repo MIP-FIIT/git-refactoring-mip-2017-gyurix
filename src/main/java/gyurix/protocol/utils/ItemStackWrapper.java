@@ -21,26 +21,26 @@ import static gyurix.protocol.Reflection.getNMSClass;
 public class ItemStackWrapper implements WrappedData {
     @ConfigOptions(serialize = false)
     public static final HashMap<Integer, String> itemNames = new HashMap<>();
-    @ConfigOptions(serialize = false)
     private static final Constructor bukkitStack;
     @ConfigOptions(serialize = false)
     private static final Object cmnObj;
-    @ConfigOptions(serialize = false)
-    private static final Method createStack, getType, nmsCopy, saveStack, getItem, getID;
-    @ConfigOptions(serialize = false)
+    private static final Method getType, nmsCopy, saveStack, getItem, getID;
+    private static final Class nmsClass = getNMSClass("ItemStack");
     private static final Field itemName;
+    private static Method createStack;
 
     static {
-        Class nms = getNMSClass("ItemStack");
         Class nmsItem = getNMSClass("Item");
         Class nbt = getNMSClass("NBTTagCompound");
         Class obc = Reflection.getOBCClass("inventory.CraftItemStack");
         Class cmn = Reflection.getOBCClass("util.CraftMagicNumbers");
         cmnObj = getFieldData(cmn, "INSTANCE");
-        createStack = Reflection.getMethod(nms, "createStack", nbt);
-        saveStack = Reflection.getMethod(nms, "save", nbt);
+        createStack = Reflection.getMethod(nmsItem, "createStack", nbt);
+        if (createStack == null)
+            createStack = Reflection.getMethod(nmsItem, "load", nbt);
+        saveStack = Reflection.getMethod(nmsItem, "save", nbt);
         nmsCopy = Reflection.getMethod(obc, "asNMSCopy", ItemStack.class);
-        bukkitStack = Reflection.getConstructor(obc, nms);
+        bukkitStack = Reflection.getConstructor(obc, nmsItem);
         getType = Reflection.getMethod(cmn, "getMaterialFromInternalName", String.class);
         getItem = Reflection.getMethod(cmn, "getItem", Material.class);
         getID = Reflection.getMethod(nmsItem, "getId", nmsItem);
@@ -181,7 +181,7 @@ public class ItemStackWrapper implements WrappedData {
     @Override
     public Object toNMS() {
         try {
-            return createStack.invoke(null, nbtData.toNMS());
+            return createStack.invoke(Reflection.newInstance(nmsClass), nbtData.toNMS());
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
             return null;
