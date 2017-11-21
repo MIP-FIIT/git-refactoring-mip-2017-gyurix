@@ -73,7 +73,7 @@ public class SpigotLibCommands implements CommandExecutor, TabCompleter {
                     lang.msg(sender, "help", "version", version);
                     return true;
                 case "nbt": {
-                    String nms = new ConfigData(new ItemStackWrapper(plr.getItemInHand()).nbtData).toString();
+                    String nms = new ConfigData(new ItemStackWrapper(plr.getItemInHand()).getNbtData()).toString();
                     sender.sendMessage(nms);
                     ItemStackWrapper isw = new ItemStackWrapper(new ConfigFile(nms).data.deserialize(NBTCompound.class));
                     sender.sendMessage("After load:\n" + new ConfigData(isw));

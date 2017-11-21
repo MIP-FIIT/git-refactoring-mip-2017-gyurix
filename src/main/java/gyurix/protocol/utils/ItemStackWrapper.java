@@ -4,6 +4,8 @@ import gyurix.nbt.NBTCompound;
 import gyurix.nbt.NBTPrimitive;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.SU;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -55,7 +57,9 @@ public class ItemStackWrapper implements WrappedData {
         itemName = Reflection.getField(nmsItem, "name");
     }
 
-    public NBTCompound nbtData = new NBTCompound();
+    @Getter
+    @Setter
+    private NBTCompound nbtData = new NBTCompound();
 
     public ItemStackWrapper() {
     }
