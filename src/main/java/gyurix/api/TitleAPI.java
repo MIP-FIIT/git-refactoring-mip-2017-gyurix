@@ -15,7 +15,7 @@ import java.util.Collection;
 public class TitleAPI {
 
     /**
-     * Clears the title message for the given collection of players
+     * Clears the title message of the given collection of players
      *
      * @param players - The collection of players whose title bar should be cleared
      */
@@ -26,13 +26,14 @@ public class TitleAPI {
     }
 
     /**
-     * @param plrs
+     * Clears the title message of the given players
+     *
+     * @param players
      */
-    public static void clear(Player... plrs) {
+    public static void clear(Player... players) {
         Object packet = new PacketPlayOutTitle(TitleAction.CLEAR, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players)
             SU.tp.sendPacket(p, packet);
-        }
     }
 
     /**
