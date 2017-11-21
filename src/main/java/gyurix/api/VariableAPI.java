@@ -91,10 +91,10 @@ public class VariableAPI {
     /**
      * @param plr
      * @param inside
-     * @param oArgs
+     * @param extArgs
      * @return
      */
-    public static Object fillVar(Player plr, List<Object> inside, Object[] oArgs) {
+    public static Object fillVar(Player plr, List<Object> inside, Object[] extArgs) {
         StringBuilder sb = new StringBuilder();
         int l = inside.size();
         for (int c = 0; c < l; ++c) {
@@ -106,23 +106,23 @@ public class VariableAPI {
                 if (id != os.length() - 1) {
                     list.add(0, os.substring(id + 1));
                 }
-                return handle(sb.toString(), plr, list, oArgs);
+                return handle(sb.toString(), plr, list, extArgs);
             }
             sb.append(os);
         }
-        return handle(sb.toString(), plr, emptyList, oArgs);
+        return handle(sb.toString(), plr, emptyList, extArgs);
     }
 
     /**
      * @param msg
      * @param plr
-     * @param oArgs
+     * @param extArgs
      * @return
      */
-    public static String fillVariables(String msg, Player plr, Object... oArgs) {
+    public static String fillVariables(String msg, Player plr, Object... extArgs) {
         if (phaHook)
             msg = PlaceholderAPI.setPlaceholders(plr, msg);
-        ArrayList<Object> out = fill(msg.replace("\\<", "\u0000").replace("\\>", "\u0001"), 0, plr, oArgs);
+        ArrayList<Object> out = fill(msg.replace("\\<", "\u0000").replace("\\>", "\u0001"), 0, plr, extArgs);
         out.remove(0);
         String s = StringUtils.join(out, "").replace('\u0000', '<').replace('\u0001', '>');
         return s;
@@ -132,10 +132,10 @@ public class VariableAPI {
      * @param var
      * @param plr
      * @param inside
-     * @param oArgs
+     * @param extArgs
      * @return
      */
-    private static Object handle(String var, Player plr, ArrayList<Object> inside, Object[] oArgs) {
+    private static Object handle(String var, Player plr, ArrayList<Object> inside, Object[] extArgs) {
         VariableHandler vh = handlers.get(var);
         if (vh == null) {
             if (missingHandlers.add(var))
@@ -143,7 +143,7 @@ public class VariableAPI {
             return "<" + var + ">";
         }
         try {
-            return vh.getValue(plr, inside, oArgs);
+            return vh.getValue(plr, inside, extArgs);
         } catch (Throwable e) {
             if (errorVars.add(var)) {
                 SU.log(Main.pl, "§cError on calculating variable §f" + var + "§c!");
