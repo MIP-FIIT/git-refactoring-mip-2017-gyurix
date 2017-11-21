@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import java.util.Collection;
 
 /**
- * An API used for title management
+ * TitleAPI - API for managing title, subtitle and actionbar messages for server versions 1.8.8 and later
  */
 public class TitleAPI {
 
