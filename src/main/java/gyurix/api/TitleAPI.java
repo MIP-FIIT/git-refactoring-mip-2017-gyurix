@@ -2,12 +2,13 @@ package gyurix.api;
 
 import gyurix.chat.ChatTag;
 import gyurix.protocol.wrappers.outpackets.PacketPlayOutTitle;
-import gyurix.protocol.wrappers.outpackets.PacketPlayOutTitle.TitleAction;
-import gyurix.spigotlib.SU;
 import gyurix.spigotutils.NullUtils;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
+
+import static gyurix.protocol.wrappers.outpackets.PacketPlayOutTitle.TitleAction.*;
+import static gyurix.spigotlib.SU.tp;
 
 /**
  * TitleAPI - API for managing title, subtitle and actionbar messages for server versions 1.8.8 and later
@@ -20,9 +21,9 @@ public class TitleAPI {
      * @param players - The collection of players whose title bar should be cleared
      */
     public static void clear(Collection<? extends Player> players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.CLEAR, null, 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(CLEAR, null, 0, 0, 0).getVanillaPacket();
         for (Player p : players)
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
     }
 
     /**
@@ -31,19 +32,20 @@ public class TitleAPI {
      * @param players - The players whose title bar should be cleared
      */
     public static void clear(Player... players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.CLEAR, null, 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(CLEAR, null, 0, 0, 0).getVanillaPacket();
         for (Player p : players)
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
     }
 
     /**
      * Resets the title message of the given collection of players
+     *
      * @param players
      */
     public static void reset(Collection<? extends Player> players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.RESET, null, 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(RESET, null, 0, 0, 0).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -51,9 +53,9 @@ public class TitleAPI {
      * @param players
      */
     public static void reset(Player... players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.RESET, null, 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(RESET, null, 0, 0, 0).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -92,9 +94,9 @@ public class TitleAPI {
      * @param players
      */
     public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(TIMES, null, fadein, show, fadeout).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -105,9 +107,9 @@ public class TitleAPI {
      * @param players
      */
     public static void setShowTime(int fadein, int show, int fadeout, Player... players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(TIMES, null, fadein, show, fadeout).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -116,9 +118,9 @@ public class TitleAPI {
      * @param players
      */
     public static void setSubTitle(String subtitle, Collection<? extends Player> players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -127,9 +129,9 @@ public class TitleAPI {
      * @param players
      */
     public static void setSubTitle(String subtitle, Player... players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -138,9 +140,9 @@ public class TitleAPI {
      * @param players
      */
     public static void setTitle(String title, Collection<? extends Player> players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 
@@ -149,9 +151,9 @@ public class TitleAPI {
      * @param players
      */
     public static void setTitle(String title, Player... players) {
-        Object packet = new PacketPlayOutTitle(TitleAction.TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
+        Object packet = new PacketPlayOutTitle(TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
         for (Player p : players) {
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
         }
     }
 }
