@@ -4,9 +4,11 @@ import com.google.common.collect.Lists;
 import gyurix.api.VariableAPI;
 import gyurix.configfile.ConfigData;
 import gyurix.configfile.ConfigFile;
+import gyurix.nbt.NBTCompound;
 import gyurix.protocol.utils.ItemStackWrapper;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.GlobalLangFile;
+import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.BackendType;
 import gyurix.spigotutils.ItemUtils;
@@ -72,7 +74,10 @@ public class SpigotLibCommands implements CommandExecutor, TabCompleter {
                     lang.msg(sender, "help", "version", version);
                     return true;
                 case "nbt": {
-                    sender.sendMessage(new ConfigData(new ItemStackWrapper(plr.getItemInHand())).toString());
+                    String nms = new ConfigData(new ItemStackWrapper(plr.getItemInHand())).toString();
+                    sender.sendMessage(nms);
+                    plr.setItemInHand(null);
+                    SU.sch.scheduleSyncDelayedTask(Main.pl, () -> plr.setItemInHand(new ItemStackWrapper(new ConfigFile(nms).data.deserialize(NBTCompound.class)).toBukkitStack()), 10);
                     return true;
                 }
                 case "cmd":

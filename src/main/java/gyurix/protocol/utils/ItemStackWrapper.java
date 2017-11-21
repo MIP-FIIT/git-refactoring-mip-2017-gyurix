@@ -60,6 +60,10 @@ public class ItemStackWrapper implements WrappedData {
     public ItemStackWrapper() {
     }
 
+    public ItemStackWrapper(NBTCompound nbt) {
+        this.nbtData = nbt;
+    }
+
     public ItemStackWrapper(ItemStack is) {
         loadFromBukkitStack(is);
     }
@@ -137,7 +141,7 @@ public class ItemStackWrapper implements WrappedData {
             if (is != null) {
                 Object nms = nmsCopy.invoke(null, is);
                 if (nms != null)
-                    tag(saveStack.invoke(nms, new NBTCompound().toNMS()));
+                    nbtData = (NBTCompound) tag(saveStack.invoke(nms, new NBTCompound().toNMS()));
             }
         } catch (Throwable e) {
             e.printStackTrace();
