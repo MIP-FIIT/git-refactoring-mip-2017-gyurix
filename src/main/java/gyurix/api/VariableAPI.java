@@ -22,6 +22,13 @@ public class VariableAPI {
     public static final HashMap<String, VariableHandler> handlers = new HashMap();
     public static boolean phaHook;
 
+    /**
+     * @param msg
+     * @param from
+     * @param plr
+     * @param oArgs
+     * @return
+     */
     public static ArrayList<Object> fill(String msg, int from, Player plr, Object[] oArgs) {
         int l = msg.length();
         int sid = from;
@@ -53,6 +60,13 @@ public class VariableAPI {
         return out;
     }
 
+    /**
+     *
+     * @param plr
+     * @param inside
+     * @param oArgs
+     * @return
+     */
     public static Object fillVar(Player plr, List<Object> inside, Object[] oArgs) {
         StringBuilder sb = new StringBuilder();
         int l = inside.size();
@@ -72,6 +86,13 @@ public class VariableAPI {
         return handle(sb.toString(), plr, emptyList, oArgs);
     }
 
+    /**
+     *
+     * @param msg
+     * @param plr
+     * @param oArgs
+     * @return
+     */
     public static String fillVariables(String msg, Player plr, Object... oArgs) {
         if (phaHook)
             msg = PlaceholderAPI.setPlaceholders(plr, msg);
@@ -81,6 +102,14 @@ public class VariableAPI {
         return s;
     }
 
+    /**
+     *
+     * @param var
+     * @param plr
+     * @param inside
+     * @param oArgs
+     * @return
+     */
     private static Object handle(String var, Player plr, ArrayList<Object> inside, Object[] oArgs) {
         VariableHandler vh = handlers.get(var);
         if (vh == null) {
@@ -99,12 +128,24 @@ public class VariableAPI {
         }
     }
 
+    /**
+     *
+     */
     public static void init() {
         if (VariableAPI.phaHook)
             new PHAHook();
     }
 
+    /**
+     *
+     */
     public interface VariableHandler {
+        /**
+         * @param plr
+         * @param args
+         * @param eArgs
+         * @return
+         */
         Object getValue(Player plr, ArrayList<Object> args, Object[] eArgs);
     }
 
