@@ -114,6 +114,14 @@ public class ConfigSerialization {
     }
 
     public interface Serializer {
+        default ConfigData postSerialize(Object o, ConfigData data) {
+            return data;
+        }
+
+        default Class resolveType(ConfigData data) {
+            return Object.class;
+        }
+
         Object fromData(ConfigData paramConfigData, Class paramClass, Type... paramVarArgs);
 
         ConfigData toData(Object paramObject, Type... paramVarArgs);

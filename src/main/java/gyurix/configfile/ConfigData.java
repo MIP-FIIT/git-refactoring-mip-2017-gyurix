@@ -3,6 +3,7 @@ package gyurix.configfile;
 import com.google.common.primitives.Primitives;
 import gyurix.configfile.ConfigSerialization.Serializer;
 import gyurix.mysql.MySQLDatabase;
+import gyurix.nbt.NBTTag;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 import org.apache.commons.codec.binary.Base64;
@@ -87,6 +88,8 @@ public class ConfigData implements Comparable<ConfigData> {
     public static ConfigData serializeObject(Object obj, boolean className, Type... parameters) {
         if (obj == null)
             return null;
+        if (obj instanceof NBTTag)
+            className = false;
         Class c = Primitives.wrap(obj.getClass());
         if (c.isArray())
             parameters = new Type[]{c.getComponentType()};
@@ -174,6 +177,7 @@ public class ConfigData implements Comparable<ConfigData> {
 
     public <T> T deserialize(Class<T> c, Type... types) {
         try {
+            c = Primitives.wrap(c);
             this.types = types;
             if (objectData != null)
                 return (T) objectData;
@@ -279,15 +283,13 @@ public class ConfigData implements Comparable<ConfigData> {
         if (stringData != null && !stringData.isEmpty())
             out.append(escape(stringData)).append('\n');
         if (mapData != null) {
+            if (stringData == null)
+                out.append('\n');
             for (Entry<ConfigData, ConfigData> d : mapData.entrySet()) {
                 ConfigData v = d.getValue();
                 String value = d.getValue().toString();
-                if (value.isEmpty())
-                    continue;
                 if (d.getKey().comment != null)
                     out.append("#").append(d.getKey().comment.replace("\n", "\n#")).append('\n');
-                if (v.mapData != null || v.listData != null)
-                    value = "\n" + value;
                 if (v.mapData != null)
                     value = value.replace("\n", "\n  ");
                 String key = d.getKey().toString();

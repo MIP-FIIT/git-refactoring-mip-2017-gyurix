@@ -13,10 +13,7 @@ import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Server;
+import org.bukkit.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
@@ -154,6 +151,10 @@ public final class SU {
                         .append("§e)");
         }
         String rep = report.toString();
+        if (cs == null) {
+            System.err.println(ChatColor.stripColor(rep));
+            return;
+        }
         cs.sendMessage(rep);
         if (sender != null && sender != cs)
             sender.sendMessage(rep);
@@ -504,11 +505,11 @@ public final class SU {
      * @param msg - The message which should be logged
      */
     public static void log(Plugin pl, Object... msg) {
-        String s = '[' + pl.getName() + "] " + StringUtils.join(msg, ", ");
+        String s = pl == null ? "" : ('[' + pl.getName() + "] ") + StringUtils.join(msg, ", ");
         if (cs != null)
             cs.sendMessage(s);
         else
-            System.out.println(s);
+            System.out.println(ChatColor.stripColor(s));
     }
 
     /**

@@ -4,6 +4,7 @@ import com.google.gson.internal.Primitives;
 import gyurix.protocol.Reflection;
 import lombok.Getter;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -67,11 +68,16 @@ public enum NBTTagType {
             return null;
         if (o instanceof NBTPrimitive)
             o = ((NBTPrimitive) o).getData();
+        if (o instanceof Map)
+            return Compound;
+        if (o instanceof Iterable || o.getClass().isArray())
+            return List;
         return classes.get(Primitives.unwrap(o.getClass()));
     }
 
     public static NBTTag tag(Object o) {
-        return of(o).makeTag(o);
+        NBTTagType type = of(o);
+        return type.makeTag(o);
     }
 
     public NBTTag makeTag(Object o) {
@@ -87,8 +93,15 @@ public enum NBTTagType {
                 ((NBTPrimitive) tag).setData(o);
             else if (tag instanceof NBTList) {
                 NBTList list = (NBTList) tag;
-                for (Object o2 : (Iterable) o)
-                    list.add(of(o2).makeTag(o2));
+                if (o.getClass().isArray()) {
+                    int len = Array.getLength(o);
+                    for (int i = 0; i < len; ++i) {
+                        Object o2 = Array.get(o, i);
+                        list.add(of(o2).makeTag(o2));
+                    }
+                } else
+                    for (Object o2 : (Iterable) o)
+                        list.add(of(o2).makeTag(o2));
             } else {
                 NBTCompound cmp = (NBTCompound) tag;
                 for (Map.Entry<String, Object> e : ((Map<String, Object>) o).entrySet())
