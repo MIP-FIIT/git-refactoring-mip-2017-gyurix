@@ -28,7 +28,7 @@ public class TitleAPI {
     /**
      * Clears the title message of the given players
      *
-     * @param players
+     * @param players - The players whose title bar should be cleared
      */
     public static void clear(Player... players) {
         Object packet = new PacketPlayOutTitle(TitleAction.CLEAR, null, 0, 0, 0).getVanillaPacket();
@@ -37,21 +37,22 @@ public class TitleAPI {
     }
 
     /**
-     * @param plrs
+     * Resets the title message of the given collection of players
+     * @param players
      */
-    public static void reset(Collection<? extends Player> plrs) {
+    public static void reset(Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TitleAction.RESET, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
 
     /**
-     * @param plrs
+     * @param players
      */
-    public static void reset(Player... plrs) {
+    public static void reset(Player... players) {
         Object packet = new PacketPlayOutTitle(TitleAction.RESET, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
@@ -62,12 +63,12 @@ public class TitleAPI {
      * @param fadeIn
      * @param showtime
      * @param fadeOut
-     * @param plrs
+     * @param players
      */
-    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Collection<? extends Player> plrs) {
-        setShowTime(fadeIn, showtime, fadeOut, plrs);
-        setSubTitle(NullUtils.to0(subtitle), plrs);
-        setTitle(title, plrs);
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Collection<? extends Player> players) {
+        setShowTime(fadeIn, showtime, fadeOut, players);
+        setSubTitle(NullUtils.to0(subtitle), players);
+        setTitle(title, players);
     }
 
     /**
@@ -76,23 +77,23 @@ public class TitleAPI {
      * @param fadeIn
      * @param showtime
      * @param fadeOut
-     * @param plrs
+     * @param players
      */
-    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... plrs) {
-        setShowTime(fadeIn, showtime, fadeOut, plrs);
-        setSubTitle(NullUtils.to0(subtitle), plrs);
-        setTitle(title, plrs);
+    public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... players) {
+        setShowTime(fadeIn, showtime, fadeOut, players);
+        setSubTitle(NullUtils.to0(subtitle), players);
+        setTitle(title, players);
     }
 
     /**
      * @param fadein
      * @param show
      * @param fadeout
-     * @param plrs
+     * @param players
      */
-    public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> plrs) {
+    public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
@@ -101,55 +102,55 @@ public class TitleAPI {
      * @param fadein
      * @param show
      * @param fadeout
-     * @param plrs
+     * @param players
      */
-    public static void setShowTime(int fadein, int show, int fadeout, Player... plrs) {
+    public static void setShowTime(int fadein, int show, int fadeout, Player... players) {
         Object packet = new PacketPlayOutTitle(TitleAction.TIMES, null, fadein, show, fadeout).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
 
     /**
      * @param subtitle
-     * @param plrs
+     * @param players
      */
-    public static void setSubTitle(String subtitle, Collection<? extends Player> plrs) {
+    public static void setSubTitle(String subtitle, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TitleAction.SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
 
     /**
      * @param subtitle
-     * @param plrs
+     * @param players
      */
-    public static void setSubTitle(String subtitle, Player... plrs) {
+    public static void setSubTitle(String subtitle, Player... players) {
         Object packet = new PacketPlayOutTitle(TitleAction.SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
 
     /**
      * @param title
-     * @param plrs
+     * @param players
      */
-    public static void setTitle(String title, Collection<? extends Player> plrs) {
+    public static void setTitle(String title, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TitleAction.TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
 
     /**
      * @param title
-     * @param plrs
+     * @param players
      */
-    public static void setTitle(String title, Player... plrs) {
+    public static void setTitle(String title, Player... players) {
         Object packet = new PacketPlayOutTitle(TitleAction.TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
-        for (Player p : plrs) {
+        for (Player p : players) {
             SU.tp.sendPacket(p, packet);
         }
     }
