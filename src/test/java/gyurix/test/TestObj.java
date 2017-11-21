@@ -6,6 +6,7 @@ import java.util.HashMap;
  * Created by GyuriX on 2016. 07. 31..
  */
 public class TestObj {
+    String name;
     HashMap<String, CompressedData> fullCompression = new HashMap<>();
     HashMap<String, PartialCompress> partialCompress = new HashMap<>();
 

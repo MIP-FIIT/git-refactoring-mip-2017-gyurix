@@ -3,7 +3,6 @@ package gyurix.protocol.event;
 import com.google.common.collect.Lists;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 
@@ -11,6 +10,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import static gyurix.spigotlib.Config.debug;
 
 public enum PacketOutType {
     Abilities,
@@ -181,8 +182,7 @@ public enum PacketOutType {
                     fields.remove(f--);
                     break;
                 } catch (Throwable e) {
-                    if (Config.debug)
-                        SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                    debug.msg("Packet", e);
                 }
             }
         }

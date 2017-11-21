@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import java.lang.reflect.Method;
 import java.util.Collection;
 
+import static gyurix.spigotlib.Config.debug;
 import static gyurix.spigotutils.ServerVersion.v1_8;
 
 public class ChatAPI {
@@ -104,8 +105,7 @@ public class ChatAPI {
      * @param pls  - The receiver list
      */
     public static void sendRawJson(ChatMessageType type, String json, Player... pls) {
-        if (Config.debug)
-            SU.cs.sendMessage("§bSendRawJson - §f" + json);
+        debug.msg("Chat", "§bSendRawJson - §f" + json);
         if (!Config.forceReducedMode && Reflection.ver.isAbove(v1_8)) {
             Object packet = new PacketPlayOutChat((byte) type.ordinal(), JsonAPI.deserialize(json, ChatTag.class)).getVanillaPacket();
             for (Player p : pls)
@@ -125,8 +125,7 @@ public class ChatAPI {
      * @param pls  - The receiver list
      */
     public static void sendRawJson(ChatMessageType type, String json, Collection<? extends Player> pls) {
-        if (Config.debug)
-            SU.cs.sendMessage("§bSendRawJson - §f" + json);
+        debug.msg("Chat", "§bSendRawJson - §f" + json);
         if (Reflection.ver.isAbove(v1_8)) {
             Object packet = new PacketPlayOutChat((byte) type.ordinal(), JsonAPI.deserialize(json, ChatTag.class)).getVanillaPacket();
             for (Player p : pls)
@@ -146,13 +145,10 @@ public class ChatAPI {
      */
     public static Object toICBC(String json) {
         try {
-            if (json == null) {
-                return null;
-            }
-            return toICBC.invoke(null, json);
+            return json == null ? null : toICBC.invoke(null, json);
         } catch (Throwable e) {
-            SU.cs.sendMessage("§cError on converting JSON §f" + json + "§c to IChatBaseComponent.");
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Chat", "§cError on converting JSON §f" + json + "§c to IChatBaseComponent.");
+            debug.msg("Chat", e);
             return null;
         }
     }
@@ -170,7 +166,7 @@ public class ChatAPI {
             }
             return (String) fromICBC.invoke(null, icbc);
         } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Chat", e);
             return null;
         }
     }

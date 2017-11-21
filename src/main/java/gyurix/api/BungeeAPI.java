@@ -17,6 +17,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static gyurix.spigotlib.Config.debug;
+
 /**
  * Created by gyurix on 20/12/2015.
  */
@@ -527,8 +529,7 @@ public class BungeeAPI implements PluginMessageListener {
             ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
             String sub = in.readUTF();
             UUID uid = player.getUniqueId();
-            if (Config.debug)
-                System.out.println("Received plugin message from player " + player.getName() + ": " + sub + " " + new String(bytes));
+            debug.msg("Bungee", "Received plugin message from player " + player.getName() + ": " + sub + " " + new String(bytes));
             switch (sub) {
                 case "CommandExecution":
                     final Command[] commands = JsonAPI.deserialize(in.readUTF(), Command[].class);

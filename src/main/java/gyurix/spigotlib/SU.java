@@ -3,25 +3,37 @@ package gyurix.spigotlib;
 import gyurix.commands.CustomCommandMap;
 import gyurix.configfile.ConfigFile;
 import gyurix.mojang.MojangAPI;
-import gyurix.protocol.*;
+import gyurix.protocol.Protocol;
+import gyurix.protocol.Reflection;
 import gyurix.protocol.utils.GameProfile;
 import gyurix.spigotlib.Config.PlayerFile;
-import gyurix.spigotutils.*;
+import gyurix.spigotutils.BackendType;
+import gyurix.spigotutils.DualMap;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 import org.apache.commons.lang.StringUtils;
-import org.bukkit.*;
-import org.bukkit.command.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.Server;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.*;
-import org.bukkit.plugin.*;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginDescriptionFile;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.scheduler.BukkitScheduler;
 
 import javax.script.ScriptEngine;
-import java.io.*;
-import java.lang.reflect.*;
+import java.io.File;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -101,17 +113,14 @@ public final class SU {
      * True if Vault is found on the server
      */
     public static boolean vault;
+
+
     static Field pluginsF, lookupNamesF;
     private static Field entityF;
     private static Constructor entityPlayerC, playerInterractManagerC;
     private static Method getBukkitEntityM, loadDataM, saveDataM;
     private static Field pingF;
     private static Object worldServer, mcServer;
-
-    @Deprecated
-    public static int addItem(Inventory inv, ItemStack is, int maxStack) {
-        return ItemUtils.addItem(inv, is, maxStack);
-    }
 
     /**
      * Sends an error report to the given sender and to console. The report only includes the stack trace parts, which
@@ -175,11 +184,6 @@ public final class SU {
         for (Entry<String, Object> v : vars.entrySet())
             s = s.replace('<' + v.getKey() + '>', String.valueOf(v.getValue()));
         return s;
-    }
-
-    @Deprecated
-    public static ItemStack fillVariables(ItemStack is, Object... vars) {
-        return ItemUtils.fillVariables(is, vars);
     }
 
     /**
@@ -445,7 +449,7 @@ public final class SU {
 
             entityF = Reflection.getField(Reflection.getOBCClass("entity.CraftEntity"), "entity");
             pingF = Reflection.getNMSClass("EntityPlayer").getField("ping");
-            mcServer = mcServerClass.getMethod("getServer", new Class[0]).invoke(null);
+            mcServer = mcServerClass.getMethod("getServer").invoke(null);
             playerInterractManagerC = pIMClass.getConstructor(Reflection.getNMSClass("World"));
             worldServer = mcServerClass.getMethod("getWorldServer", Integer.TYPE).invoke(mcServer, 0);
             entityPlayerC = entityPlayerClass.getConstructor(mcServerClass, worldServerClass, Reflection.getUtilClass("com.mojang.authlib.GameProfile"), pIMClass);
@@ -454,24 +458,8 @@ public final class SU {
             saveDataM = craftPlayerClass.getMethod("saveData");
         } catch (Throwable e) {
             log(Main.pl, "§cError in initializing offline player manager.");
-            if (Config.debug)
-                error(cs, e, "SpigotLib", "gyurix");
+            error(cs, e, "SpigotLib", "gyurix");
         }
-    }
-
-    @Deprecated
-    public static boolean itemEqual(ItemStack item1, ItemStack item2) {
-        return ItemUtils.itemEqual(item1, item2);
-    }
-
-    @Deprecated
-    public static boolean itemSimiliar(ItemStack item1, ItemStack item2) {
-        return ItemUtils.itemSimilar(item1, item2);
-    }
-
-    @Deprecated
-    public static String itemToString(ItemStack in) {
-        return ItemUtils.itemToString(in);
     }
 
     /**
@@ -516,7 +504,11 @@ public final class SU {
      * @param msg - The message which should be logged
      */
     public static void log(Plugin pl, Object... msg) {
-        cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
+        String s = '[' + pl.getName() + "] " + StringUtils.join(msg, ", ");
+        if (cs != null)
+            cs.sendMessage(s);
+        else
+            System.out.println(s);
     }
 
     /**
@@ -527,16 +519,6 @@ public final class SU {
      */
     public static void log(Plugin pl, Iterable<Object>... msg) {
         cs.sendMessage('[' + pl.getName() + "] " + StringUtils.join(msg, ", "));
-    }
-
-    @Deprecated
-    public static ItemStack makeItem(Material type, String name, String... lore) {
-        return ItemUtils.makeItem(type, name, lore);
-    }
-
-    @Deprecated
-    public static ItemStack makeItem(Material type, int amount, short sub, String name, ArrayList<String> lore, Object... vars) {
-        return ItemUtils.makeItem(type, amount, sub, name, lore, vars);
     }
 
     /**
@@ -743,11 +725,6 @@ public final class SU {
                 out[i / lines] += "\n" + d[i];
         }
         return out;
-    }
-
-    @Deprecated
-    public static ItemStack stringToItemStack(String in) {
-        return ItemUtils.stringToItemStack(in);
     }
 
     /**

@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import static gyurix.spigotlib.Config.debug;
+
 public class GlobalLangFile {
     public static final HashMap<String, HashMap<String, String>> map = new HashMap<>();
 
@@ -28,8 +30,7 @@ public class GlobalLangFile {
                 if (msg != null) {
                     return msg;
                 }
-                if (Config.debug)
-                    SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from language " + lang + ". Using servers default language...");
+                debug.msg("Lang", "§cThe requested key (" + adr + ") is missing from language " + lang + ". Using servers default language...");
             }
             SU.log(Main.pl, "§cThe requested language (" + lang + ") is not available.");
         }
@@ -38,20 +39,19 @@ public class GlobalLangFile {
             if (msg != null) {
                 return msg;
             }
-            if (Config.debug)
-                SU.log(Main.pl, "§cThe requested key (" + adr + ") is missing from servers default language (" + Config.defaultLang + "). Trying to find it in any other language...");
+            debug.msg("Lang", "§cThe requested key (" + adr + ") is missing from servers default language (" + Config.defaultLang + "). Trying to find it in any other language...");
         }
         for (HashMap<String, String> l : map.values()) {
             String msg2 = l.get(adr);
             if (msg2 == null) continue;
             return msg2;
         }
-        SU.log(Main.pl, "§cThe requested key (" + adr + ") wasn't found in any language.");
+        debug.msg("Lang", "§cThe requested key (" + adr + ") wasn't found in any language.");
         return "§cNot found (§f" + lang + "." + adr + "§c)\\-T§ePlease try to remove the plugins lang.yml file. If the problem still appears, please contact the plugins dev.\\-S" + lang + "." + adr + " ";
     }
 
     private static void load(String[] data) {
-        String adr = ".en";
+        StringBuilder adr = new StringBuilder(".en");
         StringBuilder cs = new StringBuilder();
         int lvl = 0;
         int line = 0;
@@ -73,16 +73,16 @@ public class GlobalLangFile {
             put(adr.substring(1), cs.toString());
             cs.setLength(0);
             if (blockLvl == lvl + 2) {
-                adr = adr + "." + d[0];
+                adr.append(".").append(d[0]);
                 lvl += 2;
             } else if (blockLvl == lvl) {
-                adr = adr.substring(0, adr.lastIndexOf('.') + 1) + d[0];
+                adr = new StringBuilder(adr.substring(0, adr.toString().lastIndexOf('.') + 1) + d[0]);
             } else if (blockLvl < lvl && blockLvl % 2 == 0) {
                 while (blockLvl != lvl) {
                     lvl -= 2;
-                    adr = adr.substring(0, adr.lastIndexOf('.'));
+                    adr = new StringBuilder(adr.substring(0, adr.toString().lastIndexOf('.')));
                 }
-                adr = adr.substring(0, adr.lastIndexOf('.') + 1) + d[0];
+                adr = new StringBuilder(adr.substring(0, adr.toString().lastIndexOf('.') + 1) + d[0]);
             } else {
                 throw new RuntimeException("Block leveling error in line " + line + "!");
             }

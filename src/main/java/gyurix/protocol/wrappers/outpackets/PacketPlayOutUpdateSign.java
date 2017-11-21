@@ -2,7 +2,6 @@ package gyurix.protocol.wrappers.outpackets;
 
 import gyurix.chat.ChatTag;
 import gyurix.nbt.NBTCompound;
-import gyurix.nbt.NBTPrimitive;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.utils.BlockLocation;
@@ -11,6 +10,8 @@ import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotutils.ServerVersion;
 
 import java.lang.reflect.Array;
+
+import static gyurix.nbt.NBTTagType.tag;
 
 public class PacketPlayOutUpdateSign extends WrappedPacket {
     public BlockLocation block;
@@ -30,7 +31,7 @@ public class PacketPlayOutUpdateSign extends WrappedPacket {
         if (Reflection.ver.isAbove(ServerVersion.v1_9)) {
             NBTCompound nbt = new NBTCompound();
             for (int i = 0; i < 4; ++i)
-                nbt.map.put("Text" + (i + 1), new NBTPrimitive(lines[i].toString()));
+                nbt.put("Text" + (i + 1), tag(lines[i].toString()));
             PacketPlayOutTileEntityData packet = new PacketPlayOutTileEntityData(block, 9, nbt);
             return packet.getVanillaPacket();
         }

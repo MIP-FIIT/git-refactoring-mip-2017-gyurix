@@ -3,7 +3,6 @@ package gyurix.protocol.event;
 import com.google.common.collect.Lists;
 import gyurix.protocol.Reflection;
 import gyurix.protocol.wrappers.WrappedPacket;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
 
@@ -131,7 +130,7 @@ public enum PacketInType {
                     ff.set(packet, d);
                     fields.remove(f--);
                     break;
-                } catch (Throwable e) {
+                } catch (Throwable ignored) {
                 }
             }
         }

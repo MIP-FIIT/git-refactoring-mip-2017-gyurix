@@ -9,12 +9,12 @@ import gyurix.spigotlib.ChatAPI;
 import gyurix.spigotlib.ChatAPI.ChatMessageType;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.ItemUtils;
 import org.bukkit.*;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -88,6 +88,15 @@ public class Command implements StringSerializable {
                 Entity plr = (Entity) cs;
                 Location loc = plr.getLocation();
                 plr.getWorld().createExplosion(loc.getX(), loc.getY(), loc.getZ(), Float.valueOf(text), false, false);
+            }
+            return false;
+        });
+        customCommands.put("FIREWORK", (cs, text, args) -> {
+            if (cs instanceof Entity) {
+                Entity plr = (Entity) cs;
+                Location loc = plr.getLocation();
+                Firework fw = (Firework) plr.getWorld().spawnEntity(loc, EntityType.FIREWORK);
+                fw.setFireworkMeta((FireworkMeta) ItemUtils.stringToItemStack(text).getItemMeta());
             }
             return false;
         });
@@ -295,7 +304,7 @@ public class Command implements StringSerializable {
             if (cs instanceof Player) {
                 PlayerInventory pi = ((Player) cs).getInventory();
                 String[] d = text.split(" ", 2);
-                pi.setItem(Integer.valueOf(d[0]), SU.stringToItemStack(d[1]));
+                pi.setItem(Integer.valueOf(d[0]), ItemUtils.stringToItemStack(d[1]));
                 return true;
             }
             return false;

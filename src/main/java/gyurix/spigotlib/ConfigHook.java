@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 import static gyurix.api.VariableAPI.handlers;
-import static gyurix.configfile.ConfigSerialization.serializers;
+import static gyurix.configfile.ConfigSerialization.getSerializers;
 
 /**
  * Collection of custom config serializers and custom variable handlers used only on Spigot
@@ -38,6 +38,7 @@ public class ConfigHook {
      * Registers the custom serializers used only on Spigot
      */
     public static void registerSerializers() {
+        HashMap<Class, Serializer> serializers = getSerializers();
         serializers.put(SignConfig.class, new Serializer() {
             @Override
             public Object fromData(ConfigData cd, Class cl, Type... paramVarArgs) {

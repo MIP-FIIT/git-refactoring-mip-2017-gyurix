@@ -1,11 +1,14 @@
 package gyurix.configfile;
 
 import com.google.gson.internal.Primitives;
-import gyurix.configfile.ConfigSerialization.*;
+import gyurix.configfile.ConfigSerialization.ConfigOptions;
+import gyurix.configfile.ConfigSerialization.Serializer;
+import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.nbt.NBTTag;
 import gyurix.protocol.Reflection;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
+import gyurix.spigotutils.DualMap;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -18,35 +21,39 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import static gyurix.configfile.ConfigData.serializeObject;
-import static gyurix.configfile.ConfigSerialization.*;
 import static gyurix.protocol.Reflection.newInstance;
+import static gyurix.spigotlib.Config.debug;
 
 public class DefaultSerializers {
     static final Type[] emptyTypeArray = new Type[0];
     public static int leftPad;
 
     public static void init() {
+        HashMap<Class, Serializer> serializers = ConfigSerialization.getSerializers();
+        serializers.put(NBTTag.class, new NBTTag.NBTSerializer());
         serializers.put(String.class, new StringSerializer());
         serializers.put(Class.class, new ClassSerializer());
         serializers.put(UUID.class, new UUIDSerializer());
         serializers.put(ConfigData.class, new ConfigDataSerializer());
 
-        NumberSerializer numberSerializer = new NumberSerializer();
+        NumberSerializer numSerializer = new NumberSerializer();
         serializers.put(Array.class, new ArraySerializer());
         serializers.put(Boolean.class, new BooleanSerializer());
-        serializers.put(Byte.class, numberSerializer);
+        serializers.put(Byte.class, numSerializer);
         serializers.put(Character.class, new CharacterSerializer());
         serializers.put(Collection.class, new CollectionSerializer());
-        serializers.put(Double.class, numberSerializer);
-        serializers.put(Float.class, numberSerializer);
-        serializers.put(Integer.class, numberSerializer);
-        serializers.put(Long.class, numberSerializer);
+        serializers.put(Double.class, numSerializer);
+        serializers.put(Float.class, numSerializer);
+        serializers.put(Integer.class, numSerializer);
+        serializers.put(Long.class, numSerializer);
         serializers.put(Map.class, new MapSerializer());
+        serializers.put(NBTTag.class, new NBTTag.NBTSerializer());
         serializers.put(Object.class, new ObjectSerializer());
         serializers.put(Pattern.class, new PatternSerializer());
-        serializers.put(Short.class, numberSerializer);
+        serializers.put(Short.class, numSerializer);
         serializers.put(SimpleDateFormat.class, new SimpleDateFormatSerializer());
 
+        DualMap<Class, String> aliases = ConfigSerialization.getAliases();
         aliases.put(Array.class, "[]");
         aliases.put(Boolean.class, "bool");
         aliases.put(Byte.class, "b");
@@ -67,9 +74,15 @@ public class DefaultSerializers {
         aliases.put(TreeMap.class, "<T>");
         aliases.put(TreeSet.class, "{TS}");
         aliases.put(UUID.class, "uuid");
-        interfaceBasedClasses.put(List.class, ArrayList.class);
-        interfaceBasedClasses.put(Set.class, HashSet.class);
-        interfaceBasedClasses.put(Map.class, HashMap.class);
+
+        DualMap<Class, Class> ifbClasses = ConfigSerialization.getInterfaceBasedClasses();
+        ifbClasses.put(List.class, ArrayList.class);
+        ifbClasses.put(Set.class, HashSet.class);
+        ifbClasses.put(Map.class, HashMap.class);
+    }
+
+    public static boolean shouldSkip(Class cl) {
+        return cl == Class.class || cl.getName().startsWith("java.lang.reflect.") || cl.getName().startsWith("sun.");
     }
 
     public static class ArraySerializer implements Serializer {
@@ -362,13 +375,13 @@ public class DefaultSerializers {
                 String s = StringUtils.stripStart(input.stringData.replace(" ", ""), "0");
                 return m.invoke(null, s.isEmpty() ? "0" : s);
             } catch (Throwable e) {
-                System.out.println("INVALID NUMBER: " + fixClass.getName() + " - " + input);
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                debug.msg("Config", "INVALID NUMBER: " + fixClass.getName() + " - " + input);
+                debug.msg("Config", e);
                 try {
                     return m.invoke(null, "0");
                 } catch (Throwable e2) {
-                    System.out.println("Not a number class: " + fixClass.getSimpleName());
-                    SU.error(SU.cs, e, "SpigotLib", "gyurix");
+                    debug.msg("Config", "Not a number class: " + fixClass.getSimpleName());
+                    debug.msg("Config", e);
                 }
             }
             return null;
@@ -384,8 +397,8 @@ public class DefaultSerializers {
 
     public static class ObjectSerializer implements Serializer {
         public Object fromData(ConfigData input, Class fixClass, Type... parameters) {
-            if (Thread.currentThread().getStackTrace().length>50){
-                SU.cs.sendMessage("§ePossible infinite loop - "+fixClass.getName());
+            if (Thread.currentThread().getStackTrace().length > 50) {
+                SU.cs.sendMessage("§ePossible infinite loop - " + fixClass.getName());
                 return null;
             }
             ConfigOptions co = (ConfigOptions) fixClass.getAnnotation(ConfigOptions.class);
@@ -419,7 +432,7 @@ public class DefaultSerializers {
             for (Field f : Reflection.getAllFields(fixClass)) {
                 f.setAccessible(true);
                 try {
-                    if (f.getType() == Class.class || f.getType().getName().startsWith("java.lang.reflect."))
+                    if (shouldSkip(f.getType()))
                         continue;
                     String fn = f.getName();
                     ConfigData d = input.mapData.get(new ConfigData(fn));
@@ -448,8 +461,8 @@ public class DefaultSerializers {
         }
 
         public ConfigData toData(Object obj, Type... parameters) {
-            if (Thread.currentThread().getStackTrace().length>50){
-                SU.cs.sendMessage("§ePossible infinite loop - "+obj.getClass().getName());
+            if (Thread.currentThread().getStackTrace().length > 50) {
+                SU.cs.sendMessage("§ePossible infinite loop - " + obj.getClass().getName());
                 return null;
             }
             Class c = Primitives.wrap(obj.getClass());
@@ -485,12 +498,11 @@ public class DefaultSerializers {
                     if (o != null && !o.toString().matches(dffValue) && !((o instanceof Iterable) && !((Iterable) o).iterator().hasNext())) {
                         String cn = ConfigSerialization.calculateClassName(Primitives.wrap(f.getType()), o.getClass());
                         Class check = f.getType().isArray() ? f.getType().getComponentType() : f.getType();
-                        if (check == Class.class || check.getName().startsWith("java.lang.reflect."))
+                        if (shouldSkip(check))
                             continue;
                         String fn = f.getName();
                         Type t = f.getGenericType();
-                        if (Config.debug)
-                            SU.cs.sendMessage("§bSerialize object - §e" + o.getClass().getName());
+                        debug.msg("Config", "§bSerializing field §e" + f.getName() + "§b of class §e" + c.getName() + "§b having type §e" + o.getClass().getName());
                         ConfigData value = serializeObject(o, !cn.isEmpty(),
                                 t instanceof ParameterizedType ?
                                         ((ParameterizedType) t).getActualTypeArguments() :
@@ -500,7 +512,8 @@ public class DefaultSerializers {
                         value.compress = compress;
                         out.mapData.put(new ConfigData(fn, comment), value);
                     }
-                } catch (Throwable ignored) {
+                } catch (Throwable e) {
+                    debug.msg("Config", e);
                 }
             }
             return out;

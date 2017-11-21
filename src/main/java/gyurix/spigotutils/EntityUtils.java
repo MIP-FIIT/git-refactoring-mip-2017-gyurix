@@ -174,8 +174,8 @@ public class EntityUtils {
         if (ent == null)
             return false;
         NBTCompound nbt = NBTApi.getNbtData(ent);
-        NBTPrimitive noAI = (NBTPrimitive) nbt.map.get("NoAI");
-        return noAI != null && (int) noAI.data == 1;
+        NBTPrimitive noAI = (NBTPrimitive) nbt.get("NoAI");
+        return noAI != null && (int) noAI.getData() == 1;
     }
 
     /**

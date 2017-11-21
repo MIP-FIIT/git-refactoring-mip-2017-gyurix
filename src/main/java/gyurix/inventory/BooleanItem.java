@@ -1,7 +1,7 @@
 package gyurix.inventory;
 
 import gyurix.configfile.ConfigSerialization.StringSerializable;
-import gyurix.spigotlib.SU;
+import gyurix.spigotutils.ItemUtils;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -19,8 +19,8 @@ public class BooleanItem implements StringSerializable {
         String[] s = in.split(" ", 2);
         slot = Integer.valueOf(s[0]);
         String[] items = s[1].split("\n", 2);
-        yes = SU.stringToItemStack(items[0]);
-        no = SU.stringToItemStack(items[1]);
+        yes = ItemUtils.stringToItemStack(items[0]);
+        no = ItemUtils.stringToItemStack(items[1]);
     }
 
     public void set(Inventory inv, boolean value) {

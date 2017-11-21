@@ -2,23 +2,16 @@ package gyurix.json;
 
 import com.google.common.primitives.Primitives;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.configfile.DefaultSerializers;
 import gyurix.protocol.Reflection;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumMap;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 import static gyurix.protocol.Reflection.newInstance;
+import static gyurix.spigotlib.Config.debug;
 
 public class JsonAPI {
     public static final Type[] emptyTypeArray = new Type[0];
@@ -105,17 +98,17 @@ public class JsonAPI {
             try {
                 Field f = Reflection.getField(cl, "parent");
                 f.set(obj, parent);
-            } catch (Throwable e) {
+            } catch (Throwable ignored) {
             }
             try {
                 Field f = Reflection.getField(cl, "self");
                 f.set(obj, obj);
-            } catch (Throwable e) {
+            } catch (Throwable ignored) {
             }
             try {
                 Field f = Reflection.getField(cl, "instance");
                 f.set(obj, obj);
-            } catch (Throwable e) {
+            } catch (Throwable ignored) {
             }
             return obj;
         } else {
@@ -123,11 +116,11 @@ public class JsonAPI {
             String str = readString(in);
             try {
                 return Reflection.getConstructor(cl, String.class).newInstance(str);
-            } catch (Throwable e) {
+            } catch (Throwable ignored) {
             }
             try {
                 return Reflection.getMethod(cl, "valueOf", String.class).invoke(null, str);
-            } catch (Throwable e) {
+            } catch (Throwable ignored) {
             }
             try {
                 Method m = Reflection.getMethod(cl, "fromString", String.class);
@@ -149,10 +142,8 @@ public class JsonAPI {
         try {
             return (T) deserialize(null, sr, cl, params);
         } catch (Throwable e) {
-            if (Config.debug) {
-                SU.cs.sendMessage("§cFailed to deserialize JSON §e" + json + "§c to class §e" + cl.getName());
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            }
+            debug.msg("Json", "§cFailed to deserialize JSON §e" + json + "§c to class §e" + cl.getName());
+            debug.msg("Json", e);
             return null;
         }
     }
@@ -233,7 +224,7 @@ public class JsonAPI {
                 sb.append('}');
             }
         } else {
-            if (cl.getName().startsWith("java.") || cl.getName().startsWith("sun.") || cl.getName().startsWith("org.apache.")) {
+            if (DefaultSerializers.shouldSkip(cl)) {
                 sb.append('\"').append(escape(o.toString())).append('\"');
                 return;
             }
@@ -256,8 +247,7 @@ public class JsonAPI {
                     serialize(sb, fo);
                     sb.append(',');
                 } catch (Throwable e) {
-                    e.printStackTrace();
-                    //SU.cs.sendMessage("§eJsonAPI:§c Error on serializing §e" + f.getName() + "§c field in §e" + o.getClass().getName() + "§c class. Current JSON:\n§f" + sb);
+                    debug.msg("Json", e);
                 }
             }
             if (sb.charAt(sb.length() - 1) == ',') {
@@ -274,8 +264,8 @@ public class JsonAPI {
             serialize(sb, o);
             return sb.toString();
         } catch (Throwable e) {
-            System.err.println("JsonAPI: Error on serializing " + o.getClass().getName() + " object.");
-            e.printStackTrace();
+            debug.msg("Json", "Error on serializing " + o.getClass().getName() + " object.");
+            debug.msg("Json", e);
             return "{}";
         }
     }

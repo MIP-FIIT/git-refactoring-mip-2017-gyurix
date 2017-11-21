@@ -1,12 +1,12 @@
 package gyurix.mojang;
 
-import gyurix.spigotlib.Config;
-import gyurix.spigotlib.SU;
 import org.apache.commons.io.IOUtils;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
+
+import static gyurix.spigotlib.Config.debug;
 
 /**
  * Created by GyuriX on 2016. 06. 10..
@@ -18,8 +18,7 @@ public class WebApi {
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {
-            if (Config.debug)
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Web", e);
             return null;
         }
     }
@@ -33,8 +32,7 @@ public class WebApi {
             con.getOutputStream().write(req.getBytes(Charset.forName("UTF-8")));
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {
-            if (Config.debug)
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Web", e);
             return null;
         }
     }
@@ -50,8 +48,7 @@ public class WebApi {
             con.getOutputStream().write(req.getBytes(Charset.forName("UTF-8")));
             return IOUtils.toString(con.getInputStream(), Charset.forName("UTF-8"));
         } catch (Throwable e) {
-            if (Config.debug)
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Web", e);
             return null;
         }
     }

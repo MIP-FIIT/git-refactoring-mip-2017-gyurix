@@ -1,6 +1,5 @@
 package gyurix.protocol.utils;
 
-import gyurix.configfile.ConfigSerialization.StringSerializable;
 import gyurix.nbt.NBTCompound;
 import gyurix.nbt.NBTPrimitive;
 import gyurix.protocol.Reflection;
@@ -14,14 +13,22 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import static gyurix.protocol.Reflection.*;
+import static gyurix.configfile.ConfigSerialization.ConfigOptions;
+import static gyurix.nbt.NBTTagType.tag;
+import static gyurix.protocol.Reflection.getFieldData;
+import static gyurix.protocol.Reflection.getNMSClass;
 
-public class ItemStackWrapper implements WrappedData, StringSerializable {
-    public static final Constructor bukkitStack;
-    public static final Object cmnObj;
-    public static final Method createStack, getType, nmsCopy, saveStack, getItem, getID;
-    public static final Field itemName;
+public class ItemStackWrapper implements WrappedData {
+    @ConfigOptions(serialize = false)
     public static final HashMap<Integer, String> itemNames = new HashMap<>();
+    @ConfigOptions(serialize = false)
+    private static final Constructor bukkitStack;
+    @ConfigOptions(serialize = false)
+    private static final Object cmnObj;
+    @ConfigOptions(serialize = false)
+    private static final Method createStack, getType, nmsCopy, saveStack, getItem, getID;
+    @ConfigOptions(serialize = false)
+    private static final Field itemName;
 
     static {
         Class nms = getNMSClass("ItemStack");
@@ -57,21 +64,21 @@ public class ItemStackWrapper implements WrappedData, StringSerializable {
         loadFromBukkitStack(is);
     }
 
-    public byte getCount() {
-        return (byte) ((NBTPrimitive) nbtData.map.get("Count")).data;
-    }
-
     public ItemStackWrapper(Object vanillaStack) {
         loadFromVanillaStack(vanillaStack);
     }
 
+    public byte getCount() {
+        return (byte) ((NBTPrimitive) nbtData.get("Count")).getData();
+    }
+
     public void setCount(byte count) {
-        nbtData.map.put("Count", new NBTPrimitive(count));
+        nbtData.put("Count", tag(count));
     }
 
     public short getDamage() {
         try {
-            return (Short) ((NBTPrimitive) nbtData.map.get("Damage")).data;
+            return (Short) ((NBTPrimitive) nbtData.get("Damage")).getData();
         } catch (Throwable e) {
             e.printStackTrace();
             return 0;
@@ -79,29 +86,29 @@ public class ItemStackWrapper implements WrappedData, StringSerializable {
     }
 
     public void setDamage(short damage) {
-        nbtData.map.put("Damage", new NBTPrimitive(damage));
+        nbtData.put("Damage", tag(damage));
     }
 
     public String getId() {
-        if (nbtData.map.get("id") == null)
+        if (nbtData.get("id") == null)
             return "minecraft:air";
-        return (String) ((NBTPrimitive) nbtData.map.get("id")).data;
+        return (String) ((NBTPrimitive) nbtData.get("id")).getData();
     }
 
     public void setId(String newId) {
-        nbtData.map.put("id", new NBTPrimitive(newId));
+        nbtData.put("id", tag(newId));
+    }
+
+    public NBTCompound getMetaData() {
+        return nbtData.getCompound("tag");
     }
 
     public int getNumericId() {
         return getType().getId();
     }
 
-    public void setNumericId(int newId) {
-        try {
-            nbtData.map.put("id", new NBTPrimitive(itemNames.get(newId)));
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+    public boolean hasMetaData() {
+        return nbtData.containsKey("tag");
     }
 
     public Material getType() {
@@ -113,12 +120,24 @@ public class ItemStackWrapper implements WrappedData, StringSerializable {
         }
     }
 
+    public boolean isUnbreakable() {
+        return getMetaData().getBoolean("Unbreakable");
+    }
+
+    public void setUnbreakable(boolean unbreakable) {
+        if (unbreakable) {
+            getMetaData().put("Unbreakable", tag((byte) 1));
+        } else {
+            getMetaData().remove("Unbreakable");
+        }
+    }
+
     public void loadFromBukkitStack(ItemStack is) {
         try {
             if (is != null) {
                 Object nms = nmsCopy.invoke(null, is);
                 if (nms != null)
-                    nbtData.loadFromNMS(saveStack.invoke(nms, new NBTCompound().toNMS()));
+                    tag(saveStack.invoke(nms, new NBTCompound().toNMS()));
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -128,34 +147,22 @@ public class ItemStackWrapper implements WrappedData, StringSerializable {
     public void loadFromVanillaStack(Object is) {
         try {
             if (is != null)
-                nbtData.loadFromNMS(saveStack.invoke(is, new NBTCompound().toNMS()));
+                tag(saveStack.invoke(is, new NBTCompound().toNMS()));
         } catch (Throwable e) {
             e.printStackTrace();
         }
     }
 
-    public boolean hasMetaData() {
-        return nbtData.map.containsKey("tag");
-    }
-
-    public boolean isUnbreakable() {
-        return getMetaData().getBoolean("Unbreakable");
-    }
-
-    public NBTCompound getMetaData() {
-        return nbtData.getCompound("tag");
-    }
-
-    public void setUnbreakable(boolean unbreakable) {
-        if (unbreakable) {
-            getMetaData().map.put("Unbreakable", new NBTPrimitive(Byte.valueOf((byte) 1)));
-        } else {
-            getMetaData().map.remove("Unbreakable");
-        }
-    }
-
     public void removeMetaData() {
-        nbtData.map.remove("tag");
+        nbtData.remove("tag");
+    }
+
+    public void setNumericId(int newId) {
+        try {
+            nbtData.put("id", tag(itemNames.get(newId)));
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     public ItemStack toBukkitStack() {

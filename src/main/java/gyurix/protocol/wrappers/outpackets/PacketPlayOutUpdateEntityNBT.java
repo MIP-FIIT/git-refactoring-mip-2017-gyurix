@@ -1,6 +1,7 @@
 package gyurix.protocol.wrappers.outpackets;
 
 import gyurix.nbt.NBTCompound;
+import gyurix.nbt.NBTTagType;
 import gyurix.protocol.event.PacketOutType;
 import gyurix.protocol.wrappers.WrappedPacket;
 
@@ -23,6 +24,6 @@ public class PacketPlayOutUpdateEntityNBT extends WrappedPacket {
     public void loadVanillaPacket(Object obj) {
         Object[] data = PacketOutType.UpdateEntityNBT.getPacketData(obj);
         entityId = (int) data[0];
-        nbt = new NBTCompound(data[1]);
+        nbt = (NBTCompound) NBTTagType.tag(data[1]);
     }
 }

@@ -43,7 +43,7 @@ public final class AnimationAPI {
         effects.put("rainbow", RainbowEffect.class);
         for (String key : effects.keySet())
             VariableAPI.handlers.put(key, new CustomEffectHandler(key));
-        ConfigSerialization.serializers.put(Animation.class, new AnimationSerializer());
+        ConfigSerialization.getSerializers().put(Animation.class, new AnimationSerializer());
     }
 
     /**

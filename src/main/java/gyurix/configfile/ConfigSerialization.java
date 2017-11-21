@@ -10,16 +10,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Array;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 
 public class ConfigSerialization {
-    public static final DualMap<Class, String> aliases = new DualMap();
-    public static final DualMap<Class, Class> interfaceBasedClasses = new DualMap();
-    public static final HashMap<Class, Serializer> serializers = new HashMap();
-    public static ArrayList<String> errors = new ArrayList<>();
+    private static final DualMap<Class, String> aliases = new DualMap();
+    private static final DualMap<Class, Class> interfaceBasedClasses = new DualMap();
+    private static final HashMap<Class, Serializer> serializers = new HashMap();
+
+    static {
+        DefaultSerializers.init();
+    }
 
     public static String calculateClassName(Class type, Class objectClass) {
         if (!objectClass.getName().equals(type.getName())) {
@@ -45,6 +47,14 @@ public class ConfigSerialization {
             return c.getName();
         }
         return al;
+    }
+
+    public static DualMap<Class, String> getAliases() {
+        return aliases;
+    }
+
+    public static DualMap<Class, Class> getInterfaceBasedClasses() {
+        return interfaceBasedClasses;
     }
 
     public static Class getNotInterfaceClass(Class cl) {
@@ -73,6 +83,10 @@ public class ConfigSerialization {
             }
         }
         return serializers.get(Object.class);
+    }
+
+    public static HashMap<Class, Serializer> getSerializers() {
+        return serializers;
     }
 
     public static Class realClass(String alias) {

@@ -1,12 +1,16 @@
 package gyurix.economy;
 
 import gyurix.configfile.ConfigSerialization.ConfigOptions;
-import gyurix.spigotlib.*;
-import org.bukkit.*;
+import gyurix.spigotlib.SU;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.UUID;
+
+import static gyurix.spigotlib.Config.debug;
 
 public class EconomyAPI {
     public static HashMap<String, BalanceData> balanceTypes = new HashMap<>();
@@ -23,13 +27,26 @@ public class EconomyAPI {
             if (balanceType.equals("default"))
                 return addBalance(plr, balance);
             BigDecimal bd = getBalance(plr, balanceType).add(balance);
-            if (bd.compareTo(new BigDecimal(0)) < 0)
-                return false;
-            return setBalance(plr, balanceType, bd);
+            return bd.compareTo(new BigDecimal(0)) >= 0 && setBalance(plr, balanceType, bd);
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on adding " + balance + ' ' + balanceType + " balance to player " + plr + '.');
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on adding " + balance + ' ' + balanceType + " balance to player " + plr + '.');
+            debug.msg("Economy", e);
+            return false;
+        }
+    }
+
+    public static boolean addBalance(UUID plr, BigDecimal balance) {
+        try {
+            if (useVault()) {
+                if (balance.compareTo(new BigDecimal(0)) < 0)
+                    return SU.econ.withdrawPlayer(Bukkit.getOfflinePlayer(plr), -balance.doubleValue()).transactionSuccess();
+                return SU.econ.depositPlayer(Bukkit.getOfflinePlayer(plr), balance.doubleValue()).transactionSuccess();
+            }
+            BigDecimal bd = getBalance(plr).add(balance);
+            return bd.compareTo(new BigDecimal(0)) >= 0 && setBalance(plr, bd);
+        } catch (Throwable e) {
+            debug.msg("Economy", "§cError on adding " + balance + " default balance to player " + plr + '.');
+            debug.msg("Economy", e);
             return false;
         }
     }
@@ -53,9 +70,18 @@ public class EconomyAPI {
             }
             return bal;
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on getting " + balanceType + " balance of player " + plr);
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on getting " + balanceType + " balance of player " + plr);
+            debug.msg("Economy", e);
+            return new BigDecimal(0);
+        }
+    }
+
+    public static BigDecimal getBalance(UUID plr) {
+        try {
+            if (useVault())
+                return new BigDecimal(SU.econ.getBalance(Bukkit.getOfflinePlayer(plr)));
+            return SU.getPlayerConfig(plr).get("balance.default", BigDecimal.class);
+        } catch (Throwable e) {
             return new BigDecimal(0);
         }
     }
@@ -66,9 +92,8 @@ public class EconomyAPI {
                 return new BigDecimal(SU.econ.bankBalance(bank).balance);
             return SU.pf.get("bankbalance." + bank + ".default", BigDecimal.class);
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on getting default balance of bank " + bank);
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on getting default balance of bank " + bank);
+            debug.msg("Economy", e);
             return new BigDecimal(0);
         }
     }
@@ -79,9 +104,8 @@ public class EconomyAPI {
                 return new BigDecimal(SU.econ.bankBalance(bank).balance);
             return SU.pf.get("bankbalance." + bank + '.' + balanceType, BigDecimal.class);
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on getting " + balanceType + " balance of bank " + bank);
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on getting " + balanceType + " balance of bank " + bank);
+            debug.msg("Economy", e);
             return new BigDecimal(0);
         }
     }
@@ -95,76 +119,6 @@ public class EconomyAPI {
         }
         addBalance(receiver, balance);
         return true;
-    }
-
-    public static boolean addBalance(UUID plr, BigDecimal balance) {
-        try {
-            if (useVault()) {
-                if (balance.compareTo(new BigDecimal(0)) < 0)
-                    return SU.econ.withdrawPlayer(Bukkit.getOfflinePlayer(plr), -balance.doubleValue()).transactionSuccess();
-                return SU.econ.depositPlayer(Bukkit.getOfflinePlayer(plr), balance.doubleValue()).transactionSuccess();
-            }
-            BigDecimal bd = getBalance(plr).add(balance);
-            if (bd.compareTo(new BigDecimal(0)) < 0)
-                return false;
-            return setBalance(plr, bd);
-        } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on adding " + balance + " default balance to player " + plr + '.');
-            if (Config.debug)
-                e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static boolean useVault() {
-        return vaultHookType == VaultHookType.USER && SU.vault && SU.econ != null;
-    }
-
-    public static BigDecimal getBalance(UUID plr) {
-        try {
-            if (useVault())
-                return new BigDecimal(SU.econ.getBalance(Bukkit.getOfflinePlayer(plr)));
-            return SU.getPlayerConfig(plr).get("balance.default", BigDecimal.class);
-        } catch (Throwable e) {
-            return new BigDecimal(0);
-        }
-    }
-
-    public static boolean setBalance(UUID plr, BigDecimal balance) {
-        try {
-            BalanceUpdateEvent e = new BalanceUpdateEvent(plr, getBalance(plr), balance, balanceTypes.get("default"));
-            SU.pm.callEvent(e);
-            if (!e.isCancelled()) {
-                if (useVault())
-                    return vaultSet(plr, balance);
-                SU.getPlayerConfig(plr).setObject("balance.default", balance);
-                return true;
-            }
-        } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on setting default balance of player " + plr + " to " + balance);
-            if (Config.debug)
-                e.printStackTrace();
-        }
-        return false;
-    }
-
-    private static boolean vaultSet(UUID id, BigDecimal bal) {
-        try {
-            OfflinePlayer p = Bukkit.getOfflinePlayer(id);
-            double now = SU.econ.getBalance(p);
-            double dif = bal.doubleValue() - now;
-            if (dif > 0) {
-                return SU.econ.depositPlayer(p, dif).transactionSuccess();
-            } else if (dif < 0) {
-                return SU.econ.withdrawPlayer(p, 0 - dif).transactionSuccess();
-            }
-            return true;
-        } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on setting default balance of player " + id + " to " + bal + " in economy " + SU.econ.getName() + '.');
-            if (Config.debug)
-                e.printStackTrace();
-            return false;
-        }
     }
 
     public static boolean sendBalance(UUID sender, UUID receiver, String balanceType, BigDecimal balance) {
@@ -194,6 +148,23 @@ public class EconomyAPI {
         return true;
     }
 
+    public static boolean setBalance(UUID plr, BigDecimal balance) {
+        try {
+            BalanceUpdateEvent e = new BalanceUpdateEvent(plr, getBalance(plr), balance, balanceTypes.get("default"));
+            SU.pm.callEvent(e);
+            if (!e.isCancelled()) {
+                if (useVault())
+                    return vaultSet(plr, balance);
+                SU.getPlayerConfig(plr).setObject("balance.default", balance);
+                return true;
+            }
+        } catch (Throwable e) {
+            debug.msg("Economy", "§cError on setting default balance of player " + plr + " to " + balance);
+            debug.msg("Economy", e);
+        }
+        return false;
+    }
+
     public static boolean setBalance(UUID plr, String balanceType, BigDecimal balance) {
         try {
             if (balanceType.equals("default"))
@@ -205,9 +176,8 @@ public class EconomyAPI {
                 return true;
             }
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on setting " + balanceType + " balance of player " + plr + " to " + balance);
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on setting " + balanceType + " balance of player " + plr + " to " + balance);
+            debug.msg("Economy", e);
         }
         return false;
     }
@@ -224,9 +194,8 @@ public class EconomyAPI {
             }
             return false;
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on setting default balance of bank " + bank + " to " + balance);
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on setting default balance of bank " + bank + " to " + balance);
+            debug.msg("Economy", e);
             return false;
         }
     }
@@ -243,9 +212,30 @@ public class EconomyAPI {
             }
             return false;
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on setting " + balanceType + " balance of bank " + bank + " to " + balance);
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on setting " + balanceType + " balance of bank " + bank + " to " + balance);
+            debug.msg("Economy", e);
+            return false;
+        }
+    }
+
+    public static boolean useVault() {
+        return vaultHookType == VaultHookType.USER && SU.vault && SU.econ != null;
+    }
+
+    private static boolean vaultSet(UUID id, BigDecimal bal) {
+        try {
+            OfflinePlayer p = Bukkit.getOfflinePlayer(id);
+            double now = SU.econ.getBalance(p);
+            double dif = bal.doubleValue() - now;
+            if (dif > 0) {
+                return SU.econ.depositPlayer(p, dif).transactionSuccess();
+            } else if (dif < 0) {
+                return SU.econ.withdrawPlayer(p, 0 - dif).transactionSuccess();
+            }
+            return true;
+        } catch (Throwable e) {
+            debug.msg("Economy", "§cError on setting default balance of player " + id + " to " + bal + " in economy " + SU.econ.getName() + '.');
+            debug.msg("Economy", e);
             return false;
         }
     }
@@ -261,9 +251,8 @@ public class EconomyAPI {
             }
             return true;
         } catch (Throwable e) {
-            SU.cs.sendMessage("§a[EconomyAPI] §cError on setting default balance of bank " + bank + " to " + bal + " in economy " + SU.econ.getName() + '.');
-            if (Config.debug)
-                e.printStackTrace();
+            debug.msg("Economy", "§cError on setting default balance of bank " + bank + " to " + bal + " in economy " + SU.econ.getName() + '.');
+            debug.msg("Economy", e);
             return false;
         }
     }
@@ -308,18 +297,14 @@ public class EconomyAPI {
             BigDecimal b = new BigDecimal(1000_000_000L);
             BigDecimal m = new BigDecimal(1000_000L);
             BigDecimal k = new BigDecimal(1000L);
-            if (amount.compareTo(t) > -1) {
+            if (amount.compareTo(t) > -1)
                 return amount.divide(t, BigDecimal.ROUND_DOWN).longValue() + "T";
-            }
-            if (amount.compareTo(b) > -1) {
+            if (amount.compareTo(b) > -1)
                 return amount.divide(b, BigDecimal.ROUND_DOWN).longValue() + "B";
-            }
-            if (amount.compareTo(m) > -1) {
+            if (amount.compareTo(m) > -1)
                 return amount.divide(m, BigDecimal.ROUND_DOWN).longValue() + "M";
-            }
-            if (amount.compareTo(k) > -1) {
+            if (amount.compareTo(k) > -1)
                 return amount.divide(k, BigDecimal.ROUND_DOWN).longValue() + "K";
-            }
             return amount.toString();
         }
     }

@@ -1,32 +1,31 @@
 package gyurix.nbt;
 
-import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.configfile.ConfigData;
+import gyurix.configfile.ConfigSerialization;
 import gyurix.protocol.utils.WrappedData;
 import io.netty.buffer.ByteBuf;
 
-import java.util.Collection;
-import java.util.Map;
+import java.lang.reflect.Type;
 
-public abstract class NBTTag implements WrappedData, StringSerializable {
+public interface NBTTag extends WrappedData {
+    void write(ByteBuf buf);
 
-    public static NBTTag make(Object o) {
-        if (o instanceof NBTTag) {
-            return (NBTTag) o;
+    class NBTSerializer implements ConfigSerialization.Serializer {
+        @Override
+        public Object fromData(ConfigData data, Class paramClass, Type... paramVarArgs) {
+            String d[] = data.stringData.split(" ", 2);
+            data.stringData = d[1];
+            NBTTagType type = NBTTagType.values()[Integer.valueOf(d[0])];
+            return data.deserialize(type.getDataClass());
         }
-        if (o instanceof Collection) {
-            return new NBTList().addAll((Collection) o);
+
+        @Override
+        public ConfigData toData(Object obj, Type... paramVarArgs) {
+            Object o = obj instanceof NBTPrimitive ? ((NBTPrimitive) obj).getData() : obj;
+            ConfigData cd = ConfigData.serializeObject(o);
+            cd.stringData = NBTTagType.of(o).ordinal() + " " + cd.stringData;
+            return cd;
         }
-        if (o.getClass().isArray()) {
-            return new NBTList().addAll((Object[]) o);
-        }
-        if (o instanceof Map) {
-            return new NBTCompound().addAll((Map) o);
-        }
-        return new NBTPrimitive().setData(o);
     }
-
-    public abstract void loadFromNMS(Object var1);
-
-    public abstract void write(ByteBuf buf);
 }
 

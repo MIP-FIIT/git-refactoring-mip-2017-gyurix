@@ -327,7 +327,6 @@ public class ItemUtils {
         item2.setAmount(1);
         return itemToString(item1).equals(itemToString(item2));
     }
-
     /**
      * Converts an ItemStack to it's representing string
      *
@@ -624,7 +623,7 @@ public class ItemUtils {
             FireworkMeta bmeta = (FireworkMeta) meta;
             for (String[] s : remaining) {
                 try {
-                    if (s[0].equals("POWER")) {
+                    if (s[0].equals("FPOWER")) {
                         bmeta.setPower(Integer.valueOf(s[1]));
                     } else {
                         Type type = Type.valueOf(s[0]);

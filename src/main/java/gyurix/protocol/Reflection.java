@@ -1,7 +1,6 @@
 package gyurix.protocol;
 
 import com.google.common.primitives.Primitives;
-import gyurix.spigotlib.Config;
 import gyurix.spigotlib.SU;
 import gyurix.spigotutils.ServerVersion;
 import org.apache.commons.lang.ArrayUtils;
@@ -15,14 +14,14 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static gyurix.spigotlib.Config.debug;
 import static gyurix.spigotutils.ServerVersion.*;
 import static org.apache.commons.lang.ArrayUtils.EMPTY_CLASS_ARRAY;
 import static org.apache.commons.lang.ArrayUtils.EMPTY_OBJECT_ARRAY;
 
 public class Reflection {
-    public static final Map<Class, Field[]> allFieldCache = (Map) Collections.synchronizedMap(new WeakHashMap<>());
-    public static final ConcurrentHashMap<String, String> nmsRenames = new ConcurrentHashMap();
-    public static final String ra = "§4[§cReflectionAPI§4] §e";
+    private static final Map<Class, Field[]> allFieldCache = (Map) Collections.synchronizedMap(new WeakHashMap<>());
+    private static final ConcurrentHashMap<String, String> nmsRenames = new ConcurrentHashMap();
     public static final ReflectionFactory rf = ReflectionFactory.getReflectionFactory();
     /**
      * The version of the current server
@@ -75,22 +74,21 @@ public class Reflection {
             Constructor<T> con = to.getConstructor(String.class);
             con.setAccessible(true);
             return con.newInstance(inS);
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
         try {
             Method m = to.getMethod("valueOf", String.class);
             m.setAccessible(true);
             return (T) m.invoke(null, inS);
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
         try {
             Method m = to.getMethod("fromString", String.class);
             m.setAccessible(true);
             return (T) m.invoke(null, inS);
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
-        if (Config.debug)
-            SU.cs.sendMessage(ra + "§cFailed to convert §f" + in + "§e(§f" + in.getClass().getName() + "§e)§c to class §f" + to.getName() + "§c.");
+        debug.msg("Reflection", "§cFailed to convert §f" + in + "§e(§f" + in.getClass().getName() + "§e)§c to class §f" + to.getName() + "§c.");
         return null;
     }
 
@@ -124,11 +122,9 @@ public class Reflection {
             for (int i = 1; i < classNames.length; i++)
                 c = getInnerClass(c, classNames[i]);
             return c;
-        } catch (Throwable e) {
+        } catch (Throwable ignored) {
         }
-        if (Config.debug) {
-            SU.error(SU.cs, new Throwable("Class §f" + className + "§e was not found."), "SpigotLib", "gyurix");
-        }
+        debug.msg("Reflection", new Throwable("Class §f" + className + "§e was not found."));
         return null;
     }
 
@@ -145,8 +141,7 @@ public class Reflection {
             c.setAccessible(true);
             return c;
         } catch (Throwable e) {
-            if (Config.debug)
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Reflection", e);
         }
         return null;
     }
@@ -190,10 +185,8 @@ public class Reflection {
                 }
             }
         } catch (Throwable e) {
-            if (Config.debug) {
-                SU.cs.sendMessage(ra + "§cFailed to handle §f" + StringUtils.join(data, "§f.") + "§c request.");
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
-            }
+            debug.msg("Reflection", "§cFailed to handle §f" + StringUtils.join(data, "§f.") + "§c request.");
+            debug.msg("Reflection", e);
             return null;
         }
         return obj;
@@ -203,8 +196,7 @@ public class Reflection {
         try {
             return enumType.getMethod("valueOf", String.class).invoke(null, value);
         } catch (Throwable e) {
-            if (Config.debug)
-                SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Reflection", e);
             return null;
         }
     }
@@ -213,6 +205,7 @@ public class Reflection {
         try {
             return setFieldAccessible(clazz.getDeclaredField(name));
         } catch (Throwable e) {
+            debug.msg("Reflection", e);
             return null;
         }
     }
@@ -225,6 +218,7 @@ public class Reflection {
         try {
             return setFieldAccessible(clazz.getDeclaredField(name)).get(object);
         } catch (Throwable e) {
+            debug.msg("Reflection", e);
             return null;
         }
     }
@@ -236,7 +230,7 @@ public class Reflection {
                     return setFieldAccessible(f);
             }
         } catch (Throwable e) {
-            SU.error(SU.cs, e, "SpigotLib", "gyurix");
+            debug.msg("Reflection", e);
         }
         return null;
     }
@@ -248,7 +242,7 @@ public class Reflection {
                 if (c.getName().equals(name))
                     return c;
         } catch (Throwable e) {
-            e.printStackTrace();
+            debug.msg("Reflection", e);
         }
         return null;
     }
@@ -275,8 +269,7 @@ public class Reflection {
                 }
                 cl = cl.getSuperclass();
             }
-            if (Config.debug)
-                SU.cs.sendMessage(ra + "Method §f" + name + "§e with no parameters was not found in class §f" + originalClassName + "§e.");
+            debug.msg("Reflection", "Method §f" + name + "§e with no parameters was not found in class §f" + originalClassName + "§e.");
         } else {
             while (cl != null) {
                 Method m = methodCheck(cl, name, args);
@@ -287,11 +280,9 @@ public class Reflection {
                 cl = cl.getSuperclass();
             }
             StringBuilder sb = new StringBuilder();
-            for (Class c : args) {
+            for (Class c : args)
                 sb.append(", ").append(c.getName());
-            }
-            if (Config.debug)
-                SU.cs.sendMessage(ra + "Method §f" + name + "§e with parameters §f" + sb.substring(2) + "§e was not found in class §f" + originalClassName + "§e.");
+            debug.msg("Reflection", "Method §f" + name + "§e with parameters §f" + sb.substring(2) + "§e was not found in class §f" + originalClassName + "§e.");
         }
         return null;
     }
@@ -331,7 +322,7 @@ public class Reflection {
             }
             ocl = ocl.getSuperclass();
         }
-        SU.cs.sendMessage(ra + "§cFailed to get similiar method to §e" + name + "§c in class §e" + origCl.getName() + "§c.");
+        debug.msg("Reflection", "§cFailed to get similiar method to §e" + name + "§c in class §e" + origCl.getName() + "§c.");
         return null;
     }
 
@@ -417,12 +408,11 @@ public class Reflection {
             c.setAccessible(true);
             return c.newInstance(objs);
         } catch (NoSuchMethodException e) {
-            if (Config.debug) {
+            if (debug.isEnabled("Reflection")) {
                 StringBuilder sb = new StringBuilder();
-                for (Class c : classes) {
+                for (Class c : classes)
                     sb.append(", ").append(c.getName());
-                }
-                SU.cs.sendMessage(ra + "§eConstructor §f" + cl.getName() + "§e( §f" + sb + "§e ) was not found.");
+                debug.msg("Reflection", "§eConstructor §f" + cl.getName() + "§e( §f" + sb + "§e ) was not found.");
             }
         } catch (Throwable e) {
             SU.error(SU.cs, e, "SpigotLib", "gyurix");
@@ -457,6 +447,7 @@ public class Reflection {
             modifiersField.setInt(f, modifiers & -17);
             return f;
         } catch (Throwable e) {
+            SU.error(SU.cs, e, "SpigotLib", "gyurix");
         }
         return null;
     }
