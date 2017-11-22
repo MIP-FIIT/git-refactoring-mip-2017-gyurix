@@ -24,7 +24,7 @@ import static gyurix.spigotlib.Config.debug;
  * <a href=https://www.spigotmc.org/wiki/bukkit-bungee-plugin-messaging-channel/>Spigot - Bungee communication protocol</a>
  */
 public class BungeeAPI implements PluginMessageListener {
-    public static boolean enabled, schedulePacketAPI;
+    public static boolean enabled;
     private static HashMap<UUID, String> ips = new HashMap<>();
     private static HashMap<String, Integer> playerCounts = new HashMap<>();
     private static HashMap<String, String[]> players = new HashMap<>();
