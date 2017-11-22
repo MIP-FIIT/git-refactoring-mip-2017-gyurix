@@ -49,9 +49,8 @@ public class TabAPI {
         Object headerComponent = toICBC(TextToJson(header));
         Object footerComponent = toICBC(TextToJson(footer));
         Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
-        for (Player p : plrs) {
+        for (Player p : plrs)
             SU.tp.sendPacket(p, packet);
-        }
     }
 }
 
