@@ -65,59 +65,35 @@ public class BungeeAPI implements PluginMessageListener {
 
     public static boolean forwardToAllServer(String channel, byte[] message) {
         Player p = getAnyPlayer();
-        if (p == null) return false;
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Forward");
-        out.writeUTF("ALL");
-        out.writeUTF(channel);
-        out.writeShort(message.length);
-        out.write(message);
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
+        if (p == null || message == null)
+            return false;
+        p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData("ALL", channel, true, message));
         return true;
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, String... players) {
         Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ForwardToPlayer");
-            out.writeUTF(s);
-            out.writeUTF(channel);
-            out.writeShort(message.length);
-            out.write(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (p == null || players.length == 0 || message == null)
+            return false;
+        for (String s : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData(s, channel, false, message));
         return true;
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, Iterable<String> players) {
         Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ForwardToPlayer");
-            out.writeUTF(s);
-            out.writeUTF(channel);
-            out.writeShort(message.length);
-            out.write(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (p == null || !players.iterator().hasNext() || message == null)
+            return false;
+        players.forEach((s) -> p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData(s, channel, false, message)));
         return true;
     }
 
     public static boolean forwardToServer(String channel, byte[] message, String... servers) {
         Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Forward");
-            out.writeUTF(s);
-            out.writeUTF(channel);
-            out.writeShort(message.length);
-            out.write(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (p == null || servers.length == 0 || message == null)
+            return false;
+        for (String s : servers)
+            p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData(s, channel, false, message));
         return true;
     }
 
@@ -190,6 +166,25 @@ public class BungeeAPI implements PluginMessageListener {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         for (String element : data)
             out.writeUTF(element);
+        return out.toByteArray();
+    }
+
+    /**
+     * Creates the data for forwarding a message
+     *
+     * @param channel    - Receivers channel
+     * @param serverMode - true if the receiver should be a server, false if it should be a player
+     * @param receiver   - Receivers name
+     * @param message    - The message which should be forwarded
+     * @return The data required for forwarding
+     */
+    private static byte[] makeForwardingData(String receiver, String channel, boolean serverMode, byte[] message) {
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        out.writeUTF(serverMode ? "Forward" : "ForwardToPlayer");
+        out.writeUTF(receiver);
+        out.writeUTF(channel);
+        out.writeShort(message.length);
+        out.write(message);
         return out.toByteArray();
     }
 
@@ -335,25 +330,6 @@ public class BungeeAPI implements PluginMessageListener {
             return false;
         p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut(msg));
         return true;
-    }
-
-    /**
-     * Creates the data for forwarding a message
-     *
-     * @param channel    - Receivers channel
-     * @param serverMode - true if the receiver should be a server, false if it should be a player
-     * @param receiver   - Receivers name
-     * @param message    - The message which should be forwarded
-     * @return The data required for forwarding
-     */
-    private static byte[] makeForwardingData(String receiver, String channel, boolean serverMode, byte[] message) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF(serverMode ? "Forward" : "ForwardToPlayer");
-        out.writeUTF(receiver);
-        out.writeUTF(channel);
-        out.writeShort(message.length);
-        out.write(message);
-        return out.toByteArray();
     }
 
     public static String[] serverNames() {
