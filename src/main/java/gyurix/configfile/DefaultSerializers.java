@@ -4,6 +4,8 @@ import com.google.gson.internal.Primitives;
 import gyurix.configfile.ConfigSerialization.ConfigOptions;
 import gyurix.configfile.ConfigSerialization.Serializer;
 import gyurix.configfile.ConfigSerialization.StringSerializable;
+import gyurix.nbt.NBTCompound;
+import gyurix.nbt.NBTList;
 import gyurix.nbt.NBTTag;
 import gyurix.protocol.Reflection;
 import gyurix.spigotlib.Main;
@@ -30,7 +32,8 @@ public class DefaultSerializers {
 
     public static void init() {
         HashMap<Class, Serializer> serializers = ConfigSerialization.getSerializers();
-        serializers.put(NBTTag.class, new NBTTag.NBTSerializer());
+        NBTTag.NBTSerializer nbtSerializer = new NBTTag.NBTSerializer();
+        serializers.put(NBTTag.class, nbtSerializer);
         serializers.put(String.class, new StringSerializer());
         serializers.put(Class.class, new ClassSerializer());
         serializers.put(UUID.class, new UUIDSerializer());
@@ -42,12 +45,13 @@ public class DefaultSerializers {
         serializers.put(Byte.class, numSerializer);
         serializers.put(Character.class, new CharacterSerializer());
         serializers.put(Collection.class, new CollectionSerializer());
+        serializers.put(NBTList.class, new CollectionSerializer(NBTTag.class, nbtSerializer));
         serializers.put(Double.class, numSerializer);
         serializers.put(Float.class, numSerializer);
         serializers.put(Integer.class, numSerializer);
         serializers.put(Long.class, numSerializer);
         serializers.put(Map.class, new MapSerializer());
-        serializers.put(NBTTag.class, new NBTTag.NBTSerializer());
+        serializers.put(NBTCompound.class, new MapSerializer(String.class, NBTTag.class, nbtSerializer));
         serializers.put(Object.class, new ObjectSerializer());
         serializers.put(Pattern.class, new PatternSerializer());
         serializers.put(Short.class, numSerializer);
@@ -176,13 +180,25 @@ public class DefaultSerializers {
     }
 
     public static class CollectionSerializer implements Serializer {
+        private Serializer childSerializer;
+        private Class defaultKeyClass;
+
+        public CollectionSerializer() {
+            defaultKeyClass = Object.class;
+        }
+
+        public CollectionSerializer(Class<NBTTag> defaultKeyClass, Serializer childSerializer) {
+            this.defaultKeyClass = defaultKeyClass;
+            this.childSerializer = childSerializer;
+        }
+
         public Object fromData(ConfigData input, Class fixClass, Type... parameterTypes) {
             try {
                 Collection col = (Collection) fixClass.newInstance();
                 Class cl;
                 Type[] types;
                 ParameterizedType pt;
-                cl = Object.class;
+                cl = defaultKeyClass;
                 types = emptyTypeArray;
                 if (parameterTypes.length >= 1) {
                     if (parameterTypes[0] instanceof ParameterizedType) {
@@ -211,14 +227,14 @@ public class DefaultSerializers {
 
         public ConfigData toData(Object input, Type... parameters) {
             Type[] types = emptyTypeArray;
-            Class cl = Object.class;
+            Class keyClass = defaultKeyClass;
             if (parameters.length >= 1) {
                 if (parameters[0] instanceof ParameterizedType) {
                     ParameterizedType key = (ParameterizedType) parameters[0];
                     types = key.getActualTypeArguments();
-                    cl = (Class) key.getRawType();
+                    keyClass = (Class) key.getRawType();
                 } else {
-                    cl = (Class) parameters[0];
+                    keyClass = (Class) parameters[0];
                 }
             }
             if (((Collection) input).isEmpty())
@@ -226,8 +242,8 @@ public class DefaultSerializers {
             ConfigData d = new ConfigData();
             d.listData = new ArrayList<>();
             for (Object o : (Collection) input)
-                d.listData.add(serializeObject(o, o.getClass() != cl, types));
-            return d;
+                d.listData.add(serializeObject(o, o.getClass() != keyClass, types));
+            return childSerializer == null ? d : childSerializer.postSerialize(input, d);
         }
     }
 
@@ -242,6 +258,20 @@ public class DefaultSerializers {
     }
 
     public static class MapSerializer implements Serializer {
+        private Serializer child;
+        private Class defaultKeyClass, defaultValueClass;
+
+        public MapSerializer() {
+            this.defaultKeyClass = Object.class;
+            this.defaultValueClass = Object.class;
+        }
+
+        public MapSerializer(Class defaultKeyClass, Class defaultValueClass, Serializer child) {
+            this.defaultKeyClass = defaultKeyClass;
+            this.defaultValueClass = defaultValueClass;
+            this.child = child;
+        }
+
         public Object fromData(ConfigData input, Class fixClass, Type... parameterTypes) {
             try {
                 Map map;
@@ -255,7 +285,7 @@ public class DefaultSerializers {
                 Type[] valueTypes;
                 ParameterizedType pt;
                 if (input.mapData != null) {
-                    keyClass = Object.class;
+                    keyClass = defaultKeyClass;
                     keyTypes = emptyTypeArray;
                     if (parameterTypes.length >= 1) {
                         if (parameterTypes[0] instanceof ParameterizedType) {
@@ -267,7 +297,7 @@ public class DefaultSerializers {
                         }
                     }
                     boolean dynamicValueCl = ValueClassSelector.class.isAssignableFrom(keyClass);
-                    valueClass = Object.class;
+                    valueClass = defaultValueClass;
                     valueTypes = emptyTypeArray;
                     if (!dynamicValueCl && parameterTypes.length >= 2) {
                         if (parameterTypes[1] instanceof ParameterizedType) {
@@ -293,7 +323,7 @@ public class DefaultSerializers {
                             try {
                                 map.put(e.getKey().deserialize(keyClass, keyTypes), e.getValue().deserialize(valueClass, valueTypes));
                             } catch (Throwable err) {
-                                SU.cs.sendMessage("§cMap element deserialization error:\n§eKey = §f" + e.getKey() + "§e; Value = §f" + e.getValue());
+                                SU.log(Main.pl, "§cMap element deserialization error:\n§eKey = §f" + e.getKey() + "§e; Value = §f" + e.getValue());
                                 SU.error(SU.cs, err, "SpigotLib", "gyurix");
                             }
                         }
@@ -312,8 +342,8 @@ public class DefaultSerializers {
             try {
                 if (((Map) input).isEmpty())
                     return new ConfigData();
-                Class keyClass = Object.class;
-                Class valueClass = Object.class;
+                Class keyClass = defaultKeyClass;
+                Class valueClass = defaultValueClass;
                 Type[] keyTypes = emptyTypeArray;
                 Type[] valueTypes = emptyTypeArray;
                 if (parameters.length >= 1) {
@@ -345,7 +375,7 @@ public class DefaultSerializers {
                         d.mapData.put(serializeObject(key, key.getClass() != keyClass, keyTypes),
                                 serializeObject(value, !valueClassSelector && value.getClass() != valueClass, valueTypes));
                 }
-                return d;
+                return child == null ? d : child.postSerialize(input, d);
             } catch (Throwable e) {
                 e.printStackTrace();
                 return null;
