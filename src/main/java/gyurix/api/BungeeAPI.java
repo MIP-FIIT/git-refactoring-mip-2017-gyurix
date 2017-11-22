@@ -47,6 +47,15 @@ public class BungeeAPI implements PluginMessageListener {
             throw new RuntimeException("BungeeAPI is not enabled, please enable it in SpigotLib config");
     }
 
+    /**
+     * Returns a Player whose plugin messaging channel can be used for Spigot - Bungee communication.
+     *
+     * @return The first Player found in the online player list or null if there are no online players
+     */
+    private static Player getAnyPlayer() {
+        return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
+    }
+
     public static boolean executeBungeeCommands(String[] commands, String... players) {
         String json = serialize(commands);
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
