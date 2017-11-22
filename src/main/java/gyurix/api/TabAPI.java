@@ -24,6 +24,13 @@ public class TabAPI {
         setLocalHeaderFooter(header, footer, Bukkit.getOnlinePlayers());
     }
 
+    /**
+     * Sets the player list header and footer for the given collection of players
+     *
+     * @param header - The new header
+     * @param footer - The new footer
+     * @param plrs   - Target players
+     */
     public static void setLocalHeaderFooter(String header, String footer, Collection<? extends Player> plrs) {
         Object h = toICBC(TextToJson(header));
         Object f = toICBC(TextToJson(footer));
@@ -33,6 +40,13 @@ public class TabAPI {
         }
     }
 
+    /**
+     * Sets the player list header and footer for the given players
+     *
+     * @param header - The new header
+     * @param footer - The new footer
+     * @param plrs   - Target players
+     */
     public static void setLocalHeaderFooter(String header, String footer, Player... plrs) {
         Object h = toICBC(TextToJson(header));
         Object f = toICBC(TextToJson(footer));
