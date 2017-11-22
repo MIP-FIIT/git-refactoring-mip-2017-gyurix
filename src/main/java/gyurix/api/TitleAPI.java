@@ -149,8 +149,11 @@ public class TitleAPI {
     }
 
     /**
-     * @param title
-     * @param players
+     * Sets the title of the given collection of players and shows the title message.
+     * Make sure to set the subtitle and the title timings before using this method.
+     *
+     * @param title   - The showable title message
+     * @param players - Receivers of the title message
      */
     public static void setTitle(String title, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
@@ -158,8 +161,11 @@ public class TitleAPI {
     }
 
     /**
-     * @param title
-     * @param players
+     * Sets the title of the given players and shows the title message.
+     * Make sure to set the subtitle and the title timings before using this method.
+     *
+     * @param title   - The showable title message
+     * @param players - Receivers of the title message
      */
     public static void setTitle(String title, Player... players) {
         Object packet = new PacketPlayOutTitle(TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
