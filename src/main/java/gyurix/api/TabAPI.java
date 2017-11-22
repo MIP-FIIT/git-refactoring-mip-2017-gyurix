@@ -1,14 +1,14 @@
 package gyurix.api;
 
-import gyurix.protocol.event.PacketOutType;
-import gyurix.spigotlib.SU;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
 
+import static gyurix.protocol.event.PacketOutType.PlayerListHeaderFooter;
 import static gyurix.spigotlib.ChatAPI.TextToJson;
 import static gyurix.spigotlib.ChatAPI.toICBC;
+import static gyurix.spigotlib.SU.tp;
 
 /**
  * TabAPI - Used for setting global and local player list headers and footers
@@ -34,8 +34,8 @@ public class TabAPI {
     public static void setLocalHeaderFooter(String header, String footer, Collection<? extends Player> plrs) {
         Object headerComponent = toICBC(TextToJson(header));
         Object footerComponent = toICBC(TextToJson(footer));
-        Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
-        plrs.forEach((p) -> SU.tp.sendPacket(p, packet));
+        Object packet = PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
+        plrs.forEach((p) -> tp.sendPacket(p, packet));
     }
 
     /**
@@ -48,9 +48,9 @@ public class TabAPI {
     public static void setLocalHeaderFooter(String header, String footer, Player... plrs) {
         Object headerComponent = toICBC(TextToJson(header));
         Object footerComponent = toICBC(TextToJson(footer));
-        Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
+        Object packet = PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
         for (Player p : plrs)
-            SU.tp.sendPacket(p, packet);
+            tp.sendPacket(p, packet);
     }
 }
 
