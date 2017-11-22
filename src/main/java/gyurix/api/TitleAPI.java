@@ -51,9 +51,8 @@ public class TitleAPI {
      */
     public static void reset(Player... players) {
         Object packet = new PacketPlayOutTitle(RESET, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : players) {
+        for (Player p : players)
             tp.sendPacket(p, packet);
-        }
     }
 
     /**
@@ -92,9 +91,8 @@ public class TitleAPI {
      */
     public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TIMES, null, fadein, show, fadeout).getVanillaPacket();
-        for (Player p : players) {
+        for (Player p : players)
             tp.sendPacket(p, packet);
-        }
     }
 
     /**
@@ -105,9 +103,8 @@ public class TitleAPI {
      */
     public static void setShowTime(int fadein, int show, int fadeout, Player... players) {
         Object packet = new PacketPlayOutTitle(TIMES, null, fadein, show, fadeout).getVanillaPacket();
-        for (Player p : players) {
+        for (Player p : players)
             tp.sendPacket(p, packet);
-        }
     }
 
     /**
@@ -116,9 +113,8 @@ public class TitleAPI {
      */
     public static void setSubTitle(String subtitle, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
-        for (Player p : players) {
+        for (Player p : players)
             tp.sendPacket(p, packet);
-        }
     }
 
     /**
@@ -127,9 +123,8 @@ public class TitleAPI {
      */
     public static void setSubTitle(String subtitle, Player... players) {
         Object packet = new PacketPlayOutTitle(SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
-        for (Player p : players) {
+        for (Player p : players)
             tp.sendPacket(p, packet);
-        }
     }
 
     /**
@@ -147,9 +142,8 @@ public class TitleAPI {
      */
     public static void setTitle(String title, Player... players) {
         Object packet = new PacketPlayOutTitle(TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
-        for (Player p : players) {
+        for (Player p : players)
             tp.sendPacket(p, packet);
-        }
     }
 }
 
