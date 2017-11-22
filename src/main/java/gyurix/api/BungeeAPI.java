@@ -139,16 +139,16 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * Creates a ByteArrayDataOutput from the given data
+     * Creates a ByteArrayDataOutput from the given data and converts it to byte array
      *
      * @param data - The data which should be written to the ByteArrayDataOutput
-     * @return The created ByteArrayDataOutput
+     * @return The created ByteArrayDataOutput converted to byte array
      */
-    private static ByteArrayDataOutput makeDataOut(String... data) {
+    private static byte[] makeDataOut(String... data) {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         for (String element : data)
             out.writeUTF(element);
-        return out;
+        return out.toByteArray();
     }
 
     public static String getIp(Player plr) {
