@@ -39,7 +39,7 @@ public class TitleAPI {
     /**
      * Resets the title message of the given collection of players
      *
-     * @param players
+     * @param players - The players whose title bar should be reset
      */
     public static void reset(Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(RESET, null, 0, 0, 0).getVanillaPacket();
@@ -47,7 +47,9 @@ public class TitleAPI {
     }
 
     /**
-     * @param players
+     * Resets the title message of the given players
+     *
+     * @param players - The players whose title bar should be reset
      */
     public static void reset(Player... players) {
         Object packet = new PacketPlayOutTitle(RESET, null, 0, 0, 0).getVanillaPacket();
