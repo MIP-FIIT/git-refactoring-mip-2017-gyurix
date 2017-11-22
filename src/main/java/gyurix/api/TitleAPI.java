@@ -119,10 +119,13 @@ public class TitleAPI {
     }
 
     /**
+     * Sets the subtitle of the given collection of players.
+     * Subtitle will only become visible when the title is shown using the set title method.
+     * If you only want to show a subtitle without any title, you should call the setTitle method
+     * with empty String passed as title argument
      *
-     *
-     * @param subtitle
-     * @param players
+     * @param subtitle - The new subtitle of the title message
+     * @param players  - Players whose subtitle should be changed
      */
     public static void setSubTitle(String subtitle, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
@@ -131,8 +134,13 @@ public class TitleAPI {
     }
 
     /**
-     * @param subtitle
-     * @param players
+     * Sets the subtitle of the given players.
+     * Subtitle will only become visible when the title is shown using the set title method.
+     * If you only want to show a subtitle without any title, you should call the setTitle method
+     * with empty String passed as title argument
+     *
+     * @param subtitle - The new subtitle of the title message
+     * @param players  - Players whose subtitle should be changed
      */
     public static void setSubTitle(String subtitle, Player... players) {
         Object packet = new PacketPlayOutTitle(SUBTITLE, ChatTag.fromColoredText(subtitle), 0, 0, 0).getVanillaPacket();
