@@ -189,9 +189,8 @@ public class BungeeAPI implements PluginMessageListener {
     public static boolean kick(String message, String... players) {
         Player p = getAnyPlayer();
         if (p == null) return false;
-        for (String s : players) {
+        for (String s : players)
             p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut("KickPlayer", s, message));
-        }
         return true;
     }
 
