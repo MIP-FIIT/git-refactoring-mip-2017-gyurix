@@ -8,6 +8,9 @@ import gyurix.json.JsonAPI;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -36,6 +39,15 @@ public class BungeeAPI implements PluginMessageListener {
     private static HashMap<String, Short> serverPorts = new HashMap<>();
     private static String[] servers = new String[0];
     private static HashMap<String, UUID> uuids = new HashMap<>();
+
+    @Getter
+    @Setter(AccessLevel.PRIVATE)
+    public static class ServerInfo {
+        private String name, ip;
+        private int playerCount;
+        private String[] players;
+        private short port;
+    }
 
     /**
      * Checks if the BungeeAPI is enabled in the config, if it's not, then throws an exception
