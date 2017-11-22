@@ -421,33 +421,26 @@ public class BungeeAPI implements PluginMessageListener {
 
     public static boolean start() {
         checkEnabled();
-        if (Config.BungeeAPI.servers > 0) {
+        if (Config.BungeeAPI.servers > 0)
             RunnableIDS.serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
-        }
-        if (Config.BungeeAPI.currentServerName > 0) {
+        if (Config.BungeeAPI.currentServerName > 0)
             RunnableIDS.currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
-        }
-        if (Config.BungeeAPI.playerCount > 0) {
+        if (Config.BungeeAPI.playerCount > 0)
             RunnableIDS.playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
                 requestPlayerCount(servers);
                 requestPlayerCount("ALL");
             }, 2, Config.BungeeAPI.playerCount);
-        }
-        if (Config.BungeeAPI.playerList > 0) {
+        if (Config.BungeeAPI.playerList > 0)
             RunnableIDS.playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
                 requestPlayerList(servers);
                 requestPlayerList("ALL");
             }, 2, Config.BungeeAPI.playerList);
-        }
-        if (Config.BungeeAPI.uuidAll > 0) {
+        if (Config.BungeeAPI.uuidAll > 0)
             RunnableIDS.uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
-        }
-        if (Config.BungeeAPI.serverIP > 0) {
+        if (Config.BungeeAPI.serverIP > 0)
             RunnableIDS.serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestServerIP(servers), 4, Config.BungeeAPI.serverIP);
-        }
-        if (Config.BungeeAPI.ipOnJoin) {
+        if (Config.BungeeAPI.ipOnJoin)
             SU.sch.scheduleSyncDelayedTask(Main.pl, () -> requestIP((Collection<Player>) Bukkit.getOnlinePlayers()), 4);
-        }
         return true;
     }
 
