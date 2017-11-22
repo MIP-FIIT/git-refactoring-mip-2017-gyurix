@@ -338,6 +338,7 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static String[] serverNames() {
+        checkEnabled();
         return servers;
     }
 
