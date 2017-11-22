@@ -14,6 +14,12 @@ import static gyurix.spigotlib.ChatAPI.toICBC;
  * TabAPI - Used for setting global and local tab headers and footers
  */
 public class TabAPI {
+    /**
+     * Sets the player list header and footer for every online player
+     *
+     * @param header - The new header
+     * @param footer - The new footer
+     */
     public static void setGlobalHeaderFooter(String header, String footer) {
         setLocalHeaderFooter(header, footer, Bukkit.getOnlinePlayers());
     }
