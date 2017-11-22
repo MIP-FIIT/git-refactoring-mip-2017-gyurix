@@ -35,6 +35,16 @@ public class BungeeAPI implements PluginMessageListener {
     private static String[] servers = new String[0];
     private static HashMap<String, UUID> uuids = new HashMap<>();
 
+    /**
+     * Checks if the BungeeAPI is enabled in the config, if it's not, then throws an exception
+     *
+     * @throws RuntimeException - If the BungeeAPI is not enabled
+     */
+    private static void checkEnabled() {
+        if (!enabled)
+            throw new RuntimeException("BungeeAPI is not enabled, please enable it in SpigotLib config");
+    }
+
     public static boolean executeBungeeCommands(String[] commands, String... players) {
         if (!enabled)
             return false;
