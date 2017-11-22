@@ -151,6 +151,19 @@ public class BungeeAPI implements PluginMessageListener {
         return out.toByteArray();
     }
 
+    /**
+     * Sends the given message to the Bungee using the messaging channel of the first found player on the server.
+     *
+     * @param msg - The sendable message
+     * @return true - If the message was sent, false otherwise
+     */
+    public static boolean sendMessageToBungee(String... msg) {
+        Player p = getAnyPlayer();
+        if (p == null)
+            return false;
+        p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut(msg));
+    }
+
     public static String getIp(Player plr) {
         checkEnabled();
         return ips.get(plr.getUniqueId());
