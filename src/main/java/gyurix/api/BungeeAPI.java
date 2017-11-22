@@ -169,7 +169,7 @@ public class BungeeAPI implements PluginMessageListener {
         if (message == null || players.length == 0 || getAnyPlayer() == null)
             return false;
         for (String s : players)
-            sendMessageToBungee("KickPlayer", s, message)
+            sendMessageToBungee("KickPlayer", s, message);
         return true;
     }
 
