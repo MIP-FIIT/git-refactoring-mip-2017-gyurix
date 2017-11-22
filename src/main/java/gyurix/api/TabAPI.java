@@ -11,7 +11,7 @@ import static gyurix.spigotlib.ChatAPI.TextToJson;
 import static gyurix.spigotlib.ChatAPI.toICBC;
 
 /**
- * TabAPI - Used for setting global and local tab headers and footers
+ * TabAPI - Used for setting global and local player list headers and footers
  */
 public class TabAPI {
     /**
