@@ -162,6 +162,7 @@ public class BungeeAPI implements PluginMessageListener {
         if (p == null)
             return false;
         p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut(msg));
+        return true;
     }
 
     public static String getIp(Player plr) {
