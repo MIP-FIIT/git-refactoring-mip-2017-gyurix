@@ -8,7 +8,6 @@ import gyurix.json.JsonAPI;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -20,6 +19,7 @@ import java.util.UUID;
 import static gyurix.json.JsonAPI.serialize;
 import static gyurix.spigotlib.Config.debug;
 import static gyurix.spigotlib.SU.utf8;
+import static org.apache.commons.lang.StringUtils.join;
 
 /**
  * BungeeAPI is the implementation of the
@@ -48,15 +48,7 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean executeBungeeCommands(String[] commands, String... players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        String json = serialize(commands);
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("BungeeCommand");
-        out.writeUTF(StringUtils.join(players, ","));
-        out.writeUTF(json);
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        return true;
+        return sendMessageToBungee("BungeeCommands", join(players, ","), serialize(commands));
     }
 
     public static boolean executePlayerCommands(Command[] commands, String... players) {
@@ -138,33 +130,6 @@ public class BungeeAPI implements PluginMessageListener {
         return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
     }
 
-    /**
-     * Creates a ByteArrayDataOutput from the given data and converts it to byte array
-     *
-     * @param data - The data which should be written to the ByteArrayDataOutput
-     * @return The created ByteArrayDataOutput converted to byte array
-     */
-    private static byte[] makeDataOut(String... data) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        for (String element : data)
-            out.writeUTF(element);
-        return out.toByteArray();
-    }
-
-    /**
-     * Sends the given message to the Bungee using the messaging channel of the first found player on the server.
-     *
-     * @param msg - The sendable message
-     * @return true - If the message was sent, false otherwise
-     */
-    public static boolean sendMessageToBungee(String... msg) {
-        Player p = getAnyPlayer();
-        if (p == null)
-            return false;
-        p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut(msg));
-        return true;
-    }
-
     public static String getIp(Player plr) {
         checkEnabled();
         return ips.get(plr.getUniqueId());
@@ -214,6 +179,19 @@ public class BungeeAPI implements PluginMessageListener {
         for (String s : players)
             p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut("KickPlayer", s, message));
         return true;
+    }
+
+    /**
+     * Creates a ByteArrayDataOutput from the given data and converts it to byte array
+     *
+     * @param data - The data which should be written to the ByteArrayDataOutput
+     * @return The created ByteArrayDataOutput converted to byte array
+     */
+    private static byte[] makeDataOut(String... data) {
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        for (String element : data)
+            out.writeUTF(element);
+        return out.toByteArray();
     }
 
     public static Integer playerCount(String server) {
@@ -392,41 +370,38 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean send(String server, Iterable<String> players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ConnectOther");
-            out.writeUTF(s);
-            out.writeUTF(server);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (server == null || !players.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        players.forEach((s) -> sendMessageToBungee("ConnectOther", s, server));
         return true;
     }
 
     public static boolean sendMessage(String msg, String... players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Message");
-            out.writeUTF(s);
-            out.writeUTF(msg);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (msg == null || players.length == 0 || getAnyPlayer() == null)
+            return false;
+        for (String s : players)
+            sendMessageToBungee("Message", s, msg);
         return true;
     }
 
     public static boolean sendMessage(String msg, Iterable<String> players) {
+        if (msg == null || !players.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        players.forEach((s) -> sendMessageToBungee("Message", s, msg));
+        return true;
+    }
+
+    /**
+     * Sends the given message to the Bungee using the messaging channel of the first found player on the server.
+     *
+     * @param msg - The sendable message
+     * @return true - If the message was sent, false otherwise
+     */
+    public static boolean sendMessageToBungee(String... msg) {
         Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Message");
-            out.writeUTF(s);
-            out.writeUTF(msg);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (p == null)
+            return false;
+        p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut(msg));
         return true;
     }
 
