@@ -32,9 +32,9 @@ public class TabAPI {
      * @param plrs   - Target players
      */
     public static void setLocalHeaderFooter(String header, String footer, Collection<? extends Player> plrs) {
-        Object h = toICBC(TextToJson(header));
-        Object f = toICBC(TextToJson(footer));
-        Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(h, f);
+        Object headerComponent = toICBC(TextToJson(header));
+        Object footerComponent = toICBC(TextToJson(footer));
+        Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
         plrs.forEach((p) -> SU.tp.sendPacket(p, packet));
     }
 
@@ -46,9 +46,9 @@ public class TabAPI {
      * @param plrs   - Target players
      */
     public static void setLocalHeaderFooter(String header, String footer, Player... plrs) {
-        Object h = toICBC(TextToJson(header));
-        Object f = toICBC(TextToJson(footer));
-        Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(h, f);
+        Object headerComponent = toICBC(TextToJson(header));
+        Object footerComponent = toICBC(TextToJson(footer));
+        Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(headerComponent, footerComponent);
         for (Player p : plrs) {
             SU.tp.sendPacket(p, packet);
         }
