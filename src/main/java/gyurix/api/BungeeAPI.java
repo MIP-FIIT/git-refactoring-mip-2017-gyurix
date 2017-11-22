@@ -337,6 +337,25 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * Creates the data for forwarding a message
+     *
+     * @param channel    - Receivers channel
+     * @param serverMode - true if the receiver should be a server, false if it should be a player
+     * @param receiver   - Receivers name
+     * @param message    - The message which should be forwarded
+     * @return The data required for forwarding
+     */
+    private static byte[] makeForwardingData(String receiver, String channel, boolean serverMode, byte[] message) {
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        out.writeUTF(serverMode ? "Forward" : "ForwardToPlayer");
+        out.writeUTF(receiver);
+        out.writeUTF(channel);
+        out.writeShort(message.length);
+        out.write(message);
+        return out.toByteArray();
+    }
+
     public static String[] serverNames() {
         checkEnabled();
         return servers;
