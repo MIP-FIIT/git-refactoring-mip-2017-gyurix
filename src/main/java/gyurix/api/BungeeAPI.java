@@ -46,8 +46,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean executeBungeeCommands(String[] commands, String... players) {
-        if (!enabled)
-            return false;
         String json = JsonAPI.serialize(commands);
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
@@ -62,29 +60,21 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean executePlayerCommands(Command[] commands, String... players) {
-        if (!enabled)
-            return false;
         String json = JsonAPI.serialize(commands);
         return forwardToPlayer("CommandExecution", json.getBytes(), players);
     }
 
     public static boolean executeServerCommands(String[] commands, String... servers) {
-        if (!enabled)
-            return false;
         String json = JsonAPI.serialize(commands);
         return forwardToServer("CommandExecution", json.getBytes(), servers);
     }
 
     public static boolean executeServerCommands(Command[] commands, String... servers) {
-        if (!enabled)
-            return false;
         String json = JsonAPI.serialize(commands);
         return forwardToServer("CommandExecution", json.getBytes(), servers);
     }
 
     public static boolean forwardToAllServer(String channel, byte[] message) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -100,8 +90,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, String... players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -119,8 +107,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, Iterable<String> players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -138,8 +124,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToServer(String channel, byte[] message, String... servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -157,36 +141,41 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static String getIp(Player plr) {
+        checkEnabled();
         return ips.get(plr.getUniqueId());
     }
 
     public static Integer getPort(Player plr) {
+        checkEnabled();
         return ports.get(plr.getUniqueId());
     }
 
     public static String getServerIp(String server) {
+        checkEnabled();
         return serverIps.get(server);
     }
 
     public static String getServerName() {
+        checkEnabled();
         return serverName;
     }
 
     public static Short getServerPort(String server) {
+        checkEnabled();
         return serverPorts.get(server);
     }
 
     public static UUID getUUID(Player plr) {
+        checkEnabled();
         return uuids.get(plr.getName());
     }
 
     public static UUID getUUID(String pln) {
+        checkEnabled();
         return uuids.get(pln);
     }
 
     public static boolean kick(String message, String... players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -202,8 +191,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean kick(String message, Iterable<String> players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -219,16 +206,16 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static Integer playerCount(String server) {
+        checkEnabled();
         return playerCounts.get(server);
     }
 
     public static String[] playerList(String server) {
+        checkEnabled();
         return players.get(server);
     }
 
     public static boolean requestCurrentServerName() {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -259,8 +246,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerCount(Iterable<String> servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -275,8 +260,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerCount(String... servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -291,8 +274,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerList(Iterable<String> servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -307,8 +288,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerList(String... servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -323,8 +302,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestServerIP(Iterable<String> servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -339,8 +316,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestServerIP(String... servers) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -355,8 +330,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestServerNames() {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -369,8 +342,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestUUID(Iterable<String> players) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -385,8 +356,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestUUID(String... players) {
-        if (!enabled)
-            return false;
         Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
         if (pls.size() == 0)
             return false;
@@ -419,8 +388,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean send(String server, String... players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -436,8 +403,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean send(String server, Iterable<String> players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -453,8 +418,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean sendMessage(String msg, String... players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -470,8 +433,6 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean sendMessage(String msg, Iterable<String> players) {
-        if (!enabled)
-            return false;
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -491,8 +452,7 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean start() {
-        if (!enabled)
-            return false;
+        checkEnabled();
         if (Config.BungeeAPI.servers > 0) {
             RunnableIDS.serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
         }
