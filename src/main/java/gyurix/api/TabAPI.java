@@ -35,9 +35,7 @@ public class TabAPI {
         Object h = toICBC(TextToJson(header));
         Object f = toICBC(TextToJson(footer));
         Object packet = PacketOutType.PlayerListHeaderFooter.newPacket(h, f);
-        for (Player p : plrs) {
-            SU.tp.sendPacket(p, packet);
-        }
+        plrs.forEach((p) -> SU.tp.sendPacket(p, packet));
     }
 
     /**
