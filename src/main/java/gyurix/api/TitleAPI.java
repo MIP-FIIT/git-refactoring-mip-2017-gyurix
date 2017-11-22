@@ -90,10 +90,12 @@ public class TitleAPI {
     }
 
     /**
-     * @param fadein
-     * @param show
-     * @param fadeout
-     * @param players
+     * Sets the title timings of the given collection of players
+     *
+     * @param fadein  - Fade in time in ticks (1 tick = 0.05 sec)
+     * @param show    - Show time in ticks
+     * @param fadeout - Fade out time in ticks
+     * @param players - Players whose title timings should be changed
      */
     public static void setShowTime(int fadein, int show, int fadeout, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TIMES, null, fadein, show, fadeout).getVanillaPacket();
@@ -101,11 +103,14 @@ public class TitleAPI {
             tp.sendPacket(p, packet);
     }
 
+
     /**
-     * @param fadein
-     * @param show
-     * @param fadeout
-     * @param players
+     * Sets the title timings of the given players
+     *
+     * @param fadein  - Fade in time in ticks (1 tick = 0.05 sec)
+     * @param show    - Show time in ticks
+     * @param fadeout - Fade out time in ticks
+     * @param players - Players whose title timings should be changed
      */
     public static void setShowTime(int fadein, int show, int fadeout, Player... players) {
         Object packet = new PacketPlayOutTitle(TIMES, null, fadein, show, fadeout).getVanillaPacket();
@@ -114,6 +119,8 @@ public class TitleAPI {
     }
 
     /**
+     *
+     *
      * @param subtitle
      * @param players
      */
