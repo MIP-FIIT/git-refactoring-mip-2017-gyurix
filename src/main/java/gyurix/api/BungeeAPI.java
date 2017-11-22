@@ -47,21 +47,10 @@ public class BungeeAPI implements PluginMessageListener {
             throw new RuntimeException("BungeeAPI is not enabled, please enable it in SpigotLib config");
     }
 
-    /**
-     * Returns a Player whose plugin messaging channel can be used for Spigot - Bungee communication.
-     *
-     * @return The first Player found in the online player list or null if there are no online players
-     */
-    private static Player getAnyPlayer() {
-        return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
-    }
-
     public static boolean executeBungeeCommands(String[] commands, String... players) {
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         String json = serialize(commands);
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("BungeeCommand");
         out.writeUTF(StringUtils.join(players, ","));
@@ -83,10 +72,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToAllServer(String channel, byte[] message) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Forward");
         out.writeUTF("ALL");
@@ -98,10 +85,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, String... players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("ForwardToPlayer");
@@ -115,10 +100,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, Iterable<String> players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("ForwardToPlayer");
@@ -132,10 +115,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean forwardToServer(String channel, byte[] message, String... servers) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Forward");
@@ -146,6 +127,15 @@ public class BungeeAPI implements PluginMessageListener {
             p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
         }
         return true;
+    }
+
+    /**
+     * Returns a Player whose plugin messaging channel can be used for Spigot - Bungee communication.
+     *
+     * @return The first Player found in the online player list or null if there are no online players
+     */
+    private static Player getAnyPlayer() {
+        return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
     }
 
     public static String getIp(Player plr) {
@@ -199,10 +189,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean kick(String message, Iterable<String> players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("KickPlayer");
@@ -224,10 +212,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestCurrentServerName() {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("GetServer");
         p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
@@ -254,10 +240,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerCount(Iterable<String> servers) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("PlayerCount");
@@ -268,10 +252,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerCount(String... servers) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("PlayerCount");
@@ -282,10 +264,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerList(Iterable<String> servers) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("PlayerList");
@@ -296,10 +276,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerList(String... servers) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("PlayerList");
@@ -310,10 +288,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestServerIP(Iterable<String> servers) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("ServerIP");
@@ -324,10 +300,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestServerIP(String... servers) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : servers) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("ServerIP");
@@ -338,10 +312,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestServerNames() {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("GetServers");
         p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
@@ -350,10 +322,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestUUID(Iterable<String> players) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("UUIDOther");
@@ -364,10 +334,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestUUID(String... players) {
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("UUIDOther");
@@ -396,10 +364,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean send(String server, String... players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("ConnectOther");
@@ -411,10 +377,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean send(String server, Iterable<String> players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("ConnectOther");
@@ -426,10 +390,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean sendMessage(String msg, String... players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Message");
@@ -441,10 +403,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean sendMessage(String msg, Iterable<String> players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("Message");
