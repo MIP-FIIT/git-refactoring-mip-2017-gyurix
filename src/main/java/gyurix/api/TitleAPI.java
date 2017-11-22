@@ -58,12 +58,14 @@ public class TitleAPI {
     }
 
     /**
-     * @param title
-     * @param subtitle
-     * @param fadeIn
-     * @param showtime
-     * @param fadeOut
-     * @param players
+     * Sends a title message to the given collection of players
+     *
+     * @param title    - Title text of the title message
+     * @param subtitle - Subtitle text of the title message
+     * @param fadeIn   - Fade in time in ticks (1 tick = 0.05 sec)
+     * @param showtime - Show time in ticks
+     * @param fadeOut  - Fade out time in ticks
+     * @param players  - Receivers of the title message
      */
     public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Collection<? extends Player> players) {
         setShowTime(fadeIn, showtime, fadeOut, players);
@@ -72,12 +74,14 @@ public class TitleAPI {
     }
 
     /**
-     * @param title
-     * @param subtitle
-     * @param fadeIn
-     * @param showtime
-     * @param fadeOut
-     * @param players
+     * Sends a title message to the given players
+     *
+     * @param title    - Title text of the title message
+     * @param subtitle - Subtitle text of the title message
+     * @param fadeIn   - Fade in time in ticks (1 tick = 0.05 sec)
+     * @param showtime - Show time in ticks
+     * @param fadeOut  - Fade out time in ticks
+     * @param players  - Receivers of the title message
      */
     public static void set(String title, String subtitle, int fadeIn, int showtime, int fadeOut, Player... players) {
         setShowTime(fadeIn, showtime, fadeOut, players);
