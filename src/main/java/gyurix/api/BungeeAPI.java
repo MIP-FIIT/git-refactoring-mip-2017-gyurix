@@ -166,18 +166,17 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean kick(String message, String... players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
+        if (message == null || players.length == 0 || getAnyPlayer() == null)
+            return false;
         for (String s : players)
-            p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut("KickPlayer", s, message));
+            sendMessageToBungee("KickPlayer", s, message)
         return true;
     }
 
     public static boolean kick(String message, Iterable<String> players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players)
-            p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut("KickPlayer", s, message));
+        if (message == null || !players.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        players.forEach((s) -> sendMessageToBungee("KickPlayer", s, message));
         return true;
     }
 
@@ -205,66 +204,39 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestCurrentServerName() {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("GetServer");
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-
-        return true;
+        return sendMessageToBungee("GetServer");
     }
 
     public static void requestIP(Player... players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("IP");
-        byte[] data = out.toByteArray();
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", data);
-        }
+        byte[] msg = makeDataOut("IP");
+        for (Player p : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", msg);
     }
 
     public static void requestIP(Iterable<Player> players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("IP");
-        byte[] data = out.toByteArray();
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", data);
-        }
+        byte[] msg = makeDataOut("IP");
+        players.forEach((p) -> p.sendPluginMessage(Main.pl, "BungeeCord", msg));
     }
 
     public static boolean requestPlayerCount(Iterable<String> servers) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerCount");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (!servers.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        servers.forEach((s) -> sendMessageToBungee("PlayerCount", s));
         return true;
     }
 
     public static boolean requestPlayerCount(String... servers) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerCount");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (servers.length == 0 || getAnyPlayer() == null)
+            return false;
+        for (String s : servers)
+            sendMessageToBungee("PlayerCount", s);
         return true;
     }
 
     public static boolean requestPlayerList(Iterable<String> servers) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerList");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (!servers.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        servers.forEach((s) -> sendMessageToBungee("PlayerList", s));
         return true;
     }
 
