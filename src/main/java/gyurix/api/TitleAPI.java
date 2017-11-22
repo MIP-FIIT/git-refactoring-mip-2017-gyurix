@@ -22,8 +22,7 @@ public class TitleAPI {
      */
     public static void clear(Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(CLEAR, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : players)
-            tp.sendPacket(p, packet);
+        players.forEach((p) -> tp.sendPacket(p, packet));
     }
 
     /**
@@ -44,9 +43,7 @@ public class TitleAPI {
      */
     public static void reset(Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(RESET, null, 0, 0, 0).getVanillaPacket();
-        for (Player p : players) {
-            tp.sendPacket(p, packet);
-        }
+        players.forEach((p) -> tp.sendPacket(p, packet));
     }
 
     /**
@@ -141,9 +138,7 @@ public class TitleAPI {
      */
     public static void setTitle(String title, Collection<? extends Player> players) {
         Object packet = new PacketPlayOutTitle(TITLE, ChatTag.fromColoredText(title), 0, 0, 0).getVanillaPacket();
-        for (Player p : players) {
-            tp.sendPacket(p, packet);
-        }
+        players.forEach((p) -> tp.sendPacket(p, packet));
     }
 
     /**
