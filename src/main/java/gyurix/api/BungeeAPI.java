@@ -190,11 +190,7 @@ public class BungeeAPI implements PluginMessageListener {
         Player p = getAnyPlayer();
         if (p == null) return false;
         for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("KickPlayer");
-            out.writeUTF(s);
-            out.writeUTF(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
+            p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut("KickPlayer", s, message));
         }
         return true;
     }
@@ -202,13 +198,8 @@ public class BungeeAPI implements PluginMessageListener {
     public static boolean kick(String message, Iterable<String> players) {
         Player p = getAnyPlayer();
         if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("KickPlayer");
-            out.writeUTF(s);
-            out.writeUTF(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut("KickPlayer", s, message));
         return true;
     }
 
