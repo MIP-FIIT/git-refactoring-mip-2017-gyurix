@@ -187,10 +187,8 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean kick(String message, String... players) {
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
+        Player p = getAnyPlayer();
+        if (p == null) return false;
         for (String s : players) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("KickPlayer");
