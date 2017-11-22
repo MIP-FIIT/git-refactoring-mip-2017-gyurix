@@ -8,9 +8,7 @@ import gyurix.json.JsonAPI;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -31,22 +29,15 @@ import static org.apache.commons.lang.StringUtils.join;
 public class BungeeAPI implements PluginMessageListener {
     public static boolean enabled;
     private static HashMap<UUID, String> ips = new HashMap<>();
-    private static HashMap<String, Integer> playerCounts = new HashMap<>();
-    private static HashMap<String, String[]> players = new HashMap<>();
     private static HashMap<UUID, Integer> ports = new HashMap<>();
-    private static HashMap<String, String> serverIps = new HashMap<>();
     private static String serverName = "N/A";
-    private static HashMap<String, Short> serverPorts = new HashMap<>();
-    private static String[] servers = new String[0];
+    private static ServerInfo emptyServer = new ServerInfo();
+    private static HashMap<String, ServerInfo> servers;
     private static HashMap<String, UUID> uuids = new HashMap<>();
 
-    @Getter
-    @Setter(AccessLevel.PRIVATE)
-    public static class ServerInfo {
-        private String name, ip;
-        private int playerCount;
-        private String[] players;
-        private short port;
+    public static String getServerIp(String server) {
+        checkEnabled();
+        return servers.getOrDefault(server, emptyServer).ip;
     }
 
     /**
@@ -128,9 +119,9 @@ public class BungeeAPI implements PluginMessageListener {
         return ports.get(plr.getUniqueId());
     }
 
-    public static String getServerIp(String server) {
+    public static Short getServerPort(String server) {
         checkEnabled();
-        return serverIps.get(server);
+        return servers.getOrDefault(server, emptyServer).port;
     }
 
     public static String getServerName() {
@@ -138,9 +129,9 @@ public class BungeeAPI implements PluginMessageListener {
         return serverName;
     }
 
-    public static Short getServerPort(String server) {
+    public static Integer playerCount(String server) {
         checkEnabled();
-        return serverPorts.get(server);
+        return servers.getOrDefault(server, emptyServer).playerCount;
     }
 
     public static UUID getUUID(Player plr) {
@@ -200,14 +191,14 @@ public class BungeeAPI implements PluginMessageListener {
         return out.toByteArray();
     }
 
-    public static Integer playerCount(String server) {
-        checkEnabled();
-        return playerCounts.get(server);
-    }
-
     public static String[] playerList(String server) {
         checkEnabled();
-        return players.get(server);
+        return servers.getOrDefault(server, emptyServer).players;
+    }
+
+    public static String[] serverNames() {
+        checkEnabled();
+        return servers.keySet().toArray(new String[servers.keySet().size()]);
     }
 
     public static boolean requestCurrentServerName() {
@@ -344,11 +335,6 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
-    public static String[] serverNames() {
-        checkEnabled();
-        return servers;
-    }
-
     public static boolean start() {
         checkEnabled();
         if (Config.BungeeAPI.servers > 0)
@@ -361,13 +347,13 @@ public class BungeeAPI implements PluginMessageListener {
 
         if (Config.BungeeAPI.playerCount > 0)
             RunnableIDS.playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
-                requestPlayerCount(servers);
+                requestPlayerCount(servers.keySet());
                 requestPlayerCount("ALL");
             }, 2, Config.BungeeAPI.playerCount);
 
         if (Config.BungeeAPI.playerList > 0)
             RunnableIDS.playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
-                requestPlayerList(servers);
+                requestPlayerList(servers.keySet());
                 requestPlayerList("ALL");
             }, 2, Config.BungeeAPI.playerList);
 
@@ -377,7 +363,7 @@ public class BungeeAPI implements PluginMessageListener {
 
         if (Config.BungeeAPI.serverIP > 0)
             RunnableIDS.serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () ->
-                    requestServerIP(servers), 4, Config.BungeeAPI.serverIP);
+                    requestServerIP(servers.keySet()), 4, Config.BungeeAPI.serverIP);
 
         if (Config.BungeeAPI.ipOnJoin)
             SU.sch.scheduleSyncDelayedTask(Main.pl, () ->
@@ -387,11 +373,11 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static Integer totalPlayerCount() {
-        return playerCounts.get("ALL");
+        return servers.getOrDefault("ALL", emptyServer).playerCount;
     }
 
     public static String[] totalPlayerList() {
-        return players.get("ALL");
+        return servers.getOrDefault("ALL", emptyServer).players;
     }
 
     @Override
@@ -417,13 +403,16 @@ public class BungeeAPI implements PluginMessageListener {
                     ports.put(uid, in.readInt());
                     return;
                 case "PlayerCount":
-                    playerCounts.put(in.readUTF(), in.readInt());
+                    servers.get(in.readUTF()).playerCount = in.readInt();
                     return;
                 case "PlayerList":
-                    players.put(in.readUTF(), in.readUTF().split(", "));
+                    servers.get(in.readUTF()).players = in.readUTF().split(", ");
                     return;
                 case "GetServers":
-                    servers = in.readUTF().split(", ");
+                    String[] d = in.readUTF().split(", ");
+                    for (String s : d)
+                        if (!servers.containsKey(s))
+                            servers.put(s, new ServerInfo());
                     return;
                 case "GetServer":
                     serverName = in.readUTF();
@@ -436,11 +425,22 @@ public class BungeeAPI implements PluginMessageListener {
                     return;
                 case "ServerIP":
                     String server = in.readUTF();
-                    serverIps.put(server, in.readUTF());
-                    serverPorts.put(server, in.readShort());
+                    ServerInfo si = servers.get(server);
+                    if (si == null)
+                        servers.put(server, si = new ServerInfo());
+                    si.ip = in.readUTF();
+                    si.port = in.readShort();
             }
         } catch (Throwable ignored) {
         }
+    }
+
+    @Getter
+    public static class ServerInfo {
+        private String name, ip;
+        private String[] players = new String[0];
+        private int playerCount;
+        private short port;
     }
 
     private static class RunnableIDS {
