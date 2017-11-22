@@ -26,7 +26,6 @@ import static gyurix.spigotlib.Config.debug;
 public class BungeeAPI implements PluginMessageListener {
     public static boolean enabled, schedulePacketAPI;
     private static HashMap<UUID, String> ips = new HashMap<>();
-    private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     private static HashMap<String, Integer> playerCounts = new HashMap<>();
     private static HashMap<String, String[]> players = new HashMap<>();
     private static HashMap<UUID, Integer> ports = new HashMap<>();
@@ -485,28 +484,28 @@ public class BungeeAPI implements PluginMessageListener {
         if (!enabled)
             return false;
         if (Config.BungeeAPI.servers > 0) {
-            serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
+            RunnableIDS.serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
         }
         if (Config.BungeeAPI.currentServerName > 0) {
-            currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
+            RunnableIDS.currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
         }
         if (Config.BungeeAPI.playerCount > 0) {
-            playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
+            RunnableIDS.playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
                 requestPlayerCount(servers);
                 requestPlayerCount("ALL");
             }, 2, Config.BungeeAPI.playerCount);
         }
         if (Config.BungeeAPI.playerList > 0) {
-            playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
+            RunnableIDS.playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
                 requestPlayerList(servers);
                 requestPlayerList("ALL");
             }, 2, Config.BungeeAPI.playerList);
         }
         if (Config.BungeeAPI.uuidAll > 0) {
-            uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
+            RunnableIDS.uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
         }
         if (Config.BungeeAPI.serverIP > 0) {
-            serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestServerIP(servers), 4, Config.BungeeAPI.serverIP);
+            RunnableIDS.serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestServerIP(servers), 4, Config.BungeeAPI.serverIP);
         }
         if (Config.BungeeAPI.ipOnJoin) {
             SU.sch.scheduleSyncDelayedTask(Main.pl, () -> requestIP((Collection<Player>) Bukkit.getOnlinePlayers()), 4);
@@ -569,5 +568,9 @@ public class BungeeAPI implements PluginMessageListener {
             }
         } catch (Throwable ignored) {
         }
+    }
+
+    private static class RunnableIDS {
+        private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     }
 }
