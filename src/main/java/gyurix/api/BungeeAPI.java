@@ -269,103 +269,63 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean requestPlayerList(String... servers) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerList");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (servers.length == 0 || getAnyPlayer() == null)
+            return false;
+        for (String s : servers)
+            sendMessageToBungee("PlayerList", s);
         return true;
     }
 
     public static boolean requestServerIP(Iterable<String> servers) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ServerIP");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (!servers.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        servers.forEach((s) -> sendMessageToBungee("ServerIP", s));
         return true;
     }
 
     public static boolean requestServerIP(String... servers) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ServerIP");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (servers.length == 0 || getAnyPlayer() == null)
+            return false;
+        for (String s : servers)
+            sendMessageToBungee("ServerIP", s);
         return true;
     }
 
     public static boolean requestServerNames() {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("GetServers");
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-
-        return true;
+        return sendMessageToBungee("GetServers");
     }
 
     public static boolean requestUUID(Iterable<String> players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("UUIDOther");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (!players.iterator().hasNext() || getAnyPlayer() == null)
+            return false;
+        players.forEach((s) -> sendMessageToBungee("UUIDOther", s));
         return true;
     }
 
     public static boolean requestUUID(String... players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("UUIDOther");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (players.length == 0 || getAnyPlayer() == null)
+            return false;
+        for (String s : players)
+            sendMessageToBungee("UUIDOther", s);
         return true;
     }
 
     public static void send(String server, Player... players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Connect");
-        out.writeUTF(server);
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        byte[] msg = makeDataOut("Connect", server);
+        for (Player p : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", msg);
     }
 
     public static void send(String server, Collection<Player> players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Connect");
-        out.writeUTF(server);
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        byte[] msg = makeDataOut("Connect", server);
+        players.forEach((p) -> p.sendPluginMessage(Main.pl, "BungeeCord", msg));
     }
 
     public static boolean send(String server, String... players) {
-        Player p = getAnyPlayer();
-        if (p == null) return false;
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ConnectOther");
-            out.writeUTF(s);
-            out.writeUTF(server);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        if (server == null || players.length == 0 || getAnyPlayer() == null)
+            return false;
+        for (String s : players)
+            sendMessageToBungee("ConnectOther", s, server);
         return true;
     }
 
