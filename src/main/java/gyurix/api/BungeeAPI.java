@@ -138,6 +138,19 @@ public class BungeeAPI implements PluginMessageListener {
         return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
     }
 
+    /**
+     * Creates a ByteArrayDataOutput from the given data
+     *
+     * @param data - The data which should be written to the ByteArrayDataOutput
+     * @return The created ByteArrayDataOutput
+     */
+    private static ByteArrayDataOutput makeDataOut(String... data) {
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        for (String element : data)
+            out.writeUTF(element);
+        return out;
+    }
+
     public static String getIp(Player plr) {
         checkEnabled();
         return ips.get(plr.getUniqueId());
