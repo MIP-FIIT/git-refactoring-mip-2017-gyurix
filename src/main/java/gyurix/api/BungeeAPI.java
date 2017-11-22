@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static gyurix.json.JsonAPI.serialize;
 import static gyurix.spigotlib.Config.debug;
+import static gyurix.spigotlib.SU.utf8;
 
 /**
  * BungeeAPI is the implementation of the
@@ -61,18 +62,15 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean executePlayerCommands(Command[] commands, String... players) {
-        String json = serialize(commands);
-        return forwardToPlayer("CommandExecution", json.getBytes(), players);
+        return forwardToPlayer("CommandExecution", serialize(commands).getBytes(utf8), players);
     }
 
     public static boolean executeServerCommands(String[] commands, String... servers) {
-        String json = serialize(commands);
-        return forwardToServer("CommandExecution", json.getBytes(), servers);
+        return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
 
     public static boolean executeServerCommands(Command[] commands, String... servers) {
-        String json = serialize(commands);
-        return forwardToServer("CommandExecution", json.getBytes(), servers);
+        return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
 
     public static boolean forwardToAllServer(String channel, byte[] message) {
