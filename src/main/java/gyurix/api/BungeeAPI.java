@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static gyurix.json.JsonAPI.serialize;
 import static gyurix.spigotlib.Config.debug;
 
 /**
@@ -46,7 +47,7 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean executeBungeeCommands(String[] commands, String... players) {
-        String json = JsonAPI.serialize(commands);
+        String json = serialize(commands);
         Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
         if (pc.isEmpty())
             return false;
@@ -60,17 +61,17 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static boolean executePlayerCommands(Command[] commands, String... players) {
-        String json = JsonAPI.serialize(commands);
+        String json = serialize(commands);
         return forwardToPlayer("CommandExecution", json.getBytes(), players);
     }
 
     public static boolean executeServerCommands(String[] commands, String... servers) {
-        String json = JsonAPI.serialize(commands);
+        String json = serialize(commands);
         return forwardToServer("CommandExecution", json.getBytes(), servers);
     }
 
     public static boolean executeServerCommands(Command[] commands, String... servers) {
-        String json = JsonAPI.serialize(commands);
+        String json = serialize(commands);
         return forwardToServer("CommandExecution", json.getBytes(), servers);
     }
 
