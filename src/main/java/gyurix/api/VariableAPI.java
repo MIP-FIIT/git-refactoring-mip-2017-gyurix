@@ -89,10 +89,12 @@ public class VariableAPI {
     }
 
     /**
-     * @param plr
-     * @param inside
-     * @param extArgs
-     * @return
+     * Fills variables in the given list of objects.
+     *
+     * @param plr     - The player whose data should be used in the variable filling
+     * @param inside  - List of objects were the variables should be filled
+     * @param extArgs - External arguments for the VariableHandler
+     * @return The variable filled object
      */
     private static Object fillVar(Player plr, List<Object> inside, Object[] extArgs) {
         StringBuilder sb = new StringBuilder();
