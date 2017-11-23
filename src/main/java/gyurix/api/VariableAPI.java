@@ -97,21 +97,32 @@ public class VariableAPI {
      * @return The variable filled object
      */
     private static Object fillVar(Player plr, List<Object> inside, Object[] extArgs) {
-        StringBuilder sb = new StringBuilder();
-        int l = inside.size();
-        for (int c = 0; c < l; ++c) {
-            String os = String.valueOf(inside.get(c));
-            int id = os.indexOf(':');
-            if (id != -1) {
-                sb.append(os.substring(0, id));
-                ArrayList<Object> list = new ArrayList<>(inside.subList(c + 1, l));
-                if (id != os.length() - 1)
-                    list.add(0, os.substring(id + 1));
-                return handle(sb.toString(), plr, list, extArgs);
+        //StringBuilder for calculating the placeholders full name
+        StringBuilder nameBuilder = new StringBuilder();
+        int listSize = inside.size();
+
+        //Loop through the whole list of objects
+        for (int readPos = 0; readPos < listSize; ++readPos) {
+            String placeholder = String.valueOf(inside.get(readPos));
+            int nameParamsSep = placeholder.indexOf(':');
+
+            //Check if we found a parameterized placeholder in the readingPosition
+            if (nameParamsSep != -1) {
+
+                //Split it to placeholder name and placeholder parameters
+                nameBuilder.append(placeholder.substring(0, nameParamsSep));
+                ArrayList<Object> parameters = new ArrayList<>(inside.subList(readPos + 1, listSize));
+                parameters.add(0, placeholder.substring(nameParamsSep + 1));
+
+                //Calculate the value of the placeholder
+                return handle(nameBuilder.toString(), plr, parameters, extArgs);
             }
-            sb.append(os);
+            //If not, then then our placeholders name will be longer
+            nameBuilder.append(placeholder);
         }
-        return handle(sb.toString(), plr, emptyList, extArgs);
+
+        //If our placeholder was not a parametered one, calculate it's value without using parameters
+        return handle(nameBuilder.toString(), plr, emptyList, extArgs);
     }
 
     /**
