@@ -126,10 +126,12 @@ public class VariableAPI {
     }
 
     /**
-     * @param msg
-     * @param plr
-     * @param extArgs
-     * @return
+     * Fills all the placeholders in the given message
+     *
+     * @param msg     - The variable fillable message
+     * @param plr     - Player whose data should be used for variable filling
+     * @param extArgs - External arguments passed to the VariableHandlers
+     * @return The variable filled message
      */
     public static String fillVariables(String msg, Player plr, Object... extArgs) {
         if (phaHook)
@@ -141,11 +143,13 @@ public class VariableAPI {
     }
 
     /**
-     * @param var
-     * @param plr
-     * @param inside
-     * @param extArgs
-     * @return
+     * Calculates the value of one placeholder using it's VariableHandler
+     *
+     * @param var     - The calculateable variable
+     * @param plr     - The player whose data should be used for the calculation
+     * @param inside  - Parameters of the placeholder
+     * @param extArgs - External arguments, which should be passed to VariableHandler
+     * @return The variable filling result
      */
     private static Object handle(String var, Player plr, ArrayList<Object> inside, Object[] extArgs) {
         VariableHandler vh = handlers.get(var);
