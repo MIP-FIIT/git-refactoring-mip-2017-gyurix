@@ -16,10 +16,29 @@ import java.util.List;
  * VariableAPI - Used for advanced placeholder filling in Strings
  */
 public class VariableAPI {
-    private static final HashSet<String> errorVars = new HashSet<>();
-    private static final HashSet<String> missingHandlers = new HashSet<>();
-    private static final ArrayList<Object> emptyList = new ArrayList<>();
+    /**
+     * Available VariableHandlers
+     */
     public static final HashMap<String, VariableHandler> handlers = new HashMap();
+    /**
+     * Empty list, used for quickly being passed to VariableHandlers if the placeholder does not have parameters
+     */
+    private static final ArrayList<Object> emptyList = new ArrayList<>();
+    /**
+     * List of placeholders, which were used in messages, and their handler throwed an error.
+     * Since this is a high frequently used API, this field is required to only show an error once
+     * instead of spamming the console with it.
+     */
+    private static final HashSet<String> errorVars = new HashSet<>();
+    /**
+     * List of placeholders, which were used in messages, but does not have a handler
+     * Since this is a high frequently used API, this field is required to only show a missing
+     * handler warning once instead of spamming the console with it.
+     */
+    private static final HashSet<String> missingHandlers = new HashSet<>();
+    /**
+     * Field for checking and setting the PlaceholderAPI hook status, true = hook enabled, false = hook disabled
+     */
     public static boolean phaHook;
 
     /**
