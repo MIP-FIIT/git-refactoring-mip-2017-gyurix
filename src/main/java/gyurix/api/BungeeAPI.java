@@ -8,7 +8,7 @@ import gyurix.json.JsonAPI;
 import gyurix.spigotlib.Config;
 import gyurix.spigotlib.Main;
 import gyurix.spigotlib.SU;
-import org.apache.commons.lang.StringUtils;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
@@ -17,508 +17,367 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
+import static gyurix.json.JsonAPI.serialize;
 import static gyurix.spigotlib.Config.debug;
+import static gyurix.spigotlib.SU.utf8;
+import static org.apache.commons.lang.StringUtils.join;
 
 /**
- * Created by gyurix on 20/12/2015.
+ * BungeeAPI is the implementation of the
+ * <a href=https://www.spigotmc.org/wiki/bukkit-bungee-plugin-messaging-channel/>Spigot - Bungee communication protocol</a>
  */
 public class BungeeAPI implements PluginMessageListener {
-    public static boolean enabled, schedulePacketAPI;
+    public static boolean enabled;
     private static HashMap<UUID, String> ips = new HashMap<>();
-    private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
-    private static HashMap<String, Integer> playerCounts = new HashMap<>();
-    private static HashMap<String, String[]> players = new HashMap<>();
     private static HashMap<UUID, Integer> ports = new HashMap<>();
-    private static HashMap<String, String> serverIps = new HashMap<>();
     private static String serverName = "N/A";
-    private static HashMap<String, Short> serverPorts = new HashMap<>();
-    private static String[] servers = new String[0];
+    private static ServerInfo emptyServer = new ServerInfo();
+    private static HashMap<String, ServerInfo> servers;
     private static HashMap<String, UUID> uuids = new HashMap<>();
 
-    public static boolean executeBungeeCommands(String[] commands, String... players) {
+    public static String getServerIp(String server) {
+        checkEnabled();
+        return servers.getOrDefault(server, emptyServer).ip;
+    }
+
+    /**
+     * Checks if the BungeeAPI is enabled in the config, if it's not, then throws an exception
+     *
+     * @throws RuntimeException - If the BungeeAPI is not enabled
+     */
+    private static void checkEnabled() {
         if (!enabled)
-            return false;
-        String json = JsonAPI.serialize(commands);
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("BungeeCommand");
-        out.writeUTF(StringUtils.join(players, ","));
-        out.writeUTF(json);
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        return true;
+            throw new RuntimeException("BungeeAPI is not enabled, please enable it in SpigotLib config");
+    }
+
+    public static boolean executeBungeeCommands(String[] commands, String... players) {
+        return sendMessageToBungee("BungeeCommands", join(players, ","), serialize(commands));
     }
 
     public static boolean executePlayerCommands(Command[] commands, String... players) {
-        if (!enabled)
-            return false;
-        String json = JsonAPI.serialize(commands);
-        return forwardToPlayer("CommandExecution", json.getBytes(), players);
+        return forwardToPlayer("CommandExecution", serialize(commands).getBytes(utf8), players);
     }
 
     public static boolean executeServerCommands(String[] commands, String... servers) {
-        if (!enabled)
-            return false;
-        String json = JsonAPI.serialize(commands);
-        return forwardToServer("CommandExecution", json.getBytes(), servers);
+        return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
 
     public static boolean executeServerCommands(Command[] commands, String... servers) {
-        if (!enabled)
-            return false;
-        String json = JsonAPI.serialize(commands);
-        return forwardToServer("CommandExecution", json.getBytes(), servers);
+        return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
 
     public static boolean forwardToAllServer(String channel, byte[] message) {
-        if (!enabled)
+        Player p = getAnyPlayer();
+        if (p == null || message == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Forward");
-        out.writeUTF("ALL");
-        out.writeUTF(channel);
-        out.writeShort(message.length);
-        out.write(message);
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
+        p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData("ALL", channel, true, message));
         return true;
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, String... players) {
-        if (!enabled)
+        Player p = getAnyPlayer();
+        if (p == null || players.length == 0 || message == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ForwardToPlayer");
-            out.writeUTF(s);
-            out.writeUTF(channel);
-            out.writeShort(message.length);
-            out.write(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData(s, channel, false, message));
         return true;
     }
 
     public static boolean forwardToPlayer(String channel, byte[] message, Iterable<String> players) {
-        if (!enabled)
+        Player p = getAnyPlayer();
+        if (p == null || !players.iterator().hasNext() || message == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ForwardToPlayer");
-            out.writeUTF(s);
-            out.writeUTF(channel);
-            out.writeShort(message.length);
-            out.write(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        players.forEach((s) -> p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData(s, channel, false, message)));
         return true;
     }
 
     public static boolean forwardToServer(String channel, byte[] message, String... servers) {
-        if (!enabled)
+        Player p = getAnyPlayer();
+        if (p == null || servers.length == 0 || message == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Forward");
-            out.writeUTF(s);
-            out.writeUTF(channel);
-            out.writeShort(message.length);
-            out.write(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : servers)
+            p.sendPluginMessage(Main.pl, "BungeeCord", makeForwardingData(s, channel, false, message));
         return true;
     }
 
+    /**
+     * Returns a Player whose plugin messaging channel can be used for Spigot - Bungee communication.
+     *
+     * @return The first Player found in the online player list or null if there are no online players
+     */
+    private static Player getAnyPlayer() {
+        return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
+    }
+
     public static String getIp(Player plr) {
+        checkEnabled();
         return ips.get(plr.getUniqueId());
     }
 
     public static Integer getPort(Player plr) {
+        checkEnabled();
         return ports.get(plr.getUniqueId());
     }
 
-    public static String getServerIp(String server) {
-        return serverIps.get(server);
+    public static Short getServerPort(String server) {
+        checkEnabled();
+        return servers.getOrDefault(server, emptyServer).port;
     }
 
     public static String getServerName() {
+        checkEnabled();
         return serverName;
     }
 
-    public static Short getServerPort(String server) {
-        return serverPorts.get(server);
+    public static Integer playerCount(String server) {
+        checkEnabled();
+        return servers.getOrDefault(server, emptyServer).playerCount;
     }
 
     public static UUID getUUID(Player plr) {
+        checkEnabled();
         return uuids.get(plr.getName());
     }
 
     public static UUID getUUID(String pln) {
+        checkEnabled();
         return uuids.get(pln);
     }
 
     public static boolean kick(String message, String... players) {
-        if (!enabled)
+        if (message == null || players.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("KickPlayer");
-            out.writeUTF(s);
-            out.writeUTF(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : players)
+            sendMessageToBungee("KickPlayer", s, message);
         return true;
     }
 
     public static boolean kick(String message, Iterable<String> players) {
-        if (!enabled)
+        if (message == null || !players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("KickPlayer");
-            out.writeUTF(s);
-            out.writeUTF(message);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        players.forEach((s) -> sendMessageToBungee("KickPlayer", s, message));
         return true;
     }
 
-    public static Integer playerCount(String server) {
-        return playerCounts.get(server);
+    /**
+     * Creates a ByteArrayDataOutput from the given data and converts it to byte array
+     *
+     * @param data - The data which should be written to the ByteArrayDataOutput
+     * @return The created ByteArrayDataOutput converted to byte array
+     */
+    private static byte[] makeDataOut(String... data) {
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        for (String element : data)
+            out.writeUTF(element);
+        return out.toByteArray();
+    }
+
+    /**
+     * Creates the data for forwarding a message
+     *
+     * @param channel    - Receivers channel
+     * @param serverMode - true if the receiver should be a server, false if it should be a player
+     * @param receiver   - Receivers name
+     * @param message    - The message which should be forwarded
+     * @return The data required for forwarding
+     */
+    private static byte[] makeForwardingData(String receiver, String channel, boolean serverMode, byte[] message) {
+        ByteArrayDataOutput out = ByteStreams.newDataOutput();
+        out.writeUTF(serverMode ? "Forward" : "ForwardToPlayer");
+        out.writeUTF(receiver);
+        out.writeUTF(channel);
+        out.writeShort(message.length);
+        out.write(message);
+        return out.toByteArray();
     }
 
     public static String[] playerList(String server) {
-        return players.get(server);
+        checkEnabled();
+        return servers.getOrDefault(server, emptyServer).players;
+    }
+
+    public static String[] serverNames() {
+        checkEnabled();
+        return servers.keySet().toArray(new String[servers.keySet().size()]);
     }
 
     public static boolean requestCurrentServerName() {
-        if (!enabled)
-            return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("GetServer");
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-
-        return true;
+        return sendMessageToBungee("GetServer");
     }
 
     public static void requestIP(Player... players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("IP");
-        byte[] data = out.toByteArray();
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", data);
-        }
+        byte[] msg = makeDataOut("IP");
+        for (Player p : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", msg);
     }
 
     public static void requestIP(Iterable<Player> players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("IP");
-        byte[] data = out.toByteArray();
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", data);
-        }
+        byte[] msg = makeDataOut("IP");
+        players.forEach((p) -> p.sendPluginMessage(Main.pl, "BungeeCord", msg));
     }
 
     public static boolean requestPlayerCount(Iterable<String> servers) {
-        if (!enabled)
+        if (!servers.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerCount");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        servers.forEach((s) -> sendMessageToBungee("PlayerCount", s));
         return true;
     }
 
     public static boolean requestPlayerCount(String... servers) {
-        if (!enabled)
+        if (servers.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerCount");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : servers)
+            sendMessageToBungee("PlayerCount", s);
         return true;
     }
 
     public static boolean requestPlayerList(Iterable<String> servers) {
-        if (!enabled)
+        if (!servers.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerList");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        servers.forEach((s) -> sendMessageToBungee("PlayerList", s));
         return true;
     }
 
     public static boolean requestPlayerList(String... servers) {
-        if (!enabled)
+        if (servers.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("PlayerList");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : servers)
+            sendMessageToBungee("PlayerList", s);
         return true;
     }
 
     public static boolean requestServerIP(Iterable<String> servers) {
-        if (!enabled)
+        if (!servers.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ServerIP");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        servers.forEach((s) -> sendMessageToBungee("ServerIP", s));
         return true;
     }
 
     public static boolean requestServerIP(String... servers) {
-        if (!enabled)
+        if (servers.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : servers) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ServerIP");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : servers)
+            sendMessageToBungee("ServerIP", s);
         return true;
     }
 
     public static boolean requestServerNames() {
-        if (!enabled)
-            return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("GetServers");
-        p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-
-        return true;
+        return sendMessageToBungee("GetServers");
     }
 
     public static boolean requestUUID(Iterable<String> players) {
-        if (!enabled)
+        if (!players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("UUIDOther");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        players.forEach((s) -> sendMessageToBungee("UUIDOther", s));
         return true;
     }
 
     public static boolean requestUUID(String... players) {
-        if (!enabled)
+        if (players.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pls = (Collection<Player>) SU.srv.getOnlinePlayers();
-        if (pls.size() == 0)
-            return false;
-        Player p = pls.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("UUIDOther");
-            out.writeUTF(s);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : players)
+            sendMessageToBungee("UUIDOther", s);
         return true;
     }
 
     public static void send(String server, Player... players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Connect");
-        out.writeUTF(server);
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        byte[] msg = makeDataOut("Connect", server);
+        for (Player p : players)
+            p.sendPluginMessage(Main.pl, "BungeeCord", msg);
     }
 
     public static void send(String server, Collection<Player> players) {
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Connect");
-        out.writeUTF(server);
-        for (Player p : players) {
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        byte[] msg = makeDataOut("Connect", server);
+        players.forEach((p) -> p.sendPluginMessage(Main.pl, "BungeeCord", msg));
     }
 
     public static boolean send(String server, String... players) {
-        if (!enabled)
+        if (server == null || players.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ConnectOther");
-            out.writeUTF(s);
-            out.writeUTF(server);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : players)
+            sendMessageToBungee("ConnectOther", s, server);
         return true;
     }
 
     public static boolean send(String server, Iterable<String> players) {
-        if (!enabled)
+        if (server == null || !players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("ConnectOther");
-            out.writeUTF(s);
-            out.writeUTF(server);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        players.forEach((s) -> sendMessageToBungee("ConnectOther", s, server));
         return true;
     }
 
     public static boolean sendMessage(String msg, String... players) {
-        if (!enabled)
+        if (msg == null || players.length == 0 || getAnyPlayer() == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Message");
-            out.writeUTF(s);
-            out.writeUTF(msg);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        for (String s : players)
+            sendMessageToBungee("Message", s, msg);
         return true;
     }
 
     public static boolean sendMessage(String msg, Iterable<String> players) {
-        if (!enabled)
+        if (msg == null || !players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        Collection<Player> pc = (Collection<Player>) Bukkit.getOnlinePlayers();
-        if (pc.isEmpty())
-            return false;
-        Player p = pc.iterator().next();
-        for (String s : players) {
-            ByteArrayDataOutput out = ByteStreams.newDataOutput();
-            out.writeUTF("Message");
-            out.writeUTF(s);
-            out.writeUTF(msg);
-            p.sendPluginMessage(Main.pl, "BungeeCord", out.toByteArray());
-        }
+        players.forEach((s) -> sendMessageToBungee("Message", s, msg));
         return true;
     }
 
-    public static String[] serverNames() {
-        return servers;
+    /**
+     * Sends the given message to the Bungee using the messaging channel of the first found player on the server.
+     *
+     * @param msg - The sendable message
+     * @return true - If the message was sent, false otherwise
+     */
+    public static boolean sendMessageToBungee(String... msg) {
+        Player p = getAnyPlayer();
+        if (p == null)
+            return false;
+        p.sendPluginMessage(Main.pl, "BungeeCord", makeDataOut(msg));
+        return true;
     }
 
     public static boolean start() {
-        if (!enabled)
-            return false;
-        if (Config.BungeeAPI.servers > 0) {
-            serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
-        }
-        if (Config.BungeeAPI.currentServerName > 0) {
-            currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
-        }
-        if (Config.BungeeAPI.playerCount > 0) {
-            playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
-                requestPlayerCount(servers);
+        checkEnabled();
+        if (Config.BungeeAPI.servers > 0)
+            RunnableIDS.serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl,
+                    BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
+
+        if (Config.BungeeAPI.currentServerName > 0)
+            RunnableIDS.currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl,
+                    BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
+
+        if (Config.BungeeAPI.playerCount > 0)
+            RunnableIDS.playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
+                requestPlayerCount(servers.keySet());
                 requestPlayerCount("ALL");
             }, 2, Config.BungeeAPI.playerCount);
-        }
-        if (Config.BungeeAPI.playerList > 0) {
-            playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
-                requestPlayerList(servers);
+
+        if (Config.BungeeAPI.playerList > 0)
+            RunnableIDS.playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
+                requestPlayerList(servers.keySet());
                 requestPlayerList("ALL");
             }, 2, Config.BungeeAPI.playerList);
-        }
-        if (Config.BungeeAPI.uuidAll > 0) {
-            uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
-        }
-        if (Config.BungeeAPI.serverIP > 0) {
-            serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> requestServerIP(servers), 4, Config.BungeeAPI.serverIP);
-        }
-        if (Config.BungeeAPI.ipOnJoin) {
-            SU.sch.scheduleSyncDelayedTask(Main.pl, () -> requestIP((Collection<Player>) Bukkit.getOnlinePlayers()), 4);
-        }
+
+        if (Config.BungeeAPI.uuidAll > 0)
+            RunnableIDS.uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () ->
+                    requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
+
+        if (Config.BungeeAPI.serverIP > 0)
+            RunnableIDS.serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () ->
+                    requestServerIP(servers.keySet()), 4, Config.BungeeAPI.serverIP);
+
+        if (Config.BungeeAPI.ipOnJoin)
+            SU.sch.scheduleSyncDelayedTask(Main.pl, () ->
+                    requestIP((Collection<Player>) Bukkit.getOnlinePlayers()), 4);
+
         return true;
     }
 
     public static Integer totalPlayerCount() {
-        return playerCounts.get("ALL");
+        return servers.getOrDefault("ALL", emptyServer).playerCount;
     }
 
     public static String[] totalPlayerList() {
-        return players.get("ALL");
+        return servers.getOrDefault("ALL", emptyServer).players;
     }
 
     @Override
@@ -544,13 +403,16 @@ public class BungeeAPI implements PluginMessageListener {
                     ports.put(uid, in.readInt());
                     return;
                 case "PlayerCount":
-                    playerCounts.put(in.readUTF(), in.readInt());
+                    servers.get(in.readUTF()).playerCount = in.readInt();
                     return;
                 case "PlayerList":
-                    players.put(in.readUTF(), in.readUTF().split(", "));
+                    servers.get(in.readUTF()).players = in.readUTF().split(", ");
                     return;
                 case "GetServers":
-                    servers = in.readUTF().split(", ");
+                    String[] d = in.readUTF().split(", ");
+                    for (String s : d)
+                        if (!servers.containsKey(s))
+                            servers.put(s, new ServerInfo());
                     return;
                 case "GetServer":
                     serverName = in.readUTF();
@@ -563,10 +425,25 @@ public class BungeeAPI implements PluginMessageListener {
                     return;
                 case "ServerIP":
                     String server = in.readUTF();
-                    serverIps.put(server, in.readUTF());
-                    serverPorts.put(server, in.readShort());
+                    ServerInfo si = servers.get(server);
+                    if (si == null)
+                        servers.put(server, si = new ServerInfo());
+                    si.ip = in.readUTF();
+                    si.port = in.readShort();
             }
         } catch (Throwable ignored) {
         }
+    }
+
+    @Getter
+    public static class ServerInfo {
+        private String name, ip;
+        private String[] players = new String[0];
+        private int playerCount;
+        private short port;
+    }
+
+    private static class RunnableIDS {
+        private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     }
 }
