@@ -138,8 +138,7 @@ public class VariableAPI {
             msg = PlaceholderAPI.setPlaceholders(plr, msg);
         ArrayList<Object> out = fill(msg.replace("\\<", "\u0000").replace("\\>", "\u0001"), 0, plr, extArgs);
         out.remove(0);
-        String s = StringUtils.join(out, "").replace('\u0000', '<').replace('\u0001', '>');
-        return s;
+        return StringUtils.join(out, "").replace('\u0000', '<').replace('\u0001', '>');
     }
 
     /**
