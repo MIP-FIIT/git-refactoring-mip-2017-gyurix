@@ -101,7 +101,7 @@ public class VariableAPI {
         int l = inside.size();
         for (int c = 0; c < l; ++c) {
             String os = String.valueOf(inside.get(c));
-            int id = os.indexOf(58);
+            int id = os.indexOf(':');
             if (id != -1) {
                 sb.append(os.substring(0, id));
                 ArrayList<Object> list = new ArrayList<>(inside.subList(c + 1, l));
