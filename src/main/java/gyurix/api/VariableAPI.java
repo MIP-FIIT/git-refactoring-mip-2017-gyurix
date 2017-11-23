@@ -171,11 +171,14 @@ public class VariableAPI {
      */
     private static Object handle(String var, Player plr, ArrayList<Object> inside, Object[] extArgs) {
         VariableHandler vh = handlers.get(var);
+        //Check and report missing handlers only once during the execution of the whole software
         if (vh == null) {
             if (missingHandlers.add(var))
                 SU.log(Main.pl, "§cMissing handler for variable §f" + var + "§c!");
             return "<" + var + ">";
         }
+
+        //Check and report error throwing handlers only once during the execution of the whole software
         try {
             return vh.getValue(plr, inside, extArgs);
         } catch (Throwable e) {
