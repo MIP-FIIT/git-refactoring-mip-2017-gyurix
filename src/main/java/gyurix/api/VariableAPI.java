@@ -105,9 +105,8 @@ public class VariableAPI {
             if (id != -1) {
                 sb.append(os.substring(0, id));
                 ArrayList<Object> list = new ArrayList<>(inside.subList(c + 1, l));
-                if (id != os.length() - 1) {
+                if (id != os.length() - 1)
                     list.add(0, os.substring(id + 1));
-                }
                 return handle(sb.toString(), plr, list, extArgs);
             }
             sb.append(os);
