@@ -163,36 +163,77 @@ public class BungeeAPI implements PluginMessageListener {
         return Bukkit.getOnlinePlayers().stream().findAny().orElse(null);
     }
 
+    /**
+     * Gets the real IP of the given player
+     *
+     * @param plr - Target player
+     * @return The real IP of the given player
+     */
     public static String getIp(Player plr) {
         checkEnabled();
         return players.getOrDefault(plr.getUniqueId(), emptyPlayer).getIp();
     }
 
+    /**
+     * Gets the real port of the given player
+     *
+     * @param plr - Target player
+     * @return The real port of the given player
+     */
     public static Integer getPort(Player plr) {
         checkEnabled();
         return players.getOrDefault(plr.getUniqueId(), emptyPlayer).getPort();
     }
 
+    /**
+     * Gets the IP of the given server
+     *
+     * @param server - Target server
+     * @return The IP of the given server
+     */
     public static String getServerIp(String server) {
         checkEnabled();
         return servers.getOrDefault(server, emptyServer).ip;
     }
 
+    /**
+     * Gets the name used in Bungee config for the current server
+     *
+     * @return The name of the current server
+     */
     public static String getServerName() {
         checkEnabled();
         return serverName;
     }
 
+    /**
+     * Gets the port number of the given server
+     *
+     * @param server - Target server
+     * @return The port of the given server
+     */
     public static Short getServerPort(String server) {
         checkEnabled();
         return servers.getOrDefault(server, emptyServer).getPort();
     }
 
+    /**
+     * Gets the real UUID of the given player
+     *
+     * @param plr - Target player
+     * @return The real UUID of the given player
+     */
     public static UUID getUUID(Player plr) {
         checkEnabled();
         return players.getOrDefault(plr.getName(), emptyPlayer).getUuid();
     }
 
+    /**
+     * Gets the real UUID of the given player
+     *
+     * @param pln - Target players name
+     * @return The real UUID of the given player
+     */
     public static UUID getUUID(String pln) {
         checkEnabled();
         return players.getOrDefault(pln, emptyPlayer).getUuid();
