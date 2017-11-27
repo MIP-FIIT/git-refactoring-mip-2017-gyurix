@@ -656,7 +656,7 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     *
+     * Class used for storing queried information about a player
      */
     @Getter
     public static class PlayerInfo {
@@ -672,12 +672,15 @@ public class BungeeAPI implements PluginMessageListener {
         }
     }
 
+    /**
+     * Class for storing the runnable ids of the automatic data updater Runnables used by BungeeAPI
+     */
     private static class RunnableIDS {
         private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     }
 
     /**
-     *
+     * Class used for storing queried information about a server
      */
     @Getter
     public static class ServerInfo {
