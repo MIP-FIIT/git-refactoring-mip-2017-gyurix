@@ -436,6 +436,12 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     @Getter
+    public static class PlayerInfo {
+        private String name, ip, port;
+        private UUID uuid;
+    }
+
+    @Getter
     public static class ServerInfo {
         private String name, ip;
         private String[] players = new String[0];
