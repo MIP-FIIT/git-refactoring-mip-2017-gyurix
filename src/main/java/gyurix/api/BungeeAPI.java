@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 import static gyurix.json.JsonAPI.serialize;
+import static gyurix.spigotlib.Config.BungeeAPI.*;
 import static gyurix.spigotlib.Config.debug;
 import static gyurix.spigotlib.SU.utf8;
 import static org.apache.commons.lang.StringUtils.join;
@@ -340,31 +341,31 @@ public class BungeeAPI implements PluginMessageListener {
             RunnableIDS.serversRID = SU.sch.scheduleSyncRepeatingTask(Main.pl,
                     BungeeAPI::requestServerNames, 0, Config.BungeeAPI.servers);
 
-        if (Config.BungeeAPI.currentServerName > 0)
+        if (currentServerName > 0)
             RunnableIDS.currentServerRID = SU.sch.scheduleSyncRepeatingTask(Main.pl,
-                    BungeeAPI::requestCurrentServerName, 0, Config.BungeeAPI.currentServerName);
+                    BungeeAPI::requestCurrentServerName, 0, currentServerName);
 
-        if (Config.BungeeAPI.playerCount > 0)
+        if (playerCount > 0)
             RunnableIDS.playerCountRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
                 requestPlayerCount(servers.keySet());
                 requestPlayerCount("ALL");
-            }, 2, Config.BungeeAPI.playerCount);
+            }, 2, playerCount);
 
-        if (Config.BungeeAPI.playerList > 0)
+        if (playerList > 0)
             RunnableIDS.playerListRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () -> {
                 requestPlayerList(servers.keySet());
                 requestPlayerList("ALL");
-            }, 2, Config.BungeeAPI.playerList);
+            }, 2, playerList);
 
-        if (Config.BungeeAPI.uuidAll > 0)
+        if (uuidAll > 0)
             RunnableIDS.uuidAllRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () ->
-                    requestUUID(totalPlayerList()), 4, Config.BungeeAPI.uuidAll);
+                    requestUUID(totalPlayerList()), 4, uuidAll);
 
-        if (Config.BungeeAPI.serverIP > 0)
+        if (serverIP > 0)
             RunnableIDS.serverIPRID = SU.sch.scheduleSyncRepeatingTask(Main.pl, () ->
-                    requestServerIP(servers.keySet()), 4, Config.BungeeAPI.serverIP);
+                    requestServerIP(servers.keySet()), 4, serverIP);
 
-        if (Config.BungeeAPI.ipOnJoin)
+        if (ipOnJoin)
             SU.sch.scheduleSyncDelayedTask(Main.pl, () ->
                     requestIP((Collection<Player>) Bukkit.getOnlinePlayers()), 4);
 
