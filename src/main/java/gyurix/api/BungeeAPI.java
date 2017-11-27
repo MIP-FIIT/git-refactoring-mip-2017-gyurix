@@ -32,7 +32,7 @@ public class BungeeAPI implements PluginMessageListener {
     private static ServerInfo emptyServer = new ServerInfo();
     private static PlayerInfo emptyPlayer = new PlayerInfo();
     private static HashMap<String, ServerInfo> servers;
-    private static HashMap<String, PlayerInfo> players;
+    private static HashMap<String, PlayerInfo> players = new HashMap<>();
 
     public static String getServerIp(String server) {
         checkEnabled();
