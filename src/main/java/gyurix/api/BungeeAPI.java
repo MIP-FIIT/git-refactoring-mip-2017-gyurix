@@ -89,6 +89,13 @@ public class BungeeAPI implements PluginMessageListener {
         return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
 
+    /**
+     * Forwards the given message to every server
+     *
+     * @param channel - Channel on which the message should be received by Spigot servers
+     * @param message - The sendable message
+     * @return true - if the forwarding request was sent to BungeeCord, false otherwise
+     */
     public static boolean forwardToAllServer(String channel, byte[] message) {
         Player p = getAnyPlayer();
         if (p == null || message == null)
@@ -97,6 +104,14 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * Forwards the given message to the given players
+     *
+     * @param channel - Channel on which the message should be received by Spigot servers
+     * @param message - The sendable message
+     * @param players - The players who should receive the message
+     * @return true - if the forwarding request was sent to BungeeCord, false otherwise
+     */
     public static boolean forwardToPlayer(String channel, byte[] message, String... players) {
         Player p = getAnyPlayer();
         if (p == null || players.length == 0 || message == null)
@@ -106,6 +121,14 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * Forwards the given message to the given players
+     *
+     * @param channel - Channel on which the message should be received by Spigot servers
+     * @param message - The sendable message
+     * @param players - The players who should receive the message
+     * @return true - if the forwarding request was sent to BungeeCord, false otherwise
+     */
     public static boolean forwardToPlayer(String channel, byte[] message, Iterable<String> players) {
         Player p = getAnyPlayer();
         if (p == null || !players.iterator().hasNext() || message == null)
@@ -114,6 +137,14 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * Forwards the given message to the given servers
+     *
+     * @param channel - Channel on which the message should be received by Spigot servers
+     * @param message - The sendable message
+     * @param servers - The servers which should receive the message
+     * @return true - if the forwarding request was sent to BungeeCord, false otherwise
+     */
     public static boolean forwardToServer(String channel, byte[] message, String... servers) {
         Player p = getAnyPlayer();
         if (p == null || servers.length == 0 || message == null)
