@@ -45,18 +45,46 @@ public class BungeeAPI implements PluginMessageListener {
             throw new RuntimeException("BungeeAPI is not enabled, please enable it in SpigotLib config");
     }
 
+    /**
+     * Executes commands on the BungeeCord server
+     *
+     * @param commands - The executable commands
+     * @param players  - Names of players on who the commands should be executed
+     * @return true - if the command execution request was sent to BungeeCord, false otherwise
+     */
     public static boolean executeBungeeCommands(String[] commands, String... players) {
         return sendMessageToBungee("BungeeCommands", join(players, ","), serialize(commands));
     }
 
+    /**
+     * Executes Spigot commands on the given players
+     *
+     * @param commands - The executable commands
+     * @param players  - Names of players on who the commands should be executed
+     * @return true - if the command execution request was sent to BungeeCord, false otherwise
+     */
     public static boolean executePlayerCommands(Command[] commands, String... players) {
         return forwardToPlayer("CommandExecution", serialize(commands).getBytes(utf8), players);
     }
 
+    /**
+     * Executes Spigot commands on the given servers
+     *
+     * @param commands - The executable commands
+     * @param servers  - Names of servers on which the commands should be executed
+     * @return true - if the command execution request was sent to BungeeCord, false otherwise
+     */
     public static boolean executeServerCommands(String[] commands, String... servers) {
         return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
 
+    /**
+     * Executes Spigot commands on the given servers
+     *
+     * @param commands - The executable commands
+     * @param servers  - Names of servers on which the commands should be executed
+     * @return true - if the command execution request was sent to BungeeCord, false otherwise
+     */
     public static boolean executeServerCommands(Command[] commands, String... servers) {
         return forwardToServer("CommandExecution", serialize(commands).getBytes(utf8), servers);
     }
