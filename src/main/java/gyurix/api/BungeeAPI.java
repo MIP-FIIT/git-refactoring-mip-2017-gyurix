@@ -300,11 +300,23 @@ public class BungeeAPI implements PluginMessageListener {
         return out.toByteArray();
     }
 
+    /**
+     * Gets the online player count on the given server
+     *
+     * @param server - Target server
+     * @return The online player count on the given server
+     */
     public static Integer playerCount(String server) {
         checkEnabled();
         return servers.getOrDefault(server, emptyServer).getPlayerCount();
     }
 
+    /**
+     * Gets the online players on the given server
+     *
+     * @param server - Target server
+     * @return The online player list on the given server
+     */
     public static String[] playerList(String server) {
         checkEnabled();
         return servers.getOrDefault(server, emptyServer).getPlayers();
@@ -444,11 +456,22 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * Gets the names of servers added to the BungeeCord configuration
+     *
+     * @return The names of servers added to the BungeeCord configuration
+     */
     public static String[] serverNames() {
         checkEnabled();
         return servers.keySet().toArray(new String[servers.keySet().size()]);
     }
 
+    /**
+     * Starts the BungeeAPI
+     * This method should NOT be called, by any plugins. It's only public for making SpigotLib being able to access it.
+     *
+     * @return true if the API was started succesfully, false otherwise
+     */
     public static boolean start() {
         checkEnabled();
         if (Config.BungeeAPI.servers > 0)
@@ -486,10 +509,20 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * Gets the sum of player counts on every server connected to BungeeCord
+     *
+     * @return The total player count
+     */
     public static Integer totalPlayerCount() {
         return servers.getOrDefault("ALL", emptyServer).getPlayerCount();
     }
 
+    /**
+     * Gets the names of every player who is online on the whole BungeeCord network
+     *
+     * @return The names of every online player
+     */
     public static String[] totalPlayerList() {
         return servers.getOrDefault("ALL", emptyServer).players;
     }
