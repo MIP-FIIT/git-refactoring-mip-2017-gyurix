@@ -120,7 +120,7 @@ public class BungeeAPI implements PluginMessageListener {
 
     public static Short getServerPort(String server) {
         checkEnabled();
-        return servers.getOrDefault(server, emptyServer).port;
+        return servers.getOrDefault(server, emptyServer).getPort();
     }
 
     public static String getServerName() {
@@ -130,7 +130,7 @@ public class BungeeAPI implements PluginMessageListener {
 
     public static Integer playerCount(String server) {
         checkEnabled();
-        return servers.getOrDefault(server, emptyServer).playerCount;
+        return servers.getOrDefault(server, emptyServer).getPlayerCount();
     }
 
     public static UUID getUUID(Player plr) {
@@ -192,7 +192,7 @@ public class BungeeAPI implements PluginMessageListener {
 
     public static String[] playerList(String server) {
         checkEnabled();
-        return servers.getOrDefault(server, emptyServer).players;
+        return servers.getOrDefault(server, emptyServer).getPlayers();
     }
 
     public static String[] serverNames() {
@@ -372,7 +372,7 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     public static Integer totalPlayerCount() {
-        return servers.getOrDefault("ALL", emptyServer).playerCount;
+        return servers.getOrDefault("ALL", emptyServer).getPlayerCount();
     }
 
     public static String[] totalPlayerList() {
