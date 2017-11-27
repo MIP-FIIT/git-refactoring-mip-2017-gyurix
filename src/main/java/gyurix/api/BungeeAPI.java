@@ -239,18 +239,32 @@ public class BungeeAPI implements PluginMessageListener {
         return players.getOrDefault(pln, emptyPlayer).getUuid();
     }
 
-    public static boolean kick(String message, String... players) {
-        if (message == null || players.length == 0 || getAnyPlayer() == null)
+    /**
+     * Kicks the given players from the Bungee server
+     *
+     * @param reason  - Kicking reason
+     * @param players - Names of the kickable players
+     * @return true if the kicking request was sent to the Bungee, false otherwise
+     */
+    public static boolean kick(String reason, String... players) {
+        if (reason == null || players.length == 0 || getAnyPlayer() == null)
             return false;
         for (String s : players)
-            sendMessageToBungee("KickPlayer", s, message);
+            sendMessageToBungee("KickPlayer", s, reason);
         return true;
     }
 
-    public static boolean kick(String message, Iterable<String> players) {
-        if (message == null || !players.iterator().hasNext() || getAnyPlayer() == null)
+    /**
+     * Kicks the given players from the Bungee server
+     *
+     * @param reason  - Kicking reason
+     * @param players - Names of the kickable players
+     * @return true if the kicking request was sent to the Bungee, false otherwise
+     */
+    public static boolean kick(String reason, Iterable<String> players) {
+        if (reason == null || !players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
-        players.forEach((s) -> sendMessageToBungee("KickPlayer", s, message));
+        players.forEach((s) -> sendMessageToBungee("KickPlayer", s, reason));
         return true;
     }
 
