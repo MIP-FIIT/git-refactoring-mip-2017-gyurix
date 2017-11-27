@@ -322,21 +322,34 @@ public class BungeeAPI implements PluginMessageListener {
         return servers.getOrDefault(server, emptyServer).getPlayers();
     }
 
+    /**
+     * @return
+     */
     public static boolean requestCurrentServerName() {
         return sendMessageToBungee("GetServer");
     }
 
+    /**
+     * @param players
+     */
     public static void requestIP(Player... players) {
         byte[] msg = makeDataOut("IP");
         for (Player p : players)
             p.sendPluginMessage(Main.pl, "BungeeCord", msg);
     }
 
+    /**
+     * @param players
+     */
     public static void requestIP(Iterable<Player> players) {
         byte[] msg = makeDataOut("IP");
         players.forEach((p) -> p.sendPluginMessage(Main.pl, "BungeeCord", msg));
     }
 
+    /**
+     * @param servers
+     * @return
+     */
     public static boolean requestPlayerCount(Iterable<String> servers) {
         if (!servers.iterator().hasNext() || getAnyPlayer() == null)
             return false;
@@ -344,6 +357,10 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param servers
+     * @return
+     */
     public static boolean requestPlayerCount(String... servers) {
         if (servers.length == 0 || getAnyPlayer() == null)
             return false;
@@ -352,6 +369,10 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param servers
+     * @return
+     */
     public static boolean requestPlayerList(Iterable<String> servers) {
         if (!servers.iterator().hasNext() || getAnyPlayer() == null)
             return false;
@@ -359,6 +380,10 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param servers
+     * @return
+     */
     public static boolean requestPlayerList(String... servers) {
         if (servers.length == 0 || getAnyPlayer() == null)
             return false;
@@ -367,6 +392,10 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param servers
+     * @return
+     */
     public static boolean requestServerIP(Iterable<String> servers) {
         if (!servers.iterator().hasNext() || getAnyPlayer() == null)
             return false;
@@ -374,6 +403,10 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param servers
+     * @return
+     */
     public static boolean requestServerIP(String... servers) {
         if (servers.length == 0 || getAnyPlayer() == null)
             return false;
@@ -382,10 +415,17 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @return
+     */
     public static boolean requestServerNames() {
         return sendMessageToBungee("GetServers");
     }
 
+    /**
+     * @param players
+     * @return
+     */
     public static boolean requestUUID(Iterable<String> players) {
         if (!players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
@@ -393,6 +433,10 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param players
+     * @return
+     */
     public static boolean requestUUID(String... players) {
         if (players.length == 0 || getAnyPlayer() == null)
             return false;
@@ -401,17 +445,30 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param server
+     * @param players
+     */
     public static void send(String server, Player... players) {
         byte[] msg = makeDataOut("Connect", server);
         for (Player p : players)
             p.sendPluginMessage(Main.pl, "BungeeCord", msg);
     }
 
+    /**
+     * @param server
+     * @param players
+     */
     public static void send(String server, Collection<Player> players) {
         byte[] msg = makeDataOut("Connect", server);
         players.forEach((p) -> p.sendPluginMessage(Main.pl, "BungeeCord", msg));
     }
 
+    /**
+     * @param server
+     * @param players
+     * @return
+     */
     public static boolean send(String server, String... players) {
         if (server == null || players.length == 0 || getAnyPlayer() == null)
             return false;
@@ -420,6 +477,11 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param server
+     * @param players
+     * @return
+     */
     public static boolean send(String server, Iterable<String> players) {
         if (server == null || !players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
@@ -427,6 +489,11 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param msg
+     * @param players
+     * @return
+     */
     public static boolean sendMessage(String msg, String... players) {
         if (msg == null || players.length == 0 || getAnyPlayer() == null)
             return false;
@@ -435,6 +502,11 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    /**
+     * @param msg
+     * @param players
+     * @return
+     */
     public static boolean sendMessage(String msg, Iterable<String> players) {
         if (msg == null || !players.iterator().hasNext() || getAnyPlayer() == null)
             return false;
@@ -583,6 +655,9 @@ public class BungeeAPI implements PluginMessageListener {
         }
     }
 
+    /**
+     *
+     */
     @Getter
     public static class PlayerInfo {
         private String name, ip;
@@ -601,6 +676,9 @@ public class BungeeAPI implements PluginMessageListener {
         private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     }
 
+    /**
+     *
+     */
     @Getter
     public static class ServerInfo {
         private String name, ip;
