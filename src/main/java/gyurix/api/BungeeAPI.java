@@ -28,12 +28,11 @@ import static org.apache.commons.lang.StringUtils.join;
  */
 public class BungeeAPI implements PluginMessageListener {
     public static boolean enabled;
-    private static HashMap<UUID, String> ips = new HashMap<>();
-    private static HashMap<UUID, Integer> ports = new HashMap<>();
     private static String serverName = "N/A";
     private static ServerInfo emptyServer = new ServerInfo();
+    private static PlayerInfo emptyPlayer = new PlayerInfo();
     private static HashMap<String, ServerInfo> servers;
-    private static HashMap<String, UUID> uuids = new HashMap<>();
+    private static HashMap<String, PlayerInfo> players;
 
     public static String getServerIp(String server) {
         checkEnabled();
@@ -111,12 +110,12 @@ public class BungeeAPI implements PluginMessageListener {
 
     public static String getIp(Player plr) {
         checkEnabled();
-        return ips.get(plr.getUniqueId());
+        return players.getOrDefault(plr.getUniqueId(), emptyPlayer).getIp();
     }
 
     public static Integer getPort(Player plr) {
         checkEnabled();
-        return ports.get(plr.getUniqueId());
+        return players.getOrDefault(plr.getUniqueId(), emptyPlayer).getPort();
     }
 
     public static Short getServerPort(String server) {
@@ -437,7 +436,8 @@ public class BungeeAPI implements PluginMessageListener {
 
     @Getter
     public static class PlayerInfo {
-        private String name, ip, port;
+        private String name, ip;
+        private int port;
         private UUID uuid;
     }
 
