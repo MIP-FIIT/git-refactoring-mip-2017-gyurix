@@ -28,16 +28,11 @@ import static org.apache.commons.lang.StringUtils.join;
  */
 public class BungeeAPI implements PluginMessageListener {
     public static boolean enabled;
-    private static String serverName = "N/A";
-    private static ServerInfo emptyServer = new ServerInfo();
     private static PlayerInfo emptyPlayer = new PlayerInfo();
-    private static HashMap<String, ServerInfo> servers;
+    private static ServerInfo emptyServer = new ServerInfo();
     private static HashMap<String, PlayerInfo> players = new HashMap<>();
-
-    public static String getServerIp(String server) {
-        checkEnabled();
-        return servers.getOrDefault(server, emptyServer).ip;
-    }
+    private static String serverName = "N/A";
+    private static HashMap<String, ServerInfo> servers;
 
     /**
      * Checks if the BungeeAPI is enabled in the config, if it's not, then throws an exception
@@ -118,9 +113,9 @@ public class BungeeAPI implements PluginMessageListener {
         return players.getOrDefault(plr.getUniqueId(), emptyPlayer).getPort();
     }
 
-    public static Short getServerPort(String server) {
+    public static String getServerIp(String server) {
         checkEnabled();
-        return servers.getOrDefault(server, emptyServer).getPort();
+        return servers.getOrDefault(server, emptyServer).ip;
     }
 
     public static String getServerName() {
@@ -128,19 +123,19 @@ public class BungeeAPI implements PluginMessageListener {
         return serverName;
     }
 
-    public static Integer playerCount(String server) {
+    public static Short getServerPort(String server) {
         checkEnabled();
-        return servers.getOrDefault(server, emptyServer).getPlayerCount();
+        return servers.getOrDefault(server, emptyServer).getPort();
     }
 
     public static UUID getUUID(Player plr) {
         checkEnabled();
-        return uuids.get(plr.getName());
+        return players.getOrDefault(plr.getName(), emptyPlayer).getUuid();
     }
 
     public static UUID getUUID(String pln) {
         checkEnabled();
-        return uuids.get(pln);
+        return players.getOrDefault(pln, emptyPlayer).getUuid();
     }
 
     public static boolean kick(String message, String... players) {
@@ -190,14 +185,14 @@ public class BungeeAPI implements PluginMessageListener {
         return out.toByteArray();
     }
 
+    public static Integer playerCount(String server) {
+        checkEnabled();
+        return servers.getOrDefault(server, emptyServer).getPlayerCount();
+    }
+
     public static String[] playerList(String server) {
         checkEnabled();
         return servers.getOrDefault(server, emptyServer).getPlayers();
-    }
-
-    public static String[] serverNames() {
-        checkEnabled();
-        return servers.keySet().toArray(new String[servers.keySet().size()]);
     }
 
     public static boolean requestCurrentServerName() {
@@ -334,6 +329,11 @@ public class BungeeAPI implements PluginMessageListener {
         return true;
     }
 
+    public static String[] serverNames() {
+        checkEnabled();
+        return servers.keySet().toArray(new String[servers.keySet().size()]);
+    }
+
     public static boolean start() {
         checkEnabled();
         if (Config.BungeeAPI.servers > 0)
@@ -386,7 +386,7 @@ public class BungeeAPI implements PluginMessageListener {
                 return;
             ByteArrayDataInput in = ByteStreams.newDataInput(bytes);
             String sub = in.readUTF();
-            UUID uid = player.getUniqueId();
+            String pln = player.getName();
             debug.msg("Bungee", "Received plugin message from player " + player.getName() + ": " + sub + " " + new String(bytes));
             switch (sub) {
                 case "CommandExecution":
@@ -397,12 +397,14 @@ public class BungeeAPI implements PluginMessageListener {
                         }
                     });
                     return;
-                case "IP":
-                    ips.put(uid, in.readUTF());
-                    ports.put(uid, in.readInt());
+                case "IP": {
+                    PlayerInfo pi = players.computeIfAbsent(pln, PlayerInfo::new);
+                    pi.ip = in.readUTF();
+                    pi.port = in.readInt();
                     return;
+                }
                 case "PlayerCount":
-                    servers.get(in.readUTF()).playerCount = in.readInt();
+                    servers.computeIfAbsent(in.readUTF(), ServerInfo::new).playerCount = in.readInt();
                     return;
                 case "PlayerList":
                     servers.get(in.readUTF()).players = in.readUTF().split(", ");
@@ -416,17 +418,17 @@ public class BungeeAPI implements PluginMessageListener {
                 case "GetServer":
                     serverName = in.readUTF();
                     return;
-                case "UUID":
-                    uuids.put(player.getName(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
+                case "UUID": {
+                    PlayerInfo pi = players.computeIfAbsent(pln, PlayerInfo::new);
+                    pi.uuid = UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
                     return;
+                }
                 case "UUIDOther":
-                    uuids.put(in.readUTF(), UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5")));
+                    PlayerInfo pi = players.computeIfAbsent(pln, PlayerInfo::new);
+                    pi.uuid = UUID.fromString(in.readUTF().replaceAll("(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})", "$1-$2-$3-$4-$5"));
                     return;
                 case "ServerIP":
-                    String server = in.readUTF();
-                    ServerInfo si = servers.get(server);
-                    if (si == null)
-                        servers.put(server, si = new ServerInfo());
+                    ServerInfo si = servers.computeIfAbsent(in.readUTF(), ServerInfo::new);
                     si.ip = in.readUTF();
                     si.port = in.readShort();
             }
@@ -439,17 +441,32 @@ public class BungeeAPI implements PluginMessageListener {
         private String name, ip;
         private int port;
         private UUID uuid;
+
+        private PlayerInfo(String name) {
+            this.name = name;
+        }
+
+        private PlayerInfo() {
+        }
+    }
+
+    private static class RunnableIDS {
+        private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
     }
 
     @Getter
     public static class ServerInfo {
         private String name, ip;
-        private String[] players = new String[0];
         private int playerCount;
+        private String[] players = new String[0];
         private short port;
-    }
 
-    private static class RunnableIDS {
-        private static int playerCountRID, playerListRID, serversRID, currentServerRID, uuidAllRID, serverIPRID;
+        private ServerInfo(String name) {
+            this.name = name;
+        }
+
+        private ServerInfo() {
+
+        }
     }
 }
