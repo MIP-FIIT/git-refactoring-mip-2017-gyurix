@@ -413,8 +413,7 @@ public class BungeeAPI implements PluginMessageListener {
                 case "GetServers":
                     String[] d = in.readUTF().split(", ");
                     for (String s : d)
-                        if (!servers.containsKey(s))
-                            servers.put(s, new ServerInfo());
+                        servers.putIfAbsent(s, new ServerInfo(s));
                     return;
                 case "GetServer":
                     serverName = in.readUTF();
