@@ -468,8 +468,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param server
-     * @param players
+     * Sends the given players to the given server
+     *
+     * @param server  - Target server
+     * @param players - Sendable players
      */
     public static void send(String server, Player... players) {
         byte[] msg = makeDataOut("Connect", server);
@@ -478,8 +480,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param server
-     * @param players
+     * Sends the given players to the given server
+     *
+     * @param server  - Target server
+     * @param players - Collection of sendable players
      */
     public static void send(String server, Collection<Player> players) {
         byte[] msg = makeDataOut("Connect", server);
@@ -487,9 +491,11 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param server
-     * @param players
-     * @return
+     * Sends the given players to the given server
+     *
+     * @param server  - Target server
+     * @param players - Names of sendable players
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean send(String server, String... players) {
         if (server == null || players.length == 0 || getAnyPlayer() == null)
@@ -500,9 +506,11 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param server
-     * @param players
-     * @return
+     * Sends the given players to the given server
+     *
+     * @param server  - Target server
+     * @param players - Names of the sendable players
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean send(String server, Iterable<String> players) {
         if (server == null || !players.iterator().hasNext() || getAnyPlayer() == null)
@@ -512,9 +520,11 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param msg
-     * @param players
-     * @return
+     * Sends a chat message to the given players
+     *
+     * @param msg     - Sendable message
+     * @param players - Receiver list
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean sendMessage(String msg, String... players) {
         if (msg == null || players.length == 0 || getAnyPlayer() == null)
@@ -525,9 +535,11 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param msg
-     * @param players
-     * @return
+     * Sends a chat message to the given players
+     *
+     * @param msg     - Sendable message
+     * @param players - Receiver list
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean sendMessage(String msg, Iterable<String> players) {
         if (msg == null || !players.iterator().hasNext() || getAnyPlayer() == null)
