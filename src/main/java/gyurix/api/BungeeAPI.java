@@ -323,14 +323,18 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @return
+     * Requests the configured name of the current server from BungeeCord
+     *
+     * @return true if the request was succesful, false otherwise
      */
     public static boolean requestCurrentServerName() {
         return sendMessageToBungee("GetServer");
     }
 
     /**
-     * @param players
+     * Requests the real IP of the given players
+     *
+     * @param players - Players whose IP we would like to get
      */
     public static void requestIP(Player... players) {
         byte[] msg = makeDataOut("IP");
@@ -339,7 +343,9 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param players
+     * Requests the real IP of the given players
+     *
+     * @param players - Players whose IP we would like to get
      */
     public static void requestIP(Iterable<Player> players) {
         byte[] msg = makeDataOut("IP");
@@ -347,8 +353,9 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param servers
-     * @return
+     * Requests the online player count on the given servers
+     *
+     * @param servers - Servers about which we would like to request the player count
      */
     public static boolean requestPlayerCount(Iterable<String> servers) {
         if (!servers.iterator().hasNext() || getAnyPlayer() == null)
@@ -358,8 +365,9 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param servers
-     * @return
+     * Requests the online player count on the given servers
+     *
+     * @param servers - Servers about which we would like to request the player count
      */
     public static boolean requestPlayerCount(String... servers) {
         if (servers.length == 0 || getAnyPlayer() == null)
@@ -370,8 +378,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param servers
-     * @return
+     * Requests the online player list on the given servers
+     *
+     * @param servers - Servers about which we would like to request the player list
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestPlayerList(Iterable<String> servers) {
         if (!servers.iterator().hasNext() || getAnyPlayer() == null)
@@ -381,8 +391,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param servers
-     * @return
+     * Requests the online player list on the given servers
+     *
+     * @param servers - Servers about which we would like to request the player list
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestPlayerList(String... servers) {
         if (servers.length == 0 || getAnyPlayer() == null)
@@ -393,8 +405,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param servers
-     * @return
+     * Requests the ip of the given servers
+     *
+     * @param servers - The servers which IP we would like to request
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestServerIP(Iterable<String> servers) {
         if (!servers.iterator().hasNext() || getAnyPlayer() == null)
@@ -404,8 +418,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param servers
-     * @return
+     * Requests the ip of the given servers
+     *
+     * @param servers - The servers which IP we would like to request
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestServerIP(String... servers) {
         if (servers.length == 0 || getAnyPlayer() == null)
@@ -416,15 +432,19 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @return
+     * Requests the names of the servers set up in the Bungee config
+     *
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestServerNames() {
         return sendMessageToBungee("GetServers");
     }
 
     /**
-     * @param players
-     * @return
+     * Requests the real UUID of the given players
+     *
+     * @param players - The players whose UUID we would like to get
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestUUID(Iterable<String> players) {
         if (!players.iterator().hasNext() || getAnyPlayer() == null)
@@ -434,8 +454,10 @@ public class BungeeAPI implements PluginMessageListener {
     }
 
     /**
-     * @param players
-     * @return
+     * Requests the real UUID of the given players
+     *
+     * @param players - The players whose UUID we would like to get
+     * @return true if the request was sent to the Bungee successfully, false otherwise
      */
     public static boolean requestUUID(String... players) {
         if (players.length == 0 || getAnyPlayer() == null)
