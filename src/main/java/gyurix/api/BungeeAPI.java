@@ -646,9 +646,8 @@ public class BungeeAPI implements PluginMessageListener {
                 case "CommandExecution":
                     final Command[] commands = JsonAPI.deserialize(in.readUTF(), Command[].class);
                     SU.sch.scheduleSyncDelayedTask(Main.pl, () -> {
-                        for (Command c : commands) {
+                        for (Command c : commands)
                             c.execute(player);
-                        }
                     });
                     return;
                 case "IP": {
