@@ -1,3 +1,39 @@
+#Refactoring
+
+I have refactored the 4 classes of the whole SpigotLib plugin.
+The commits of the refactoring started after commit with message
+**Added recent changes, starting refactoring after this commit**. 
+
+###BungeeAPI
+- Merged several HashMaps to fewer HashMaps by creating inner classes.
+- Splitted longer methods to the combination of shorter ones
+- Renamed method parameters and local variables
+- Moved things having similar functionality to classes 
+- Created JavaDOC
+- Removed useless brackets
+- Converted code to use the new Java 8 features, such as lamdas 
+
+###TitleAPI
+- Created JavaDOC
+- Renamed some method parameters and local variables
+- Replaced some loops with new Java 8 forEach and lamda features
+
+###VariableAPI
+- Created JavaDOC
+- Removed magic numbers (character code ids used instead of characters)
+- Commented code in method bodies
+- Renamed some method parameters and local variables
+- Fixed field visibility related issues (converted some public fields to private fields)
+- Replaced some loops with new Java 8 forEach and lamda features
+
+###TabAPI
+- Created JavaDOC
+- Added static imports for better code readability
+- Renamed some method parameters and local variables
+- Replaced some loops with new Java 8 forEach and lamda features
+
+
+
 #SpigotLib
 
 ##Introduction
