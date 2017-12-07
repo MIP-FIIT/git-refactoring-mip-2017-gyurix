@@ -5,13 +5,19 @@ The commits of the refactoring started after commit with message
 **Added recent changes, starting refactoring after this commit**. 
 
 ###BungeeAPI
-- Merged several HashMaps to fewer HashMaps by creating inner classes.
-- Splitted longer methods to the combination of shorter ones
-- Renamed method parameters and local variables
-- Moved things having similar functionality to classes 
+- Converted code to use the new Java 8 features, such as lamdas
 - Created JavaDOC
+- Merged several HashMaps to fewer HashMaps by creating inner classes.
+- Moved things having similar functionality to classes 
 - Removed useless brackets
-- Converted code to use the new Java 8 features, such as lamdas 
+- Renamed method parameters and local variables
+- Splitted longer methods to the combination of shorter ones
+
+###TabAPI
+- Added static imports for better code readability
+- Created JavaDOC
+- Renamed some method parameters and local variables
+- Replaced some loops with new Java 8 forEach and lamda features
 
 ###TitleAPI
 - Created JavaDOC
@@ -19,16 +25,10 @@ The commits of the refactoring started after commit with message
 - Replaced some loops with new Java 8 forEach and lamda features
 
 ###VariableAPI
-- Created JavaDOC
-- Removed magic numbers (character code ids used instead of characters)
 - Commented code in method bodies
-- Renamed some method parameters and local variables
-- Fixed field visibility related issues (converted some public fields to private fields)
-- Replaced some loops with new Java 8 forEach and lamda features
-
-###TabAPI
 - Created JavaDOC
-- Added static imports for better code readability
+- Fixed field visibility related issues (converted some public fields to private fields)
+- Removed magic numbers (character code ids used instead of characters)
 - Renamed some method parameters and local variables
 - Replaced some loops with new Java 8 forEach and lamda features
 
